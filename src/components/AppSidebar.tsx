@@ -7,11 +7,13 @@ import {
   LogOut,
   BarChart3,
   FileText,
-  HelpCircle
+  HelpCircle,
+  Shield
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
 
 import {
   Sidebar,
@@ -40,10 +42,15 @@ const settingsItems = [
   { title: "Support", url: "/support", icon: HelpCircle },
 ];
 
+const superAdminItems = [
+  { title: "Config. SES", url: "/config-ses", icon: Shield },
+];
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
   const { signOut } = useAuth();
+  const { isSuperAdmin } = useUserRole();
   const isCollapsed = state === "collapsed";
   
   const isActive = (path: string) => location.pathname === path;
@@ -107,6 +114,31 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {isSuperAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-sidebar-primary">
+              Super Admin
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {superAdminItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                      <NavLink 
+                        to={item.url}
+                        className="flex items-center gap-3"
+                      >
+                        <item.icon className="h-5 w-5" />
+                        {!isCollapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter>

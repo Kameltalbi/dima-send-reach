@@ -15,6 +15,7 @@ import NouvelleCampagne from "./pages/NouvelleCampagne";
 import Statistiques from "./pages/Statistiques";
 import Templates from "./pages/Templates";
 import Parametres from "./pages/Parametres";
+import ConfigurationSES from "./pages/ConfigurationSES";
 import Support from "./pages/Support";
 import NotFound from "./pages/NotFound";
 
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/statistiques" element={<AppLayout><Statistiques /></AppLayout>} />
             <Route path="/templates" element={<AppLayout><Templates /></AppLayout>} />
             <Route path="/parametres" element={<AppLayout><Parametres /></AppLayout>} />
+            <Route path="/config-ses" element={<AppLayout><ConfigurationSES /></AppLayout>} />
             <Route path="/support" element={<AppLayout><Support /></AppLayout>} />
             
             {/* Catch-all */}
