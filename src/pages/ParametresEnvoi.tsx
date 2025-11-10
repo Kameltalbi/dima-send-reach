@@ -9,26 +9,26 @@ const ParametresEnvoi = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-heading font-bold text-foreground">Paramètres d'envoi</h1>
+        <h1 className="text-3xl font-heading font-bold text-foreground">Sending Settings</h1>
         <p className="text-muted-foreground mt-1">
-          Configurez votre compte Amazon SES pour l'envoi d'emails
+          Configure your Amazon SES account for email sending
         </p>
       </div>
 
       <Alert>
         <Info className="h-4 w-4" />
         <AlertDescription>
-          Ces informations sont nécessaires pour envoyer vos campagnes via Amazon SES. 
-          Assurez-vous de configurer correctement vos enregistrements DNS (SPF, DKIM, DMARC) 
-          sur votre domaine avant d'envoyer des emails.
+          This information is required to send your campaigns via Amazon SES. 
+          Make sure to properly configure your DNS records (SPF, DKIM, DMARC) 
+          on your domain before sending emails.
         </AlertDescription>
       </Alert>
 
       <Card className="max-w-2xl">
         <CardHeader>
-          <CardTitle>Configuration Amazon SES</CardTitle>
+          <CardTitle>Amazon SES Configuration</CardTitle>
           <CardDescription>
-            Renseignez vos clés d'accès AWS pour activer l'envoi d'emails
+            Enter your AWS access keys to enable email sending
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -49,7 +49,7 @@ const ParametresEnvoi = () => {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="region">Région AWS</Label>
+            <Label htmlFor="region">AWS Region</Label>
             <Input 
               id="region" 
               type="text" 
@@ -57,33 +57,33 @@ const ParametresEnvoi = () => {
               defaultValue="us-east-1"
             />
             <p className="text-sm text-muted-foreground">
-              Exemples: us-east-1, eu-west-1, ap-southeast-1
+              Examples: us-east-1, eu-west-1, ap-southeast-1
             </p>
           </div>
-          <Button>Enregistrer la configuration</Button>
+          <Button>Save Configuration</Button>
         </CardContent>
       </Card>
 
       <Card className="max-w-2xl">
         <CardHeader>
-          <CardTitle>Configuration DNS</CardTitle>
+          <CardTitle>DNS Configuration</CardTitle>
           <CardDescription>
-            Instructions pour configurer vos enregistrements DNS
+            Instructions for configuring your DNS records
           </CardDescription>
         </CardHeader>
         <CardContent className="prose prose-sm max-w-none">
           <p className="text-muted-foreground">
-            Pour que vos emails soient correctement livrés, vous devez configurer 
-            les enregistrements suivants dans votre zone DNS :
+            For your emails to be properly delivered, you must configure 
+            the following records in your DNS zone:
           </p>
           <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-            <li><strong>SPF</strong> : Autorise Amazon SES à envoyer des emails depuis votre domaine</li>
-            <li><strong>DKIM</strong> : Signe numériquement vos emails pour prouver leur authenticité</li>
-            <li><strong>DMARC</strong> : Définit comment traiter les emails qui échouent aux vérifications</li>
+            <li><strong>SPF</strong>: Authorizes Amazon SES to send emails from your domain</li>
+            <li><strong>DKIM</strong>: Digitally signs your emails to prove their authenticity</li>
+            <li><strong>DMARC</strong>: Defines how to handle emails that fail verification</li>
           </ul>
           <p className="text-muted-foreground mt-4">
-            Consultez la documentation d'Amazon SES pour obtenir les valeurs exactes 
-            à configurer pour votre domaine.
+            Consult the Amazon SES documentation to get the exact values 
+            to configure for your domain.
           </p>
         </CardContent>
       </Card>

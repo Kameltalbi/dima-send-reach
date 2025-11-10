@@ -10,27 +10,27 @@ const Campagnes = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-heading font-bold text-foreground">Campagnes</h1>
+          <h1 className="text-3xl font-heading font-bold text-foreground">Campaigns</h1>
           <p className="text-muted-foreground mt-1">
-            Créez et gérez vos campagnes d'email marketing
+            Create and manage your email marketing campaigns
           </p>
         </div>
         <Button onClick={() => navigate("/campagnes/nouvelle")} className="gap-2">
           <Plus className="h-4 w-4" />
-          Nouvelle campagne
+          New Campaign
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Toutes vos campagnes</CardTitle>
+          <CardTitle>All Your Campaigns</CardTitle>
           <CardDescription>
-            Consultez les performances de vos campagnes
+            View your campaign performance
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-12 text-muted-foreground">
-            Fonctionnalité en développement...
+            Feature in development...
           </div>
         </CardContent>
       </Card>

@@ -14,7 +14,7 @@ const Auth = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
-  // États pour l'inscription
+  // Signup states
   const [signupData, setSignupData] = useState({
     email: "",
     password: "",
@@ -23,7 +23,7 @@ const Auth = () => {
     nom_entreprise: "",
   });
 
-  // États pour la connexion
+  // Login states
   const [loginData, setLoginData] = useState({
     email: "",
     password: "",
@@ -52,15 +52,15 @@ const Auth = () => {
       if (error) throw error;
 
       toast({
-        title: "Inscription réussie !",
-        description: "Vous pouvez maintenant vous connecter.",
+        title: "Registration successful!",
+        description: "You can now log in.",
       });
       
-      // Rediriger automatiquement après inscription réussie
+      // Automatically redirect after successful registration
       navigate("/dashboard");
     } catch (error: any) {
       toast({
-        title: "Erreur d'inscription",
+        title: "Registration error",
         description: error.message,
         variant: "destructive",
       });
@@ -82,14 +82,14 @@ const Auth = () => {
       if (error) throw error;
 
       toast({
-        title: "Connexion réussie !",
-        description: "Bienvenue sur DimaMail.",
+        title: "Login successful!",
+        description: "Welcome to DimaMail.",
       });
       
       navigate("/dashboard");
     } catch (error: any) {
       toast({
-        title: "Erreur de connexion",
+        title: "Login error",
         description: error.message,
         variant: "destructive",
       });
@@ -110,22 +110,22 @@ const Auth = () => {
             <span className="text-accent">.</span>
           </h1>
           <p className="text-muted-foreground">
-            Plateforme d'email marketing professionnelle
+            Professional email marketing platform
           </p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Accès à votre compte</CardTitle>
+            <CardTitle>Access your account</CardTitle>
             <CardDescription>
-              Connectez-vous ou créez un nouveau compte
+              Sign in or create a new account
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Connexion</TabsTrigger>
-                <TabsTrigger value="signup">Inscription</TabsTrigger>
+                <TabsTrigger value="login">Login</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
@@ -135,14 +135,14 @@ const Auth = () => {
                     <Input
                       id="login-email"
                       type="email"
-                      placeholder="votre@email.com"
+                      placeholder="your@email.com"
                       value={loginData.email}
                       onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="login-password">Mot de passe</Label>
+                    <Label htmlFor="login-password">Password</Label>
                     <Input
                       id="login-password"
                       type="password"
@@ -152,7 +152,7 @@ const Auth = () => {
                     />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Connexion..." : "Se connecter"}
+                    {loading ? "Signing in..." : "Sign In"}
                   </Button>
                 </form>
               </TabsContent>
@@ -161,7 +161,7 @@ const Auth = () => {
                 <form onSubmit={handleSignup} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="prenom">Prénom</Label>
+                      <Label htmlFor="prenom">First Name</Label>
                       <Input
                         id="prenom"
                         type="text"
@@ -171,7 +171,7 @@ const Auth = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="nom">Nom</Label>
+                      <Label htmlFor="nom">Last Name</Label>
                       <Input
                         id="nom"
                         type="text"
@@ -182,7 +182,7 @@ const Auth = () => {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="nom_entreprise">Nom de l'entreprise</Label>
+                    <Label htmlFor="nom_entreprise">Company Name</Label>
                     <Input
                       id="nom_entreprise"
                       type="text"
@@ -196,14 +196,14 @@ const Auth = () => {
                     <Input
                       id="signup-email"
                       type="email"
-                      placeholder="votre@email.com"
+                      placeholder="your@email.com"
                       value={signupData.email}
                       onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-password">Mot de passe</Label>
+                    <Label htmlFor="signup-password">Password</Label>
                     <Input
                       id="signup-password"
                       type="password"
@@ -214,7 +214,7 @@ const Auth = () => {
                     />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Inscription..." : "Créer mon compte"}
+                    {loading ? "Creating account..." : "Create Account"}
                   </Button>
                 </form>
               </TabsContent>

@@ -32,7 +32,7 @@ const Dashboard = () => {
 
   const loadDashboardData = async () => {
     try {
-      // Charger les campagnes récentes avec leurs stats
+      // Load recent campaigns with their stats
       const { data: campaigns, error: campaignsError } = await supabase
         .from("campaigns")
         .select(`
@@ -52,7 +52,7 @@ const Dashboard = () => {
 
       if (campaignsError) throw campaignsError;
 
-      // Calculer les statistiques globales
+      // Calculate global statistics
       let totalEnvoyes = 0;
       let totalOuverts = 0;
       let totalCliques = 0;
@@ -85,7 +85,7 @@ const Dashboard = () => {
         tauxClic: totalEnvoyes > 0 ? (totalCliques / totalEnvoyes) * 100 : 0,
       });
     } catch (error) {
-      console.error("Erreur lors du chargement du dashboard:", error);
+      console.error("Error loading dashboard:", error);
     } finally {
       setLoading(false);
     }
@@ -111,65 +111,65 @@ const Dashboard = () => {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-heading font-bold text-foreground">Tableau de bord</h1>
+          <h1 className="text-3xl font-heading font-bold text-foreground">Dashboard</h1>
           <p className="text-muted-foreground mt-1">
-            Vue d'ensemble de vos campagnes d'email marketing
+            Overview of your email marketing campaigns
           </p>
         </div>
         <Button onClick={() => navigate("/campagnes/nouvelle")} className="gap-2">
           <Plus className="h-4 w-4" />
-          Nouvelle campagne
+          New Campaign
         </Button>
       </div>
 
-      {/* Statistiques principales */}
+      {/* Main statistics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Emails envoyés ce mois</CardTitle>
+            <CardTitle className="text-sm font-medium">Emails sent this month</CardTitle>
             <Mail className="h-5 w-5 text-accent" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-primary">{stats.totalEnvoyes.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              Total des emails livrés
+              Total emails delivered
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taux d'ouverture</CardTitle>
+            <CardTitle className="text-sm font-medium">Open Rate</CardTitle>
             <TrendingUp className="h-5 w-5 text-accent" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-primary">{stats.tauxOuverture.toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground mt-1">
-              Moyenne de toutes les campagnes
+              Average across all campaigns
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taux de clic</CardTitle>
+            <CardTitle className="text-sm font-medium">Click Rate</CardTitle>
             <MousePointer className="h-5 w-5 text-accent" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-primary">{stats.tauxClic.toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground mt-1">
-              Engagement des destinataires
+              Recipient engagement
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Campagnes récentes */}
+      {/* Recent campaigns */}
       <Card>
         <CardHeader>
-          <CardTitle>Dernières campagnes</CardTitle>
+          <CardTitle>Recent Campaigns</CardTitle>
           <CardDescription>
-            Vos 5 campagnes les plus récentes
+            Your 5 most recent campaigns
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -177,13 +177,13 @@ const Dashboard = () => {
             <div className="text-center py-12">
               <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">
-                Aucune campagne envoyée
+                No campaigns sent
               </h3>
               <p className="text-muted-foreground mb-4">
-                Commencez par créer votre première campagne d'emailing
+                Start by creating your first email campaign
               </p>
               <Button onClick={() => navigate("/campagnes/nouvelle")}>
-                Créer ma première campagne
+                Create my first campaign
               </Button>
             </div>
           ) : (
@@ -202,13 +202,13 @@ const Dashboard = () => {
                   </div>
                   <div className="flex items-center gap-6 text-sm">
                     <div>
-                      <p className="text-muted-foreground">Envoyés</p>
+                      <p className="text-muted-foreground">Sent</p>
                       <p className="font-semibold text-foreground">
                         {campaign.total_envoyes.toLocaleString()}
                       </p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Ouvertures</p>
+                      <p className="text-muted-foreground">Opens</p>
                       <p className="font-semibold text-primary">
                         {campaign.total_envoyes > 0
                           ? ((campaign.total_ouverts / campaign.total_envoyes) * 100).toFixed(1)
@@ -216,7 +216,7 @@ const Dashboard = () => {
                       </p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Clics</p>
+                      <p className="text-muted-foreground">Clicks</p>
                       <p className="font-semibold text-accent">
                         {campaign.total_envoyes > 0
                           ? ((campaign.total_cliques / campaign.total_envoyes) * 100).toFixed(1)

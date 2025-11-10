@@ -25,15 +25,15 @@ import {
 } from "@/components/ui/sidebar";
 
 const menuItems = [
-  { title: "Tableau de bord", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Contacts", url: "/contacts", icon: Users },
-  { title: "Listes", url: "/listes", icon: ListChecks },
-  { title: "Campagnes", url: "/campagnes", icon: Mail },
+  { title: "Lists", url: "/listes", icon: ListChecks },
+  { title: "Campaigns", url: "/campagnes", icon: Mail },
 ];
 
 const settingsItems = [
-  { title: "Mon profil", url: "/profil", icon: User },
-  { title: "Paramètres d'envoi", url: "/parametres-envoi", icon: Settings },
+  { title: "My Profile", url: "/profil", icon: User },
+  { title: "Sending Settings", url: "/parametres-envoi", icon: Settings },
 ];
 
 export function AppSidebar() {
@@ -83,7 +83,7 @@ export function AppSidebar() {
 
         <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-foreground/70">
-            Configuration
+            Settings
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -110,7 +110,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton onClick={signOut} className="text-destructive hover:text-destructive hover:bg-destructive/10">
               <LogOut className="h-5 w-5" />
-              {!isCollapsed && <span>Déconnexion</span>}
+              {!isCollapsed && <span>Sign Out</span>}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

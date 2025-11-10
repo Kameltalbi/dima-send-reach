@@ -7,27 +7,27 @@ const Listes = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-heading font-bold text-foreground">Listes</h1>
+          <h1 className="text-3xl font-heading font-bold text-foreground">Lists</h1>
           <p className="text-muted-foreground mt-1">
-            Organisez vos contacts en listes ciblées
+            Organize your contacts into targeted lists
           </p>
         </div>
         <Button className="gap-2">
           <Plus className="h-4 w-4" />
-          Nouvelle liste
+          New List
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Vos listes d'envoi</CardTitle>
+          <CardTitle>Your Mailing Lists</CardTitle>
           <CardDescription>
-            Créez et gérez vos listes de diffusion
+            Create and manage your distribution lists
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-12 text-muted-foreground">
-            Fonctionnalité en développement...
+            Feature in development...
           </div>
         </CardContent>
       </Card>

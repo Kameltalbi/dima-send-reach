@@ -7,71 +7,71 @@ const Profil = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-heading font-bold text-foreground">Mon profil</h1>
+        <h1 className="text-3xl font-heading font-bold text-foreground">My Profile</h1>
         <p className="text-muted-foreground mt-1">
-          Gérez vos informations personnelles et d'entreprise
+          Manage your personal and company information
         </p>
       </div>
 
       <div className="grid gap-6 max-w-2xl">
         <Card>
           <CardHeader>
-            <CardTitle>Informations personnelles</CardTitle>
+            <CardTitle>Personal Information</CardTitle>
             <CardDescription>
-              Mettez à jour vos coordonnées
+              Update your contact details
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="prenom">Prénom</Label>
-                <Input id="prenom" placeholder="Votre prénom" />
+                <Label htmlFor="prenom">First Name</Label>
+                <Input id="prenom" placeholder="Your first name" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="nom">Nom</Label>
-                <Input id="nom" placeholder="Votre nom" />
+                <Label htmlFor="nom">Last Name</Label>
+                <Input id="nom" placeholder="Your last name" />
               </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="votre@email.com" />
+              <Input id="email" type="email" placeholder="your@email.com" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="entreprise">Nom de l'entreprise</Label>
-              <Input id="entreprise" placeholder="Votre entreprise" />
+              <Label htmlFor="entreprise">Company Name</Label>
+              <Input id="entreprise" placeholder="Your company" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email-envoi">Email d'envoi par défaut</Label>
-              <Input id="email-envoi" type="email" placeholder="newsletter@entreprise.com" />
+              <Label htmlFor="email-envoi">Default Sender Email</Label>
+              <Input id="email-envoi" type="email" placeholder="newsletter@company.com" />
               <p className="text-sm text-muted-foreground">
-                Cette adresse sera utilisée comme expéditeur par défaut pour vos campagnes
+                This address will be used as the default sender for your campaigns
               </p>
             </div>
-            <Button>Enregistrer les modifications</Button>
+            <Button>Save Changes</Button>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Mot de passe</CardTitle>
+            <CardTitle>Password</CardTitle>
             <CardDescription>
-              Modifiez votre mot de passe
+              Change your password
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="current-password">Mot de passe actuel</Label>
+              <Label htmlFor="current-password">Current Password</Label>
               <Input id="current-password" type="password" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-password">Nouveau mot de passe</Label>
+              <Label htmlFor="new-password">New Password</Label>
               <Input id="new-password" type="password" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirmer le mot de passe</Label>
+              <Label htmlFor="confirm-password">Confirm Password</Label>
               <Input id="confirm-password" type="password" />
             </div>
-            <Button>Changer le mot de passe</Button>
+            <Button>Change Password</Button>
           </CardContent>
         </Card>
       </div>
