@@ -1,5 +1,6 @@
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { Topbar } from "@/components/Topbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 
@@ -26,9 +27,7 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
       <div className="flex min-h-screen w-full bg-background">
         <AppSidebar />
         <div className="flex-1 flex flex-col">
-          <header className="h-16 border-b border-border bg-card flex items-center px-6 sticky top-0 z-10">
-            <SidebarTrigger className="mr-4" />
-          </header>
+          <Topbar />
           <main className="flex-1 p-6">{children}</main>
         </div>
       </div>

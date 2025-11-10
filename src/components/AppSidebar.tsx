@@ -5,7 +5,9 @@ import {
   Mail, 
   Settings, 
   LogOut,
-  User
+  BarChart3,
+  FileText,
+  HelpCircle
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -26,14 +28,16 @@ import {
 
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Campagnes", url: "/campagnes", icon: Mail },
   { title: "Contacts", url: "/contacts", icon: Users },
-  { title: "Lists", url: "/listes", icon: ListChecks },
-  { title: "Campaigns", url: "/campagnes", icon: Mail },
+  { title: "Listes", url: "/listes", icon: ListChecks },
+  { title: "Statistiques", url: "/statistiques", icon: BarChart3 },
+  { title: "Templates", url: "/templates", icon: FileText },
 ];
 
 const settingsItems = [
-  { title: "My Profile", url: "/profil", icon: User },
-  { title: "Sending Settings", url: "/parametres-envoi", icon: Settings },
+  { title: "Paramètres", url: "/parametres", icon: Settings },
+  { title: "Support", url: "/support", icon: HelpCircle },
 ];
 
 export function AppSidebar() {

@@ -11,8 +11,11 @@ import Dashboard from "./pages/Dashboard";
 import Contacts from "./pages/Contacts";
 import Listes from "./pages/Listes";
 import Campagnes from "./pages/Campagnes";
-import Profil from "./pages/Profil";
-import ParametresEnvoi from "./pages/ParametresEnvoi";
+import NouvelleCampagne from "./pages/NouvelleCampagne";
+import Statistiques from "./pages/Statistiques";
+import Templates from "./pages/Templates";
+import Parametres from "./pages/Parametres";
+import Support from "./pages/Support";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,8 +36,11 @@ const App = () => (
             <Route path="/contacts" element={<AppLayout><Contacts /></AppLayout>} />
             <Route path="/listes" element={<AppLayout><Listes /></AppLayout>} />
             <Route path="/campagnes" element={<AppLayout><Campagnes /></AppLayout>} />
-            <Route path="/profil" element={<AppLayout><Profil /></AppLayout>} />
-            <Route path="/parametres-envoi" element={<AppLayout><ParametresEnvoi /></AppLayout>} />
+            <Route path="/campagnes/nouvelle" element={<AppLayout><NouvelleCampagne /></AppLayout>} />
+            <Route path="/statistiques" element={<AppLayout><Statistiques /></AppLayout>} />
+            <Route path="/templates" element={<AppLayout><Templates /></AppLayout>} />
+            <Route path="/parametres" element={<AppLayout><Parametres /></AppLayout>} />
+            <Route path="/support" element={<AppLayout><Support /></AppLayout>} />
             
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
