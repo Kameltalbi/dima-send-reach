@@ -1,117 +1,72 @@
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, FileText } from "lucide-react";
+import { Plus } from "lucide-react";
+import { TemplatesList } from "@/components/templates/TemplatesList";
+import { TemplateEditor } from "@/components/templates/TemplateEditor";
 
-const templates = [
-  {
-    id: 1,
-    name: "Newsletter Moderne",
-    description: "Design épuré avec en-tête coloré",
-    category: "Newsletter"
-  },
-  {
-    id: 2,
-    name: "Promo Flash",
-    description: "Mise en avant de promotion limitée",
-    category: "Promotion"
-  },
-  {
-    id: 3,
-    name: "Bienvenue Client",
-    description: "Email d'accueil personnalisé",
-    category: "Transactionnel"
-  },
-  {
-    id: 4,
-    name: "Annonce Produit",
-    description: "Lancement de nouveau produit",
-    category: "Produit"
-  },
-  {
-    id: 5,
-    name: "Événement",
-    description: "Invitation à un événement",
-    category: "Événement"
-  },
-  {
-    id: 6,
-    name: "Rapport Mensuel",
-    description: "Récapitulatif des activités",
-    category: "Newsletter"
-  },
-];
+export default function Templates() {
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
 
-const Templates = () => {
+  const { data: templates, isLoading } = useQuery({
+    queryKey: ["templates"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("templates")
+        .select("*")
+        .order("updated_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const handleCreateNew = () => {
+    setSelectedTemplateId(null);
+    setIsEditorOpen(true);
+  };
+
+  const handleEdit = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+    setIsEditorOpen(true);
+  };
+
+  const handleCloseEditor = () => {
+    setIsEditorOpen(false);
+    setSelectedTemplateId(null);
+  };
+
+  if (isEditorOpen) {
+    return (
+      <TemplateEditor
+        templateId={selectedTemplateId}
+        onClose={handleCloseEditor}
+      />
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="container mx-auto py-6 space-y-6">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-heading font-bold text-foreground">Templates</h1>
-          <p className="text-muted-foreground mt-1">
-            Modèles d'e-mails prêts à l'emploi
+          <h1 className="text-3xl font-bold tracking-tight">Templates d'emails</h1>
+          <p className="text-muted-foreground">
+            Créez et gérez vos modèles d'emails avec l'éditeur drag-and-drop
           </p>
         </div>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          Créer un template
+        <Button onClick={handleCreateNew} size="lg">
+          <Plus className="mr-2 h-5 w-5" />
+          Nouveau template
         </Button>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {templates.map((template) => (
-          <Card key={template.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-primary/10 rounded-lg">
-                    <FileText className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">{template.name}</CardTitle>
-                    <CardDescription className="text-xs mt-1">
-                      {template.category}
-                    </CardDescription>
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                {template.description}
-              </p>
-            </CardContent>
-            <CardFooter className="gap-2">
-              <Button variant="outline" className="flex-1">
-                Aperçu
-              </Button>
-              <Button className="flex-1">
-                Utiliser
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Créer votre propre template</CardTitle>
-          <CardDescription>
-            Concevez des modèles personnalisés réutilisables
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground mb-4">
-            Créez vos propres templates avec notre éditeur visuel et réutilisez-les 
-            pour gagner du temps dans la création de vos campagnes.
-          </p>
-          <Button variant="outline" className="gap-2">
-            <Plus className="h-4 w-4" />
-            Nouveau template personnalisé
-          </Button>
-        </CardContent>
-      </Card>
+      <TemplatesList
+        templates={templates}
+        isLoading={isLoading}
+        onEdit={handleEdit}
+      />
     </div>
   );
-};
-
-export default Templates;
+}

@@ -403,6 +403,48 @@ export type Database = {
           },
         ]
       }
+      templates: {
+        Row: {
+          content_html: string | null
+          content_json: Json | null
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean
+          nom: string
+          thumbnail_url: string | null
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content_html?: string | null
+          content_json?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          nom: string
+          thumbnail_url?: string | null
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content_html?: string | null
+          content_json?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          nom?: string
+          thumbnail_url?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
