@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Mail, Zap, BarChart3, Globe, ArrowRight, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo-dima-mail.png";
+import heroEmail from "@/assets/hero-email.jpg";
 
 const Landing = () => {
   return (
@@ -50,13 +51,11 @@ const Landing = () => {
               </div>
             </div>
             <div className="hidden md:block">
-              <Card className="shadow-lg">
-                <CardContent className="p-0">
-                  <div className="aspect-video bg-gradient-to-br from-primary/20 to-accent/20 rounded-lg flex items-center justify-center">
-                    <BarChart3 className="h-32 w-32 text-primary/40" />
-                  </div>
-                </CardContent>
-              </Card>
+              <img 
+                src={heroEmail} 
+                alt="Email Marketing" 
+                className="rounded-lg shadow-2xl w-full h-auto object-cover"
+              />
             </div>
           </div>
         </div>
