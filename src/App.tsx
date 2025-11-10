@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/layouts/AppLayout";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -16,6 +17,7 @@ import Statistiques from "./pages/Statistiques";
 import Templates from "./pages/Templates";
 import Parametres from "./pages/Parametres";
 import ConfigurationSES from "./pages/ConfigurationSES";
+import SuperAdmin from "./pages/SuperAdmin";
 import Support from "./pages/Support";
 import NotFound from "./pages/NotFound";
 
@@ -42,6 +44,7 @@ const App = () => (
             <Route path="/templates" element={<AppLayout><Templates /></AppLayout>} />
             <Route path="/parametres" element={<AppLayout><Parametres /></AppLayout>} />
             <Route path="/config-ses" element={<AppLayout><ConfigurationSES /></AppLayout>} />
+            <Route path="/superadmin" element={<AppLayout><ProtectedRoute requiredRole="superadmin"><SuperAdmin /></ProtectedRoute></AppLayout>} />
             <Route path="/support" element={<AppLayout><Support /></AppLayout>} />
             
             {/* Catch-all */}

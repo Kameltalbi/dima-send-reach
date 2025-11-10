@@ -8,7 +8,8 @@ import {
   BarChart3,
   FileText,
   HelpCircle,
-  Shield
+  Shield,
+  Crown
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -43,6 +44,7 @@ const settingsItems = [
 ];
 
 const superAdminItems = [
+  { title: "Dashboard Admin", url: "/superadmin", icon: Crown },
   { title: "Config. SES", url: "/config-ses", icon: Shield },
 ];
 

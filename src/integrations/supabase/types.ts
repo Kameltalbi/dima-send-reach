@@ -252,6 +252,39 @@ export type Database = {
         }
         Relationships: []
       }
+      organizations: {
+        Row: {
+          created_at: string
+          date_creation: string
+          email_contact: string
+          id: string
+          nom: string
+          notes: string | null
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_creation?: string
+          email_contact: string
+          id?: string
+          nom: string
+          notes?: string | null
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_creation?: string
+          email_contact?: string
+          id?: string
+          nom?: string
+          notes?: string | null
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -259,6 +292,7 @@ export type Database = {
           id: string
           nom: string
           nom_entreprise: string
+          organization_id: string | null
           prenom: string
           updated_at: string
         }
@@ -268,6 +302,7 @@ export type Database = {
           id: string
           nom: string
           nom_entreprise: string
+          organization_id?: string | null
           prenom: string
           updated_at?: string
         }
@@ -277,10 +312,19 @@ export type Database = {
           id?: string
           nom?: string
           nom_entreprise?: string
+          organization_id?: string | null
           prenom?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ses_config: {
         Row: {
@@ -311,6 +355,53 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          date_debut: string
+          date_fin: string | null
+          email_limit: number
+          id: string
+          notes: string | null
+          organization_id: string
+          plan_type: string
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_debut?: string
+          date_fin?: string | null
+          email_limit?: number
+          id?: string
+          notes?: string | null
+          organization_id: string
+          plan_type?: string
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_debut?: string
+          date_fin?: string | null
+          email_limit?: number
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          plan_type?: string
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
