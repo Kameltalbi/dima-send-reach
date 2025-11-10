@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Save, Eye, Download, Settings } from "lucide-react";
+import { ArrowLeft, Save, Eye, Download, Settings, Code } from "lucide-react";
 import { toast } from "sonner";
 import grapesjs from "grapesjs";
 import "grapesjs/dist/css/grapes.min.css";
@@ -262,6 +262,11 @@ export function TemplateEditor({ templateId, onClose }: TemplateEditorProps) {
     toast.success("Template exporté avec succès");
   };
 
+  const handleImport = () => {
+    if (!editorRef.current) return;
+    editorRef.current.runCommand('gjs-open-import-webpage');
+  };
+
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Barre d'outils */}
@@ -282,6 +287,10 @@ export function TemplateEditor({ templateId, onClose }: TemplateEditorProps) {
           <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
             <Settings className="mr-2 h-4 w-4" />
             Paramètres
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleImport}>
+            <Code className="mr-2 h-4 w-4" />
+            Importer HTML
           </Button>
           <Button variant="outline" size="sm" onClick={handlePreview}>
             <Eye className="mr-2 h-4 w-4" />
