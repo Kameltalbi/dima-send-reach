@@ -133,7 +133,15 @@ const Landing = () => {
       <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-12 items-center">
-...
+            <div className="hidden md:block">
+              <Card className="shadow-lg">
+                <CardContent className="p-0">
+                  <div className="aspect-video bg-gradient-to-br from-primary/20 to-accent/20 rounded-lg flex items-center justify-center">
+                    <BarChart3 className="h-32 w-32 text-primary/40" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
             <div>
               <h2 className="text-4xl font-heading font-bold text-foreground mb-6">
                 A clear dashboard to manage all your campaigns
