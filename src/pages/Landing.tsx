@@ -14,38 +14,38 @@ const Landing = () => {
             <img src={logo} alt="DimaMail" className="h-10" />
           </div>
           <nav className="hidden md:flex items-center gap-8">
-            <a href="#accueil" className="text-foreground hover:text-accent transition-colors">Accueil</a>
-            <a href="#fonctionnalites" className="text-foreground hover:text-accent transition-colors">Fonctionnalités</a>
-            <a href="#tarifs" className="text-foreground hover:text-accent transition-colors">Tarifs</a>
-            <a href="#apropos" className="text-foreground hover:text-accent transition-colors">À propos</a>
+            <a href="#home" className="text-foreground hover:text-accent transition-colors">Home</a>
+            <a href="#features" className="text-foreground hover:text-accent transition-colors">Features</a>
+            <a href="#pricing" className="text-foreground hover:text-accent transition-colors">Pricing</a>
+            <a href="#about" className="text-foreground hover:text-accent transition-colors">About</a>
             <a href="#contact" className="text-foreground hover:text-accent transition-colors">Contact</a>
           </nav>
           <Link to="/auth">
-            <Button variant="default">Se connecter</Button>
+            <Button variant="default">Sign In</Button>
           </Link>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section id="accueil" className="py-20 bg-muted/30">
+      <section id="home" className="py-20 bg-muted/30">
         <div className="container mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
               <h1 className="text-5xl font-heading font-bold text-foreground mb-6">
-                Envoyez vos campagnes d'e-mails simplement et efficacement
+                Send your email campaigns simply and effectively
               </h1>
               <p className="text-xl text-muted-foreground mb-8">
-                DimaMail est la plateforme d'e-mail marketing qui vous permet d'envoyer jusqu'à 1 000 000 d'e-mails par campagne, avec un suivi en temps réel.
+                DimaMail is the email marketing platform that allows you to send up to 1,000,000 emails per campaign, with real-time tracking.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link to="/auth">
                   <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90">
-                    Créer un compte gratuit
+                    Create Free Account
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
                 <Button size="lg" variant="outline">
-                  Découvrir les fonctionnalités
+                  Discover Features
                 </Button>
               </div>
             </div>
@@ -62,12 +62,12 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Fonctionnalités */}
-      <section id="fonctionnalites" className="py-20">
+      {/* Features */}
+      <section id="features" className="py-20">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-heading font-bold text-foreground mb-4">
-              Tout ce dont vous avez besoin pour réussir vos campagnes
+              Everything you need to succeed with your campaigns
             </h2>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -77,10 +77,10 @@ const Landing = () => {
                   <Mail className="h-8 w-8 text-accent" />
                 </div>
                 <h3 className="text-xl font-heading font-semibold text-foreground mb-3">
-                  Création facile
+                  Easy Creation
                 </h3>
                 <p className="text-muted-foreground">
-                  Créez vos e-mails en quelques clics grâce à notre éditeur visuel.
+                  Create your emails in a few clicks with our visual editor.
                 </p>
               </CardContent>
             </Card>
@@ -91,10 +91,10 @@ const Landing = () => {
                   <Zap className="h-8 w-8 text-accent" />
                 </div>
                 <h3 className="text-xl font-heading font-semibold text-foreground mb-3">
-                  Envoi massif sécurisé
+                  Secure Mass Sending
                 </h3>
                 <p className="text-muted-foreground">
-                  Jusqu'à 1 million d'e-mails par campagne via Amazon SES.
+                  Up to 1 million emails per campaign via Amazon SES.
                 </p>
               </CardContent>
             </Card>
@@ -105,10 +105,10 @@ const Landing = () => {
                   <BarChart3 className="h-8 w-8 text-accent" />
                 </div>
                 <h3 className="text-xl font-heading font-semibold text-foreground mb-3">
-                  Statistiques détaillées
+                  Detailed Statistics
                 </h3>
                 <p className="text-muted-foreground">
-                  Suivez vos performances en temps réel : ouvertures, clics, désabonnements.
+                  Track your performance in real-time: opens, clicks, unsubscribes.
                 </p>
               </CardContent>
             </Card>
@@ -119,10 +119,10 @@ const Landing = () => {
                   <Globe className="h-8 w-8 text-accent" />
                 </div>
                 <h3 className="text-xl font-heading font-semibold text-foreground mb-3">
-                  Fiabilité mondiale
+                  Global Reliability
                 </h3>
                 <p className="text-muted-foreground">
-                  Conforme aux standards internationaux de sécurité et de deliverabilité.
+                  Compliant with international security and deliverability standards.
                 </p>
               </CardContent>
             </Card>
@@ -130,36 +130,30 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Aperçu produit */}
+      {/* Product Overview */}
       <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            <Card className="shadow-xl">
-              <CardContent className="p-0">
-                <div className="aspect-video bg-gradient-to-br from-primary/30 to-accent/30 rounded-lg flex items-center justify-center">
-                  <BarChart3 className="h-40 w-40 text-primary/50" />
-                </div>
-              </CardContent>
-            </Card>
+...
             <div>
               <h2 className="text-4xl font-heading font-bold text-foreground mb-6">
-                Un tableau de bord clair pour piloter toutes vos campagnes
+                A clear dashboard to manage all your campaigns
               </h2>
               <p className="text-xl text-muted-foreground mb-6">
-                Analysez vos résultats et améliorez votre communication à chaque envoi.
+                Analyze your results and improve your communication with every send.
               </p>
               <ul className="space-y-4">
                 <li className="flex items-start gap-3">
                   <Check className="h-6 w-6 text-accent flex-shrink-0 mt-0.5" />
-                  <span className="text-muted-foreground">Vue d'ensemble de vos performances en temps réel</span>
+                  <span className="text-muted-foreground">Real-time performance overview</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <Check className="h-6 w-6 text-accent flex-shrink-0 mt-0.5" />
-                  <span className="text-muted-foreground">Graphiques et statistiques détaillées par campagne</span>
+                  <span className="text-muted-foreground">Detailed graphs and statistics per campaign</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <Check className="h-6 w-6 text-accent flex-shrink-0 mt-0.5" />
-                  <span className="text-muted-foreground">Export CSV pour analyses approfondies</span>
+                  <span className="text-muted-foreground">CSV export for in-depth analysis</span>
                 </li>
               </ul>
             </div>
@@ -167,111 +161,111 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Tarifs */}
-      <section id="tarifs" className="py-20">
+      {/* Pricing */}
+      <section id="pricing" className="py-20">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-heading font-bold text-foreground mb-4">
-              Des offres flexibles pour tous les besoins
+              Flexible plans for every need
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             <Card>
               <CardContent className="pt-8 pb-8">
-                <h3 className="text-2xl font-heading font-bold text-foreground mb-2">Découverte</h3>
-                <p className="text-muted-foreground mb-6">Gratuit</p>
-                <p className="text-3xl font-bold text-foreground mb-6">0 DT<span className="text-lg font-normal">/mois</span></p>
+                <h3 className="text-2xl font-heading font-bold text-foreground mb-2">Starter</h3>
+                <p className="text-muted-foreground mb-6">Free</p>
+                <p className="text-3xl font-bold text-foreground mb-6">$0<span className="text-lg font-normal">/month</span></p>
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-start gap-2">
                     <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">10 000 e-mails par mois</span>
+                    <span className="text-sm">10,000 emails per month</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Statistiques de base</span>
+                    <span className="text-sm">Basic statistics</span>
                   </li>
                 </ul>
-                <Button variant="outline" className="w-full">Commencer</Button>
+                <Button variant="outline" className="w-full">Get Started</Button>
               </CardContent>
             </Card>
 
             <Card className="border-accent border-2">
               <CardContent className="pt-8 pb-8">
-                <div className="text-xs font-semibold text-accent mb-2">POPULAIRE</div>
+                <div className="text-xs font-semibold text-accent mb-2">POPULAR</div>
                 <h3 className="text-2xl font-heading font-bold text-foreground mb-2">Pro</h3>
-                <p className="text-muted-foreground mb-6">Pour les professionnels</p>
-                <p className="text-3xl font-bold text-foreground mb-6">À partir de 49 DT<span className="text-lg font-normal">/mois</span></p>
+                <p className="text-muted-foreground mb-6">For professionals</p>
+                <p className="text-3xl font-bold text-foreground mb-6">From $49<span className="text-lg font-normal">/month</span></p>
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-start gap-2">
                     <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Jusqu'à 100 000 e-mails/mois</span>
+                    <span className="text-sm">Up to 100,000 emails/month</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Statistiques avancées</span>
+                    <span className="text-sm">Advanced statistics</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Support prioritaire</span>
+                    <span className="text-sm">Priority support</span>
                   </li>
                 </ul>
-                <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">Commencer</Button>
+                <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">Get Started</Button>
               </CardContent>
             </Card>
 
             <Card>
               <CardContent className="pt-8 pb-8">
-                <h3 className="text-2xl font-heading font-bold text-foreground mb-2">Entreprise</h3>
-                <p className="text-muted-foreground mb-6">Volume élevé</p>
-                <p className="text-3xl font-bold text-foreground mb-6">Sur mesure</p>
+                <h3 className="text-2xl font-heading font-bold text-foreground mb-2">Enterprise</h3>
+                <p className="text-muted-foreground mb-6">High volume</p>
+                <p className="text-3xl font-bold text-foreground mb-6">Custom</p>
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-start gap-2">
                     <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Jusqu'à 1 million d'envois</span>
+                    <span className="text-sm">Up to 1 million sends</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Support dédié</span>
+                    <span className="text-sm">Dedicated support</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">SLA garanti</span>
+                    <span className="text-sm">Guaranteed SLA</span>
                   </li>
                 </ul>
-                <Button variant="outline" className="w-full">Nous contacter</Button>
+                <Button variant="outline" className="w-full">Contact Us</Button>
               </CardContent>
             </Card>
           </div>
         </div>
       </section>
 
-      {/* À propos */}
-      <section id="apropos" className="py-20 bg-primary text-primary-foreground">
+      {/* About */}
+      <section id="about" className="py-20 bg-primary text-primary-foreground">
         <div className="container mx-auto px-6 text-center max-w-4xl">
           <h2 className="text-4xl font-heading font-bold mb-6">
-            Une solution conçue pour les professionnels
+            A solution designed for professionals
           </h2>
           <p className="text-xl mb-8 opacity-90">
-            DimaMail est née de la volonté d'offrir aux entreprises une solution fiable et performante d'email marketing. Simple, rapide et efficace, DimaMail vous aide à rester toujours en contact avec vos clients, où qu'ils soient.
+            DimaMail was born from the desire to offer businesses a reliable and powerful email marketing solution. Simple, fast, and effective, DimaMail helps you stay connected with your customers, wherever they are.
           </p>
           <Button size="lg" variant="secondary" className="bg-accent text-accent-foreground hover:bg-accent/90">
-            Nous contacter
+            Contact Us
           </Button>
         </div>
       </section>
 
-      {/* CTA Final */}
+      {/* Final CTA */}
       <section className="py-20 bg-gradient-to-br from-primary/90 to-primary text-primary-foreground">
         <div className="container mx-auto px-6 text-center">
           <h2 className="text-4xl font-heading font-bold mb-6">
-            Commencez à envoyer vos campagnes dès aujourd'hui
+            Start sending your campaigns today
           </h2>
           <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-            Rejoignez les entreprises qui font confiance à DimaMail pour leur communication.
+            Join the businesses that trust DimaMail for their communication.
           </p>
           <Link to="/auth">
             <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90">
-              Créer un compte gratuit
+              Create Free Account
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>
@@ -285,28 +279,28 @@ const Landing = () => {
             <div>
               <img src={logo} alt="DimaMail" className="h-8 mb-4 brightness-0 invert" />
               <p className="text-sm opacity-80">
-                Plateforme professionnelle d'e-mail marketing.
+                Professional email marketing platform.
               </p>
             </div>
             <div>
               <h4 className="font-heading font-semibold mb-4">Navigation</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="#accueil" className="opacity-80 hover:text-accent transition-colors">Accueil</a></li>
-                <li><a href="#fonctionnalites" className="opacity-80 hover:text-accent transition-colors">Fonctionnalités</a></li>
-                <li><a href="#tarifs" className="opacity-80 hover:text-accent transition-colors">Tarifs</a></li>
+                <li><a href="#home" className="opacity-80 hover:text-accent transition-colors">Home</a></li>
+                <li><a href="#features" className="opacity-80 hover:text-accent transition-colors">Features</a></li>
+                <li><a href="#pricing" className="opacity-80 hover:text-accent transition-colors">Pricing</a></li>
                 <li><a href="#contact" className="opacity-80 hover:text-accent transition-colors">Contact</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-heading font-semibold mb-4">Ressources</h4>
+              <h4 className="font-heading font-semibold mb-4">Resources</h4>
               <ul className="space-y-2 text-sm">
                 <li><a href="#" className="opacity-80 hover:text-accent transition-colors">FAQ</a></li>
-                <li><a href="#" className="opacity-80 hover:text-accent transition-colors">Support technique</a></li>
-                <li><a href="#" className="opacity-80 hover:text-accent transition-colors">Blog (à venir)</a></li>
+                <li><a href="#" className="opacity-80 hover:text-accent transition-colors">Technical Support</a></li>
+                <li><a href="#" className="opacity-80 hover:text-accent transition-colors">Blog (coming soon)</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-heading font-semibold mb-4">Suivez-nous</h4>
+              <h4 className="font-heading font-semibold mb-4">Follow Us</h4>
               <div className="flex gap-4">
                 <a href="#" className="opacity-80 hover:text-accent transition-colors">LinkedIn</a>
                 <a href="#" className="opacity-80 hover:text-accent transition-colors">Facebook</a>
@@ -314,7 +308,7 @@ const Landing = () => {
             </div>
           </div>
           <div className="border-t border-primary-foreground/20 pt-8 text-center text-sm opacity-80">
-            <p>© 2025 DimaMail — Tous droits réservés. Fait avec 🇹🇳 à Tunis.</p>
+            <p>© 2025 DimaMail — All rights reserved. Made with 🇹🇳 in Tunis.</p>
           </div>
         </div>
       </footer>
