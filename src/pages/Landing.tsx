@@ -50,7 +50,7 @@ const Landing = () => {
                 </Button>
               </div>
             </div>
-            <div className="hidden md:block">
+            <div className="hidden md:block animate-fade-in">
               <img 
                 src={heroEmail} 
                 alt="Email Marketing" 
