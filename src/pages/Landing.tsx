@@ -54,7 +54,7 @@ const Landing = () => {
               <img 
                 src={heroEmail} 
                 alt="Email Marketing" 
-                className="rounded-lg shadow-2xl w-full h-auto object-cover"
+                className="rounded-lg shadow-2xl w-full h-auto object-cover scale-110"
               />
             </div>
           </div>
