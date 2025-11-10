@@ -36,6 +36,8 @@ export function TemplateEditor({ templateId, onClose }: TemplateEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const [settingsOpen, setSettingsOpen] = useState(!templateId);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importHtml, setImportHtml] = useState("");
   const [templateName, setTemplateName] = useState("");
   const [templateDescription, setTemplateDescription] = useState("");
   const [templateType, setTemplateType] = useState("newsletter");
@@ -263,8 +265,23 @@ export function TemplateEditor({ templateId, onClose }: TemplateEditorProps) {
   };
 
   const handleImport = () => {
-    if (!editorRef.current) return;
-    editorRef.current.runCommand('gjs-open-import-webpage');
+    setImportOpen(true);
+  };
+
+  const handleImportConfirm = () => {
+    if (!editorRef.current || !importHtml.trim()) {
+      toast.error("Veuillez entrer du code HTML");
+      return;
+    }
+    
+    try {
+      editorRef.current.setComponents(importHtml);
+      toast.success("HTML importé avec succès");
+      setImportOpen(false);
+      setImportHtml("");
+    } catch (error) {
+      toast.error("Erreur lors de l'importation du HTML");
+    }
   };
 
   return (
@@ -383,6 +400,39 @@ export function TemplateEditor({ templateId, onClose }: TemplateEditorProps) {
             </Button>
             <Button onClick={() => saveMutation.mutate()}>
               Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog import HTML */}
+      <Dialog open={importOpen} onOpenChange={setImportOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Importer du code HTML</DialogTitle>
+            <DialogDescription>
+              Collez votre code HTML ci-dessous pour l'importer dans l'éditeur
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="html-import">Code HTML</Label>
+              <Textarea
+                id="html-import"
+                value={importHtml}
+                onChange={(e) => setImportHtml(e.target.value)}
+                placeholder="<div>Votre code HTML ici...</div>"
+                rows={12}
+                className="font-mono text-sm"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImportOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleImportConfirm}>
+              Importer
             </Button>
           </DialogFooter>
         </DialogContent>
