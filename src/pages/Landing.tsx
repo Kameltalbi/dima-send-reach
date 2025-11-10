@@ -35,7 +35,7 @@ const Landing = () => {
                 Envoyez vos campagnes d'e-mails simplement et efficacement
               </h1>
               <p className="text-xl text-muted-foreground mb-8">
-                DimaMail est la plateforme tunisienne d'e-mail marketing qui vous permet d'envoyer jusqu'à 1 000 000 d'e-mails par campagne, avec un suivi en temps réel.
+                DimaMail est la plateforme d'e-mail marketing qui vous permet d'envoyer jusqu'à 1 000 000 d'e-mails par campagne, avec un suivi en temps réel.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link to="/auth">
@@ -119,10 +119,10 @@ const Landing = () => {
                   <Globe className="h-8 w-8 text-accent" />
                 </div>
                 <h3 className="text-xl font-heading font-semibold text-foreground mb-3">
-                  Solution locale, fiabilité mondiale
+                  Fiabilité mondiale
                 </h3>
                 <p className="text-muted-foreground">
-                  Hébergée en Tunisie, conforme aux standards internationaux.
+                  Conforme aux standards internationaux de sécurité et de deliverabilité.
                 </p>
               </CardContent>
             </Card>
@@ -249,10 +249,10 @@ const Landing = () => {
       <section id="apropos" className="py-20 bg-primary text-primary-foreground">
         <div className="container mx-auto px-6 text-center max-w-4xl">
           <h2 className="text-4xl font-heading font-bold mb-6">
-            Une solution tunisienne conçue pour les professionnels
+            Une solution conçue pour les professionnels
           </h2>
           <p className="text-xl mb-8 opacity-90">
-            DimaMail est née de la volonté d'offrir aux entreprises tunisiennes et africaines une alternative locale et fiable aux plateformes étrangères. Simple, rapide et performante, DimaMail vous aide à rester toujours en contact avec vos clients.
+            DimaMail est née de la volonté d'offrir aux entreprises une solution fiable et performante d'email marketing. Simple, rapide et efficace, DimaMail vous aide à rester toujours en contact avec vos clients, où qu'ils soient.
           </p>
           <Button size="lg" variant="secondary" className="bg-accent text-accent-foreground hover:bg-accent/90">
             Nous contacter
@@ -285,7 +285,7 @@ const Landing = () => {
             <div>
               <img src={logo} alt="DimaMail" className="h-8 mb-4 brightness-0 invert" />
               <p className="text-sm opacity-80">
-                Plateforme tunisienne d'e-mail marketing.
+                Plateforme professionnelle d'e-mail marketing.
               </p>
             </div>
             <div>
