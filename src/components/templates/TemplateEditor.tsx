@@ -24,7 +24,8 @@ import { ArrowLeft, Save, Eye, Download, Settings, Code } from "lucide-react";
 import { toast } from "sonner";
 import grapesjs from "grapesjs";
 import "grapesjs/dist/css/grapes.min.css";
-import "grapesjs-preset-newsletter";
+import newsletterPreset from "grapesjs-preset-newsletter";
+import "grapesjs-preset-newsletter/dist/grapesjs-preset-newsletter.css";
 
 interface TemplateEditorProps {
   templateId: string | null;
@@ -74,16 +75,7 @@ export function TemplateEditor({ templateId, onClose }: TemplateEditorProps) {
       height: "100%",
       width: "auto",
       storageManager: false,
-      plugins: ["gjs-preset-newsletter"],
-      pluginsOpts: {
-        "gjs-preset-newsletter": {
-          modalTitleImport: "Importer du code",
-          modalLabelImport: "Collez votre HTML ici",
-          modalBtnImport: "Importer",
-          codeViewerTheme: "material",
-          importPlaceholder: "<div>Insérez votre code HTML ici</div>",
-        },
-      },
+      plugins: [newsletterPreset],
       blockManager: {
         appendTo: "#blocks",
       },
