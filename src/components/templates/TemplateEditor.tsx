@@ -25,7 +25,6 @@ import { toast } from "sonner";
 import grapesjs from "grapesjs";
 import "grapesjs/dist/css/grapes.min.css";
 import newsletterPreset from "grapesjs-preset-newsletter";
-import "grapesjs-preset-newsletter/dist/grapesjs-preset-newsletter.css";
 
 interface TemplateEditorProps {
   templateId: string | null;
