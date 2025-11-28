@@ -113,32 +113,15 @@ const Checkout = () => {
     }
   }, [profile, user]);
 
-  // Mutation pour créer une commande
+  // Mutation pour créer une commande (TODO: Implémenter la table orders)
   const createOrderMutation = useMutation({
     mutationFn: async (paymentData: any) => {
       if (!user) throw new Error("Non authentifié");
-
-      // Créer la commande
-      const { data: order, error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          user_id: user.id,
-          plan_type: planParam,
-          amount: selectedPlan.price,
-          currency: selectedPlan.currency,
-          payment_method: paymentMethod,
-          payment_status: paymentMethod === "card" ? "pending" : "pending_manual",
-          billing_info: paymentInfo,
-          ...paymentData,
-        })
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-      return order;
+      
+      // TODO: Implémenter la création de commande quand la table orders sera créée
+      throw new Error("La fonctionnalité de paiement n'est pas encore implémentée");
     },
-    onSuccess: (order) => {
-      setOrderId(order.id);
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
     },
     onError: (error: any) => {
@@ -149,29 +132,9 @@ const Checkout = () => {
   const handleCardPayment = async () => {
     setIsProcessing(true);
     try {
-      // Créer la commande d'abord
-      const order = await createOrderMutation.mutateAsync({});
-
-      // Appeler l'Edge Function pour créer un lien de paiement Konnect
-      const { data, error } = await supabase.functions.invoke('create-konnect-payment', {
-        body: {
-          orderId: order.id,
-          amount: selectedPlan.price,
-          currency: 'TND',
-          description: `Abonnement ${selectedPlan.name} - DimaMail`,
-          returnUrl: `${window.location.origin}/checkout/success?orderId=${order.id}`,
-          cancelUrl: `${window.location.origin}/checkout?plan=${planParam}`,
-        },
-      });
-
-      if (error) throw error;
-
-      // Rediriger vers la page de paiement Konnect
-      if (data?.paymentUrl) {
-        window.location.href = data.paymentUrl;
-      } else {
-        throw new Error(t('checkout.paymentError'));
-      }
+      // TODO: Implémenter le système de paiement complet avec table orders
+      toast.error('Le système de paiement n\'est pas encore implémenté');
+      setIsProcessing(false);
     } catch (error: any) {
       toast.error(error.message || t('checkout.paymentError'));
       setIsProcessing(false);

@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { validateEmail, validateEmailList, detectPotentialBounces } from "../../supabase/functions/send-email/utils/email-validation.ts";
+import { validateEmail, validateEmailList, detectPotentialBounces } from "../../../supabase/functions/send-email/utils/email-validation";
 
 describe("Email Validation", () => {
   describe("validateEmail", () => {
