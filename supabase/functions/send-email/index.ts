@@ -28,6 +28,7 @@ serve(async (req) => {
       }
     );
 
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
     const { campaignId, testEmail } = await req.json();
 
     if (!campaignId && !testEmail) {
@@ -118,11 +119,38 @@ serve(async (req) => {
     // Envoyer les emails un par un
     for (const recipient of recipients) {
       try {
+        // Préparer le HTML avec tracking
+        let trackedHtml = campaign.html_contenu || "";
+        
+        // 1. Ajouter le pixel de tracking des ouvertures
+        const trackOpenUrl = `${SUPABASE_URL}/functions/v1/track-open?r=${recipient.id}`;
+        const trackingPixel = `<img src="${trackOpenUrl}" width="1" height="1" style="display:none;" alt="" />`;
+        
+        // Insérer le pixel juste avant la balise </body> ou à la fin
+        if (trackedHtml.includes("</body>")) {
+          trackedHtml = trackedHtml.replace("</body>", `${trackingPixel}</body>`);
+        } else {
+          trackedHtml += trackingPixel;
+        }
+        
+        // 2. Remplacer tous les liens par des liens trackés
+        trackedHtml = trackedHtml.replace(
+          /href="([^"]+)"/gi,
+          (match: string, url: string) => {
+            // Ne pas tracker les liens mailto: et tel:
+            if (url.startsWith("mailto:") || url.startsWith("tel:") || url.startsWith("#")) {
+              return match;
+            }
+            const trackClickUrl = `${SUPABASE_URL}/functions/v1/track-click?r=${recipient.id}&url=${encodeURIComponent(url)}`;
+            return `href="${trackClickUrl}"`;
+          }
+        );
+
         const data = await sendWithResend({
           from: `${campaign.expediteur_nom} <${campaign.expediteur_email}>`,
           to: recipient.contacts.email,
           subject: campaign.sujet_email,
-          html: campaign.html_contenu || "",
+          html: trackedHtml,
         });
 
         console.log(`Envoyé à ${recipient.contacts.email}:`, data);
