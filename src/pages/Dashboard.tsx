@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
+import { useTranslation } from "react-i18next";
 
 interface CampaignStat {
   campaign_id: string;
@@ -40,6 +41,7 @@ interface DailyProgress {
 }
 
 const Dashboard = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [timePeriod, setTimePeriod] = useState("week");
@@ -190,37 +192,37 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       {/* Header avec compte email et statut */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">&lt;</span>
-            <span className="font-medium text-foreground">{selectedEmail}</span>
+            <span className="font-medium text-foreground truncate">{selectedEmail}</span>
           </div>
-          <div className="h-4 w-px bg-border"></div>
+          <div className="hidden sm:block h-4 w-px bg-border"></div>
           <a 
             href="#" 
             className="text-sm text-primary hover:underline flex items-center gap-1"
           >
-            Comment filtrer les emails de warmup ?
+            {t('dashboard.warmupFilter')}
             <ExternalLink className="h-3 w-3" />
           </a>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted border">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-md bg-muted border">
             <div className="h-2 w-2 rounded-full bg-green-500"></div>
             <select 
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="bg-transparent border-none outline-none text-sm font-medium cursor-pointer"
+              className="bg-transparent border-none outline-none text-xs sm:text-sm font-medium cursor-pointer"
             >
-              <option value="Running">Running</option>
-              <option value="Paused">Paused</option>
-              <option value="Stopped">Stopped</option>
+              <option value="Running">{t('dashboard.running')}</option>
+              <option value="Paused">{t('dashboard.paused')}</option>
+              <option value="Stopped">{t('dashboard.stopped')}</option>
             </select>
           </div>
           <Button variant="outline" size="sm" className="gap-2">
             <Settings className="h-4 w-4" />
-            Settings
+            <span className="hidden sm:inline">{t('dashboard.settings')}</span>
         </Button>
         </div>
       </div>
@@ -228,10 +230,10 @@ const Dashboard = () => {
       {/* Sélecteur de période */}
       <Tabs value={timePeriod} onValueChange={setTimePeriod} className="w-full">
         <TabsList className="grid w-full max-w-md grid-cols-4">
-          <TabsTrigger value="week">Semaine</TabsTrigger>
-          <TabsTrigger value="two-weeks">Deux semaines</TabsTrigger>
-          <TabsTrigger value="month">Mois</TabsTrigger>
-          <TabsTrigger value="quarter">Trimestre</TabsTrigger>
+          <TabsTrigger value="week" className="text-xs sm:text-sm">{t('dashboard.week')}</TabsTrigger>
+          <TabsTrigger value="two-weeks" className="text-xs sm:text-sm">{t('dashboard.twoWeeks')}</TabsTrigger>
+          <TabsTrigger value="month" className="text-xs sm:text-sm">{t('dashboard.month')}</TabsTrigger>
+          <TabsTrigger value="quarter" className="text-xs sm:text-sm">{t('dashboard.quarter')}</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -239,7 +241,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="relative">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Email sent</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.emailSent')}</CardTitle>
             <div className="relative">
               <Info className="h-4 w-4 text-muted-foreground cursor-help" />
             </div>
@@ -251,7 +253,7 @@ const Dashboard = () => {
             <div className="flex items-center gap-2 mt-2">
               <div className="h-2 w-2 rounded-full bg-purple-500"></div>
               <p className="text-xs text-muted-foreground">
-                {stats.totalEnvoyes.toLocaleString()} emails
+                {stats.totalEnvoyes.toLocaleString()} {t('dashboard.emails')}
               </p>
             </div>
           </CardContent>
@@ -259,7 +261,7 @@ const Dashboard = () => {
 
         <Card className="relative">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Inbox</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.inbox')}</CardTitle>
             <div className="relative">
               <Info className="h-4 w-4 text-muted-foreground cursor-help" />
             </div>
@@ -271,7 +273,7 @@ const Dashboard = () => {
             <div className="flex items-center gap-2 mt-2">
               <div className="h-2 w-2 rounded-full bg-green-500"></div>
               <p className="text-xs text-muted-foreground">
-                Taux de délivrabilité
+                {t('dashboard.deliverabilityRate')}
               </p>
             </div>
           </CardContent>
@@ -279,7 +281,7 @@ const Dashboard = () => {
 
         <Card className="relative">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Spam</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.spam')}</CardTitle>
             <div className="relative">
               <Info className="h-4 w-4 text-muted-foreground cursor-help" />
             </div>
@@ -291,7 +293,7 @@ const Dashboard = () => {
             <div className="flex items-center gap-2 mt-2">
               <div className="h-2 w-2 rounded-full bg-red-500"></div>
               <p className="text-xs text-muted-foreground">
-                Taux de spam
+                {t('dashboard.spamRate')}
               </p>
             </div>
           </CardContent>
@@ -299,7 +301,7 @@ const Dashboard = () => {
 
         <Card className="relative">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Category</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.category')}</CardTitle>
             <div className="relative">
               <Info className="h-4 w-4 text-muted-foreground cursor-help" />
             </div>
@@ -311,7 +313,7 @@ const Dashboard = () => {
             <div className="flex items-center gap-2 mt-2">
               <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
               <p className="text-xs text-muted-foreground">
-                Taux de catégorisation
+                {t('dashboard.categoryRate')}
               </p>
             </div>
           </CardContent>
@@ -323,7 +325,7 @@ const Dashboard = () => {
         {/* Graphique de progression */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Progress</CardTitle>
+            <CardTitle>{t('dashboard.progress')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -349,7 +351,7 @@ const Dashboard = () => {
                             isSuccess ? 'bg-green-500' : 'bg-muted'
                           }`}
                           style={{ height: `${height}%` }}
-                          title={`${day.success}% Success`}
+                          title={`${day.success}% ${t('dashboard.success')}`}
                         >
                         </div>
                         <span className="text-xs text-muted-foreground whitespace-nowrap">
@@ -367,7 +369,7 @@ const Dashboard = () => {
         {/* Score de réputation */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Reputation Score</CardTitle>
+            <CardTitle>{t('dashboard.reputation')}</CardTitle>
             <Info className="h-4 w-4 text-muted-foreground cursor-help" />
           </CardHeader>
           <CardContent className="space-y-6">
@@ -397,7 +399,7 @@ const Dashboard = () => {
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="text-2xl font-bold">{reputationScore}%</span>
-                  <span className="text-xs text-muted-foreground">Reputation Score</span>
+                  <span className="text-xs text-muted-foreground">{t('dashboard.reputation')}</span>
                 </div>
               </div>
             </div>
@@ -405,10 +407,10 @@ const Dashboard = () => {
               {/* Scores par provider */}
             <div className="space-y-4">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-semibold">Reputation Score by provider</h4>
+                <h4 className="text-sm font-semibold">{t('dashboard.reputationByProvider')}</h4>
                 <Button variant="ghost" size="sm" className="h-7 gap-1">
                   <Filter className="h-3 w-3" />
-                  Filter by
+                  {t('dashboard.filterBy')}
                 </Button>
               </div>
               
@@ -416,7 +418,7 @@ const Dashboard = () => {
                 {/* Google */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium">Google</span>
+                    <span className="font-medium">{t('dashboard.google')}</span>
                     <span className="text-muted-foreground font-semibold">{providerScores.google}%</span>
                   </div>
                   <div className="relative h-2 bg-muted rounded-full overflow-hidden">
@@ -430,7 +432,7 @@ const Dashboard = () => {
                 {/* Outlook */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium">Outlook</span>
+                    <span className="font-medium">{t('dashboard.outlook')}</span>
                     <span className="text-muted-foreground font-semibold">{providerScores.outlook}%</span>
                   </div>
                   <div className="relative h-2 bg-muted rounded-full overflow-hidden">
@@ -444,7 +446,7 @@ const Dashboard = () => {
                 {/* Other */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium">Other</span>
+                    <span className="font-medium">{t('dashboard.other')}</span>
                     <span className="text-muted-foreground font-semibold">{providerScores.other}%</span>
                   </div>
                   <div className="relative h-2 bg-muted rounded-full overflow-hidden">
@@ -464,14 +466,14 @@ const Dashboard = () => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Campagnes récentes</CardTitle>
+            <CardTitle>{t('dashboard.recentCampaigns')}</CardTitle>
           <CardDescription>
-              Vos dernières campagnes envoyées
+              {t('dashboard.recentCampaignsDesc')}
           </CardDescription>
           </div>
           <Button onClick={() => navigate("/campagnes/nouvelle")} className="gap-2">
             <Plus className="h-4 w-4" />
-            Nouvelle campagne
+            {t('dashboard.newCampaign')}
           </Button>
         </CardHeader>
         <CardContent>
@@ -479,13 +481,13 @@ const Dashboard = () => {
             <div className="text-center py-12">
               <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">
-                Aucune campagne envoyée
+                {t('dashboard.noCampaigns')}
               </h3>
               <p className="text-muted-foreground mb-4">
-                Commencez par créer votre première campagne d'email
+                {t('dashboard.createCampaign')}
               </p>
               <Button onClick={() => navigate("/campagnes/nouvelle")}>
-                Créer ma première campagne
+                {t('dashboard.createCampaign')}
               </Button>
             </div>
           ) : (
@@ -506,15 +508,15 @@ const Dashboard = () => {
                       })}
                     </p>
                   </div>
-                  <div className="flex items-center gap-6 text-sm">
+                  <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm">
                     <div>
-                      <p className="text-muted-foreground">Envoyés</p>
+                      <p className="text-muted-foreground">{t('dashboard.totalSent')}</p>
                       <p className="font-semibold text-foreground">
                         {campaign.total_envoyes.toLocaleString()}
                       </p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Ouvertures</p>
+                      <p className="text-muted-foreground">{t('dashboard.openRate')}</p>
                       <p className="font-semibold text-primary">
                         {campaign.total_envoyes > 0
                           ? ((campaign.total_ouverts / campaign.total_envoyes) * 100).toFixed(1)
@@ -522,7 +524,7 @@ const Dashboard = () => {
                       </p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Clics</p>
+                      <p className="text-muted-foreground">{t('dashboard.clickRate')}</p>
                       <p className="font-semibold text-accent">
                         {campaign.total_envoyes > 0
                           ? ((campaign.total_cliques / campaign.total_envoyes) * 100).toFixed(1)

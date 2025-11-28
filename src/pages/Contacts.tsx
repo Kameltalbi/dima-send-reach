@@ -43,8 +43,10 @@ import { Plus, Upload, Search, MoreVertical, Edit, Trash2, Mail, User, Filter } 
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTranslation } from "react-i18next";
 
 const Contacts = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
@@ -114,15 +116,15 @@ const Contacts = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
-      toast.success("Contact créé avec succès");
+      toast.success(t('contacts.createSuccess'));
       setIsCreateOpen(false);
       resetForm();
     },
     onError: (error: any) => {
       if (error.code === "23505") {
-        toast.error("Cet email existe déjà dans vos contacts");
+        toast.error(t('contacts.emailExists'));
       } else {
-        toast.error("Erreur lors de la création du contact");
+        toast.error(t('contacts.createError'));
       }
     },
   });
@@ -138,13 +140,13 @@ const Contacts = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
-      toast.success("Contact modifié avec succès");
+      toast.success(t('contacts.updateSuccess'));
       setIsEditOpen(false);
       setSelectedContact(null);
       resetForm();
     },
     onError: () => {
-      toast.error("Erreur lors de la modification du contact");
+      toast.error(t('contacts.updateError'));
     },
   });
 
@@ -156,12 +158,12 @@ const Contacts = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
-      toast.success("Contact supprimé avec succès");
+      toast.success(t('contacts.deleteSuccess'));
       setIsDeleteOpen(false);
       setSelectedContact(null);
     },
     onError: () => {
-      toast.error("Erreur lors de la suppression du contact");
+      toast.error(t('contacts.deleteError'));
     },
   });
 
@@ -199,12 +201,12 @@ const Contacts = () => {
 
   const handleSubmit = () => {
     if (!formData.nom || !formData.prenom || !formData.email) {
-      toast.error("Veuillez remplir tous les champs obligatoires");
+      toast.error(t('common.fillRequired'));
       return;
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      toast.error("Veuillez entrer une adresse email valide");
+      toast.error(t('common.invalidEmail'));
       return;
     }
 
@@ -220,7 +222,7 @@ const Contacts = () => {
     if (!file) return;
 
     if (!file.name.endsWith(".csv")) {
-      toast.error("Veuillez sélectionner un fichier CSV");
+      toast.error(t('contacts.importError'));
       return;
     }
 
@@ -235,7 +237,7 @@ const Contacts = () => {
     const segmentIndex = headers.findIndex((h) => h.includes("segment"));
 
     if (emailIndex === -1) {
-      toast.error("Le fichier CSV doit contenir une colonne 'email'");
+      toast.error(t('contacts.importError'));
       return;
     }
 
@@ -257,7 +259,7 @@ const Contacts = () => {
     }
 
     if (contactsToImport.length === 0) {
-      toast.error("Aucun contact valide trouvé dans le fichier");
+      toast.error(t('contacts.importError'));
       return;
     }
 
@@ -265,17 +267,17 @@ const Contacts = () => {
       const { error } = await supabase.from("contacts").insert(contactsToImport);
       if (error) {
         if (error.code === "23505") {
-          toast.error("Certains contacts existent déjà et n'ont pas été importés");
+          toast.error(t('contacts.importError'));
         } else {
           throw error;
         }
       } else {
-        toast.success(`${contactsToImport.length} contact(s) importé(s) avec succès`);
+        toast.success(t('contacts.importSuccess'));
         queryClient.invalidateQueries({ queryKey: ["contacts"] });
         setIsImportOpen(false);
       }
     } catch (error) {
-      toast.error("Erreur lors de l'importation");
+      toast.error(t('contacts.importError'));
     }
   };
 
@@ -295,21 +297,22 @@ const Contacts = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-heading font-bold text-foreground">Contacts</h1>
-          <p className="text-muted-foreground mt-1">
-            Gérez vos contacts et segmentez votre audience
+          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-foreground">{t('contacts.title')}</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">
+            {t('contacts.subtitle')}
           </p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={() => setIsImportOpen(true)} className="gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          <Button variant="outline" onClick={() => setIsImportOpen(true)} className="gap-2 w-full sm:w-auto">
             <Upload className="h-4 w-4" />
-            Import CSV
+            <span className="hidden sm:inline">{t('contacts.importCSV')}</span>
+            <span className="sm:hidden">Import CSV</span>
           </Button>
-          <Button onClick={handleCreate} className="gap-2">
+          <Button onClick={handleCreate} className="gap-2 w-full sm:w-auto">
             <Plus className="h-4 w-4" />
-            Nouveau contact
+            {t('contacts.newContact')}
           </Button>
         </div>
       </div>
@@ -317,33 +320,33 @@ const Contacts = () => {
       {/* Filtres et recherche */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Rechercher un contact..."
+                placeholder={t('contacts.search')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Statut" />
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder={t('contacts.status')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tous les statuts</SelectItem>
-                <SelectItem value="actif">Actif</SelectItem>
-                <SelectItem value="desabonne">Désabonné</SelectItem>
-                <SelectItem value="erreur">Erreur</SelectItem>
+                <SelectItem value="all">{t('contacts.all')}</SelectItem>
+                <SelectItem value="actif">{t('contacts.active')}</SelectItem>
+                <SelectItem value="desabonne">{t('contacts.unsubscribed')}</SelectItem>
+                <SelectItem value="erreur">{t('contacts.inactive')}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={segmentFilter} onValueChange={setSegmentFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Segment" />
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder={t('contacts.segment')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tous les segments</SelectItem>
+                <SelectItem value="all">{t('contacts.all')}</SelectItem>
                 {segments.map((segment) => (
                   <SelectItem key={segment} value={segment}>
                     {segment}

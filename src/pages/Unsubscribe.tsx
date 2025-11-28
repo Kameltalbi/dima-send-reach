@@ -6,8 +6,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle2, XCircle, Loader2, Mail } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { useTranslation } from "react-i18next";
 
 const Unsubscribe = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const recipientId = searchParams.get("r");
   
@@ -20,7 +22,7 @@ const Unsubscribe = () => {
   useEffect(() => {
     const processUnsubscribe = async () => {
       if (!recipientId) {
-        setError("Lien de désinscription invalide");
+        setError(t('unsubscribe.error.invalidLink'));
         setLoading(false);
         return;
       }
@@ -46,7 +48,7 @@ const Unsubscribe = () => {
         const result = await response.json();
 
         if (!response.ok) {
-          throw new Error(result.error || "Erreur lors du désabonnement");
+          throw new Error(result.error || t('unsubscribe.error.subtitle'));
         }
 
         if (result.alreadyUnsubscribed) {
@@ -57,7 +59,7 @@ const Unsubscribe = () => {
         setEmail(result.email);
       } catch (err: any) {
         console.error("Unsubscribe error:", err);
-        setError(err.message || "Une erreur est survenue lors du désabonnement");
+        setError(err.message || t('unsubscribe.error.subtitle'));
       } finally {
         setLoading(false);
       }
@@ -80,9 +82,9 @@ const Unsubscribe = () => {
                 <div className="mx-auto w-12 h-12 flex items-center justify-center">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
-                <CardTitle className="text-2xl">Traitement en cours...</CardTitle>
+                <CardTitle className="text-2xl">{t('unsubscribe.processing')}</CardTitle>
                 <CardDescription>
-                  Veuillez patienter pendant que nous traitons votre demande
+                  {t('unsubscribe.processingDesc')}
                 </CardDescription>
               </>
             ) : success ? (
@@ -91,12 +93,12 @@ const Unsubscribe = () => {
                   <CheckCircle2 className="h-12 w-12 text-green-500" />
                 </div>
                 <CardTitle className="text-2xl">
-                  {alreadyUnsubscribed ? "Déjà désabonné" : "Désabonnement confirmé"}
+                  {alreadyUnsubscribed ? t('unsubscribe.success.alreadyTitle') : t('unsubscribe.success.title')}
                 </CardTitle>
                 <CardDescription>
                   {alreadyUnsubscribed
-                    ? "Vous étiez déjà désabonné de notre liste de diffusion"
-                    : "Vous avez été désabonné avec succès de notre liste de diffusion"}
+                    ? t('unsubscribe.success.alreadySubtitle')
+                    : t('unsubscribe.success.subtitle')}
                 </CardDescription>
               </>
             ) : (
@@ -104,9 +106,9 @@ const Unsubscribe = () => {
                 <div className="mx-auto w-12 h-12 flex items-center justify-center">
                   <XCircle className="h-12 w-12 text-destructive" />
                 </div>
-                <CardTitle className="text-2xl">Erreur</CardTitle>
+                <CardTitle className="text-2xl">{t('unsubscribe.error.title')}</CardTitle>
                 <CardDescription>
-                  Une erreur est survenue lors du traitement de votre demande
+                  {t('unsubscribe.error.subtitle')}
                 </CardDescription>
               </>
             )}
@@ -115,7 +117,7 @@ const Unsubscribe = () => {
           <CardContent className="space-y-4">
             {loading ? (
               <div className="text-center text-sm text-muted-foreground">
-                <p>Nous traitons votre demande de désabonnement...</p>
+                <p>{t('unsubscribe.processingDesc')}</p>
               </div>
             ) : success ? (
               <div className="space-y-4">
@@ -123,7 +125,7 @@ const Unsubscribe = () => {
                   <Alert className="border-primary/20 bg-primary/5">
                     <Mail className="h-4 w-4 text-primary" />
                     <AlertDescription className="text-sm">
-                      L'adresse <span className="font-semibold">{email}</span> ne recevra plus d'emails de notre part.
+                      {t('unsubscribe.success.message', { email })}
                     </AlertDescription>
                   </Alert>
                 )}
@@ -131,24 +133,23 @@ const Unsubscribe = () => {
                 <div className="text-sm text-muted-foreground space-y-2">
                   <p>
                     {alreadyUnsubscribed
-                      ? "Vous ne recevrez plus d'emails de notre part."
-                      : "Nous sommes désolés de vous voir partir. Vous ne recevrez plus d'emails marketing de notre part."}
+                      ? t('unsubscribe.success.alreadyInfo')
+                      : t('unsubscribe.success.info')}
                   </p>
                   <p className="text-xs">
-                    Si vous avez été désabonné par erreur ou si vous souhaitez vous réabonner, 
-                    veuillez nous contacter directement.
+                    {t('unsubscribe.success.reSubscribe')}
                   </p>
                 </div>
 
                 <div className="pt-4 flex flex-col gap-2">
                   <Link to="/">
                     <Button variant="default" className="w-full">
-                      Retour à l'accueil
+                      {t('unsubscribe.success.backHome')}
                     </Button>
                   </Link>
                   <Link to="/support">
                     <Button variant="outline" className="w-full">
-                      Contacter le support
+                      {t('unsubscribe.success.contactSupport')}
                     </Button>
                   </Link>
                 </div>
@@ -157,26 +158,25 @@ const Unsubscribe = () => {
               <div className="space-y-4">
                 <Alert variant="destructive">
                   <AlertDescription>
-                    {error || "Une erreur est survenue"}
+                    {error || t('unsubscribe.error.subtitle')}
                   </AlertDescription>
                 </Alert>
 
                 <div className="text-sm text-muted-foreground">
                   <p>
-                    Si le problème persiste, veuillez nous contacter directement 
-                    en indiquant ce code d'erreur : <code className="text-xs bg-muted px-1 py-0.5 rounded">{recipientId}</code>
+                    {t('unsubscribe.error.message', { code: recipientId })}
                   </p>
                 </div>
 
                 <div className="pt-4 flex flex-col gap-2">
                   <Link to="/">
                     <Button variant="default" className="w-full">
-                      Retour à l'accueil
+                      {t('unsubscribe.error.backHome')}
                     </Button>
                   </Link>
                   <Link to="/support">
                     <Button variant="outline" className="w-full">
-                      Contacter le support
+                      {t('unsubscribe.error.contactSupport')}
                     </Button>
                   </Link>
                 </div>
@@ -186,7 +186,7 @@ const Unsubscribe = () => {
         </Card>
 
         <p className="text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} DimaMail. Tous droits réservés.
+          {t('unsubscribe.copyright', { year: new Date().getFullYear() })}
         </p>
       </div>
     </div>

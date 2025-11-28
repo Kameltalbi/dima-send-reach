@@ -143,14 +143,14 @@ const Campagnes = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-heading font-bold text-foreground">Campagnes</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-foreground">Campagnes</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">
             Créez et gérez vos campagnes d'emailing
           </p>
         </div>
-        <Button onClick={() => navigate("/campagnes/nouvelle")} className="gap-2">
+        <Button onClick={() => navigate("/campagnes/nouvelle")} className="gap-2 w-full sm:w-auto">
           <Plus className="h-4 w-4" />
           Nouvelle campagne
         </Button>
@@ -159,7 +159,7 @@ const Campagnes = () => {
       {/* Filtres et recherche */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -170,7 +170,7 @@ const Campagnes = () => {
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-full sm:w-[200px]">
                 <SelectValue placeholder="Statut" />
               </SelectTrigger>
               <SelectContent>
@@ -218,18 +218,18 @@ const Campagnes = () => {
               )}
             </div>
           ) : (
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Campagne</TableHead>
-                    <TableHead>Sujet</TableHead>
-                    <TableHead>Liste</TableHead>
+                    <TableHead className="hidden md:table-cell">Sujet</TableHead>
+                    <TableHead className="hidden lg:table-cell">Liste</TableHead>
                     <TableHead>Statut</TableHead>
-                    <TableHead>Envoyés</TableHead>
-                    <TableHead>Ouvertures</TableHead>
-                    <TableHead>Clics</TableHead>
-                    <TableHead>Date</TableHead>
+                    <TableHead className="hidden md:table-cell">Envoyés</TableHead>
+                    <TableHead className="hidden lg:table-cell">Ouvertures</TableHead>
+                    <TableHead className="hidden lg:table-cell">Clics</TableHead>
+                    <TableHead className="hidden xl:table-cell">Date</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>

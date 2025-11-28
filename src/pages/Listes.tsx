@@ -195,14 +195,14 @@ const Listes = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-heading font-bold text-foreground">Listes</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-foreground">Listes</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">
             Organisez vos contacts en listes ciblées
           </p>
         </div>
-        <Button onClick={handleCreate} className="gap-2">
+        <Button onClick={handleCreate} className="gap-2 w-full sm:w-auto">
           <Plus className="h-4 w-4" />
           Nouvelle liste
         </Button>

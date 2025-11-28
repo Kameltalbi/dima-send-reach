@@ -1,0 +1,610 @@
+{
+  "common": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "logout": "Logout",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "filter": "Filter",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "confirm": "Confirm",
+    "close": "Close",
+    "next": "Next",
+    "previous": "Previous",
+    "back": "Back",
+    "submit": "Submit",
+    "language": "Language"
+  },
+  "nav": {
+    "home": "Home",
+    "features": "Features",
+    "pricing": "Pricing",
+    "about": "About",
+    "contact": "Contact",
+    "dashboard": "Dashboard",
+    "campaigns": "Campaigns",
+    "contacts": "Contacts",
+    "lists": "Lists",
+    "templates": "Templates",
+    "statistics": "Statistics",
+    "settings": "Settings",
+    "support": "Support"
+  },
+  "landing": {
+    "hero": {
+      "title": "Send your email campaigns simply and effectively",
+      "subtitle": "DimaMail is the email marketing platform that allows you to send up to 1,000,000 emails per campaign, with real-time tracking.",
+      "cta": "Create Free Account",
+      "pricing": "Discover Pricing"
+    },
+    "features": {
+      "title": "Everything you need to succeed with your campaigns",
+      "easyCreation": {
+        "title": "Easy Creation",
+        "description": "Create your emails in a few clicks with our visual editor."
+      },
+      "massSending": {
+        "title": "Secure Mass Sending",
+        "description": "Up to 1 million emails per campaign via Amazon SES."
+      },
+      "statistics": {
+        "title": "Detailed Statistics",
+        "description": "Track your performance in real-time: opens, clicks, unsubscribes."
+      },
+      "reliability": {
+        "title": "Global Reliability",
+        "description": "Compliant with international security and deliverability standards."
+      }
+    },
+    "product": {
+      "title": "A clear dashboard to manage all your campaigns",
+      "subtitle": "Analyze your results and improve your communication with every send.",
+      "features": {
+        "overview": "Real-time performance overview",
+        "graphs": "Detailed graphs and statistics per campaign",
+        "export": "CSV export for in-depth analysis"
+      }
+    },
+    "pricing": {
+      "title": "Flexible pricing for every need",
+      "subtitle": "Choose the plan that fits your business",
+      "seeDetails": "See all plan details",
+      "plans": {
+        "free": {
+          "name": "Free",
+          "description": "To test the platform",
+          "price": "0 DT",
+          "period": "/year",
+          "features": {
+            "emails": "3,000 emails / month",
+            "users": "1 user",
+            "domains": "1 domain",
+            "templates": "3 templates"
+          },
+          "cta": "Start for free"
+        },
+        "starter": {
+          "name": "Starter",
+          "description": "For small businesses",
+          "price": "340 DT",
+          "period": "/year",
+          "features": {
+            "emails": "10,000 emails / month",
+            "users": "3 users",
+            "domains": "3 domains",
+            "templates": "5 templates"
+          },
+          "cta": "Choose this plan"
+        },
+        "essential": {
+          "name": "Essential",
+          "description": "For SMEs and marketing teams",
+          "price": "590 DT",
+          "period": "/year",
+          "popular": "MOST POPULAR",
+          "features": {
+            "emails": "50,000 emails / month",
+            "users": "10 users",
+            "domains": "10 domains",
+            "templates": "10 templates"
+          },
+          "cta": "Choose this plan"
+        },
+        "pro": {
+          "name": "Pro",
+          "description": "For large enterprises",
+          "price": "990 DT",
+          "period": "/year",
+          "features": {
+            "emails": "200,000 emails / month",
+            "users": "Unlimited users",
+            "domains": "Unlimited domains",
+            "templates": "15 templates"
+          },
+          "cta": "Choose this plan"
+        }
+      }
+    },
+    "about": {
+      "title": "A solution designed for professionals",
+      "description": "DimaMail was born from the desire to offer businesses a reliable and powerful email marketing solution. Simple, fast, and effective, DimaMail helps you stay connected with your customers, wherever they are.",
+      "cta": "Contact Us"
+    },
+    "cta": {
+      "title": "Start sending your campaigns today",
+      "subtitle": "Join the businesses that trust DimaMail for their communication.",
+      "button": "Create Free Account"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "newCampaign": "New Campaign",
+    "settings": "Settings",
+    "period": "Period",
+    "status": "Status",
+    "reputation": "Reputation Score",
+    "deliverability": "Deliverability",
+    "recentCampaigns": "Recent Campaigns"
+  },
+  "campaigns": {
+    "title": "Campaigns",
+    "newCampaign": "New Campaign",
+    "search": "Search for a campaign...",
+    "noCampaigns": "No campaigns found",
+    "status": {
+      "draft": "Draft",
+      "scheduled": "Scheduled",
+      "sending": "Sending",
+      "sent": "Sent",
+      "failed": "Failed"
+    }
+  },
+  "contacts": {
+    "title": "Contacts",
+    "newContact": "New Contact",
+    "importCSV": "Import CSV",
+    "search": "Search for a contact...",
+    "noContacts": "No contacts found"
+  },
+  "lists": {
+    "title": "Lists",
+    "newList": "New List",
+    "noLists": "No lists found"
+  },
+  "templates": {
+    "title": "Templates",
+    "newTemplate": "New Template",
+    "loadExamples": "Load Examples",
+    "noTemplates": "No templates found"
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "password": "Password",
+    "preferences": "Preferences"
+  },
+  "support": {
+    "title": "Support",
+    "contactUs": "Contact Us",
+    "documentation": "View Documentation",
+    "chat": "Start Chat",
+    "email": "support@dimamail.com",
+    "faq": "Frequently Asked Questions"
+  },
+  "auth": {
+    "title": "DimaMail",
+    "subtitle": "Professional email marketing platform",
+    "cardTitle": "Access your account",
+    "cardDescription": "Sign in or create a new account",
+    "login": "Login",
+    "signup": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "emailPlaceholder": "your@email.com",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "companyName": "Company Name",
+    "signIn": "Sign In",
+    "signingIn": "Signing in...",
+    "createAccount": "Create Account",
+    "creatingAccount": "Creating account...",
+    "registrationSuccess": "Registration successful!",
+    "registrationSuccessDesc": "You can now log in.",
+    "registrationError": "Registration error",
+    "loginSuccess": "Login successful!",
+    "loginSuccessDesc": "Welcome to DimaMail.",
+    "loginError": "Login error"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "newCampaign": "New Campaign",
+    "settings": "Settings",
+    "period": "Period",
+    "status": "Status",
+    "reputation": "Reputation Score",
+    "deliverability": "Deliverability",
+    "recentCampaigns": "Recent Campaigns",
+    "totalSent": "Total Sent",
+    "openRate": "Open Rate",
+    "clickRate": "Click Rate",
+    "inboxRate": "Inbox Rate",
+    "spamRate": "Spam Rate",
+    "categoryRate": "Category Rate",
+    "week": "Week",
+    "month": "Month",
+    "year": "Year",
+    "running": "Running",
+    "paused": "Paused",
+    "stopped": "Stopped",
+    "noCampaigns": "No recent campaigns",
+    "viewAll": "View All"
+  },
+  "contacts": {
+    "title": "Contacts",
+    "newContact": "New Contact",
+    "importCSV": "Import CSV",
+    "search": "Search for a contact...",
+    "noContacts": "No contacts found",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email",
+    "segment": "Segment",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "unsubscribed": "Unsubscribed",
+    "all": "All",
+    "createContact": "Create Contact",
+    "editContact": "Edit Contact",
+    "deleteContact": "Delete Contact",
+    "deleteConfirm": "Are you sure you want to delete this contact?",
+    "deleteConfirmDesc": "This action cannot be undone.",
+    "importCSVTitle": "Import contacts from CSV file",
+    "importCSVDesc": "Select a CSV file containing your contacts.",
+    "selectFile": "Select File",
+    "import": "Import",
+    "importing": "Importing...",
+    "importSuccess": "Contacts imported successfully",
+    "importError": "Error importing contacts",
+    "createSuccess": "Contact created successfully",
+    "updateSuccess": "Contact updated successfully",
+    "deleteSuccess": "Contact deleted successfully",
+    "createError": "Error creating contact",
+    "updateError": "Error updating contact",
+    "deleteError": "Error deleting contact"
+  },
+  "pricing": {
+    "title": "Simple and transparent pricing",
+    "subtitle": "Choose the plan that fits your needs. Change or cancel at any time.",
+    "popular": "Most Popular",
+    "capacities": "Capacities",
+    "features": "Features",
+    "startFree": "Start for free",
+    "choosePlan": "Choose this plan",
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "changePlan": {
+        "q": "Can I change my plan?",
+        "a": "Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately."
+      },
+      "billing": {
+        "q": "How does billing work?",
+        "a": "All paid plans are billed annually. The Free plan is free with no time limit. You can cancel at any time."
+      },
+      "limit": {
+        "q": "What happens if I exceed my limit?",
+        "a": "You will be notified before reaching your limit. You can upgrade your plan or wait for the next month."
+      },
+      "support": {
+        "q": "Is technical support included?",
+        "a": "Yes, all plans include support. Paid plans benefit from priority support and 24/7 for the Pro plan."
+      }
+    },
+    "cta": {
+      "title": "Ready to get started with DimaMail?",
+      "subtitle": "Start free today. No credit card required.",
+      "startFree": "Start for free",
+      "contactSales": "Contact Sales"
+    },
+    "footer": {
+      "copyright": "© {{year}} DimaMail. All rights reserved.",
+      "support": "Support",
+      "pricing": "Pricing"
+    }
+  },
+  "checkout": {
+    "title": "Complete your subscription",
+    "selectPlan": "Select your plan",
+    "paymentMethod": "Payment method",
+    "paymentMethodDesc": "Choose your preferred payment method",
+    "billingInfo": "Billing information",
+    "billingInfoDesc": "This information will be used for billing and confirmation",
+    "processing": "Processing...",
+    "processPayment": "Process payment",
+    "payNow": "Pay now",
+    "confirmOrder": "Confirm order",
+    "card": "Credit card",
+    "cardSecure": "Secure payment via Konnect",
+    "cardRecommended": "Recommended",
+    "check": "Check",
+    "checkDesc": "Send your check by mail",
+    "transfer": "Bank transfer",
+    "transferDesc": "Instructions sent by email",
+    "cash": "Cash",
+    "cashDesc": "In-person payment (by appointment)",
+    "cardRedirect": "You will be redirected to Konnect's secure payment page to complete your purchase.",
+    "cardRedirectAfter": "You will be redirected to Konnect payment page after clicking \"Pay now\"",
+    "cardSecureTitle": "Secure payment via Konnect",
+    "cardFees": "Konnect fees:",
+    "cardFeesDesc": "1.3% for Tunisian cards, 2.9% for international cards",
+    "companyName": "Company name",
+    "companyNameRequired": "Company name *",
+    "address": "Address",
+    "addressRequired": "Address *",
+    "city": "City",
+    "postalCode": "Postal code",
+    "phone": "Phone",
+    "email": "Email",
+    "emailRequired": "Email *",
+    "notes": "Additional notes (optional)",
+    "backToPricing": "Back to pricing",
+    "summary": "Summary",
+    "plan": "Plan",
+    "period": "Period",
+    "annual": "Annual",
+    "emailsIncluded": "Emails included",
+    "users": "Users",
+    "domains": "Domains",
+    "total": "Total",
+    "terms": "By confirming, you agree to our terms and conditions",
+    "orderConfirmed": "Order confirmed!",
+    "orderConfirmedDesc": "Your order has been successfully recorded",
+    "orderNumber": "Order number",
+    "orderActive": "Your {{plan}} subscription is now active. You can start using all features.",
+    "nextSteps": "Next steps:",
+    "checkInstructions": {
+      "title": "Check payment instructions:",
+      "libelle": "Make check payable to \"DimaMail\"",
+      "amount": "Amount: {{amount}} {{currency}}",
+      "send": "Send check to: [Address to be completed]",
+      "activate": "Your subscription will be activated upon receipt of check"
+    },
+    "transferInstructions": {
+      "title": "Bank transfer instructions:",
+      "amount": "Amount: {{amount}} {{currency}}",
+      "iban": "IBAN: [To be completed]",
+      "reference": "Reference: Use your order number",
+      "email": "You will receive full details by email after confirmation"
+    },
+    "cashInstructions": {
+      "title": "Cash payment:",
+      "amount": "Amount: {{amount}} {{currency}}",
+      "contact": "Contact us to schedule an appointment",
+      "email": "Email: support@dimamail.com",
+      "activate": "Your subscription will be activated immediately after payment"
+    },
+    "orderCreated": "Order created! You will receive payment instructions by email.",
+    "fillRequired": "Please fill in all required fields",
+    "orderError": "Error creating order",
+    "paymentError": "Error creating payment",
+    "backToDashboard": "Back to dashboard",
+    "viewSubscription": "View my subscription"
+  },
+  "checkoutSuccess": {
+    "verifying": "Verifying payment...",
+    "success": {
+      "title": "Payment successful!",
+      "subtitle": "Your subscription is now active",
+      "orderNumber": "Order number",
+      "message": "Your {{plan}} subscription is now active. You can start using all features.",
+      "backToDashboard": "Back to dashboard",
+      "viewSubscription": "View my subscription"
+    },
+    "failed": {
+      "title": "Payment failed",
+      "subtitle": "Your payment could not be processed",
+      "message": "Payment could not be completed. Please try again or choose another payment method.",
+      "backToPricing": "Back to pricing",
+      "contactSupport": "Contact support"
+    }
+  },
+  "unsubscribe": {
+    "processing": "Processing...",
+    "processingDesc": "Please wait while we process your request",
+    "success": {
+      "title": "Unsubscription confirmed",
+      "alreadyTitle": "Already unsubscribed",
+      "subtitle": "You have been successfully unsubscribed from our mailing list",
+      "alreadySubtitle": "You were already unsubscribed from our mailing list",
+      "message": "The address {{email}} will no longer receive emails from us.",
+      "info": "We're sorry to see you go. You will no longer receive marketing emails from us.",
+      "alreadyInfo": "You will no longer receive emails from us.",
+      "reSubscribe": "If you were unsubscribed by mistake or wish to resubscribe, please contact us directly.",
+      "backHome": "Back to home",
+      "contactSupport": "Contact support"
+    },
+    "error": {
+      "title": "Error",
+      "subtitle": "An error occurred while processing your request",
+      "invalidLink": "Invalid unsubscribe link",
+      "message": "If the problem persists, please contact us directly with this error code: {{code}}",
+      "backHome": "Back to home",
+      "contactSupport": "Contact support"
+    },
+    "copyright": "© {{year}} DimaMail. All rights reserved."
+  },
+  "notFound": {
+    "title": "404",
+    "subtitle": "Oops! Page not found",
+    "backHome": "Return to Home"
+  },
+  "statistics": {
+    "title": "Statistics",
+    "globalStats": "Global Statistics",
+    "totalSent": "Total Sent",
+    "totalOpened": "Total Opened",
+    "totalClicked": "Total Clicks",
+    "totalUnsubscribed": "Total Unsubscribed",
+    "openRate": "Open Rate",
+    "clickRate": "Click Rate",
+    "unsubscribeRate": "Unsubscribe Rate",
+    "dailyPerformance": "Daily Performance",
+    "campaignPerformance": "Campaign Performance",
+    "opens": "Opens",
+    "clicks": "Clicks",
+    "campaign": "Campaign",
+    "date": "Date",
+    "recipients": "Recipients",
+    "noData": "No data available"
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "password": "Password",
+    "preferences": "Preferences",
+    "team": "Team",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "companyName": "Company Name",
+    "defaultEmail": "Default Send Email",
+    "saveProfile": "Save Changes",
+    "saveProfileSuccess": "Profile updated successfully",
+    "saveProfileError": "Error updating profile",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm Password",
+    "changePassword": "Change Password",
+    "changePasswordSuccess": "Password changed successfully",
+    "changePasswordError": "Error changing password",
+    "passwordsNotMatch": "Passwords do not match",
+    "timezone": "Timezone",
+    "defaultSendHour": "Default Send Hour",
+    "enableTracking": "Enable Tracking",
+    "enableUnsubscribeLink": "Enable Unsubscribe Link",
+    "notifyOnCampaignSent": "Notify on Campaign Sent",
+    "notifyOnHighEngagement": "Notify on High Engagement",
+    "savePreferences": "Save Preferences",
+    "savePreferencesSuccess": "Preferences saved successfully",
+    "savePreferencesError": "Error saving preferences",
+    "teamMembers": "Team Members",
+    "inviteMember": "Invite Member",
+    "inviteEmail": "Email",
+    "inviteRole": "Role",
+    "user": "User",
+    "admin": "Administrator",
+    "sendInvite": "Send Invitation",
+    "inviteSuccess": "Invitation sent successfully",
+    "inviteError": "Error sending invitation",
+    "pendingInvitations": "Pending Invitations",
+    "removeMember": "Remove Member",
+    "removeMemberConfirm": "Are you sure you want to remove this member?",
+    "removeMemberSuccess": "Member removed successfully",
+    "removeMemberError": "Error removing member"
+  },
+  "configSES": {
+    "title": "Amazon SES Configuration",
+    "subtitle": "Configure your Amazon SES account to send emails",
+    "step1": "Step 1: Create AWS Account",
+    "step1Desc": "If you don't have an AWS account yet, create one on aws.amazon.com",
+    "step2": "Step 2: Access Amazon SES",
+    "step2Desc": "Log in to AWS console and access Amazon SES service",
+    "step3": "Step 3: Create Access Keys",
+    "step3Desc": "Create IAM access keys with required SES permissions",
+    "step4": "Step 4: Verify Your Domain",
+    "step4Desc": "Add required DNS records to verify your domain",
+    "accessKeyId": "Access Key ID",
+    "secretAccessKey": "Secret Access Key",
+    "region": "Region",
+    "testConnection": "Test Connection",
+    "save": "Save",
+    "testSuccess": "Connection successful!",
+    "testError": "Connection error",
+    "saveSuccess": "Configuration saved successfully",
+    "saveError": "Error saving configuration"
+  },
+  "support": {
+    "title": "Support & Help",
+    "subtitle": "Find answers to your questions or contact us",
+    "documentation": "Documentation",
+    "documentationDesc": "Complete guides and tutorials",
+    "viewDoc": "View Documentation",
+    "chat": "Live Chat",
+    "chatDesc": "Chat with our team",
+    "startChat": "Start Chat",
+    "email": "Email",
+    "emailDesc": "Send us an email",
+    "contactEmail": "support@dimamail.com",
+    "contactUs": "Contact Us",
+    "contactForm": {
+      "title": "Contact Form",
+      "name": "Name",
+      "email": "Email",
+      "subject": "Subject",
+      "message": "Message",
+      "send": "Send Message",
+      "sending": "Sending...",
+      "success": "Your message has been sent. We will respond within 24 hours.",
+      "error": "Error sending message",
+      "fillAll": "Please fill in all fields",
+      "invalidEmail": "Please enter a valid email address"
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "importContacts": {
+        "q": "How do I import my contacts?",
+        "a": "You can import your contacts via a CSV file from the Contacts page. Click 'Import CSV' and follow the instructions. The file must contain at minimum the columns: email, name, first name."
+      },
+      "configSES": {
+        "q": "How do I configure Amazon SES?",
+        "a": "Go to Settings > SES Configuration. You will need your AWS access keys (Access Key ID and Secret Access Key). Don't forget to verify your sending domain in the AWS SES console."
+      },
+      "scheduleCampaign": {
+        "q": "Can I schedule my campaigns?",
+        "a": "Yes, when creating a campaign, you can choose to send it immediately or schedule it for a later date and time."
+      },
+      "createList": {
+        "q": "How do I create a contact list?",
+        "a": "Go to the Lists section, click 'New List', give it a name and description, then add your contacts from the list management page."
+      },
+      "viewStats": {
+        "q": "Where can I see my campaign statistics?",
+        "a": "Global statistics are available in the Statistics section. To see details of a specific campaign, click on its name from the campaigns list."
+      }
+    }
+  },
+  "newCampaign": {
+    "title": "New Campaign",
+    "step1": "Basic Information",
+    "step2": "Select Template",
+    "step3": "Customize Content",
+    "step4": "Recipients",
+    "step5": "Schedule Send",
+    "campaignName": "Campaign Name",
+    "emailSubject": "Email Subject",
+    "senderEmail": "Sender Email",
+    "senderName": "Sender Name",
+    "selectTemplate": "Select Template",
+    "noTemplate": "No Template",
+    "selectList": "Select List",
+    "selectContacts": "Select Contacts",
+    "sendNow": "Send Now",
+    "schedule": "Schedule",
+    "preview": "Preview",
+    "save": "Save",
+    "send": "Send",
+    "sendTest": "Send Test",
+    "testEmail": "Test Email",
+    "openEditor": "Open Visual Editor",
+    "saveSuccess": "Campaign saved successfully",
+    "sendSuccess": "Campaign sent successfully",
+    "saveError": "Error saving campaign",
+    "sendError": "Error sending campaign"
+  }
+}
+

@@ -8,8 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Eye, EyeOff } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const Auth = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -54,15 +56,15 @@ const Auth = () => {
       if (error) throw error;
 
       toast({
-        title: "Registration successful!",
-        description: "You can now log in.",
+        title: t('auth.registrationSuccess'),
+        description: t('auth.registrationSuccessDesc'),
       });
       
       // Automatically redirect after successful registration
       navigate("/dashboard");
     } catch (error: any) {
       toast({
-        title: "Registration error",
+        title: t('auth.registrationError'),
         description: error.message,
         variant: "destructive",
       });
@@ -84,14 +86,14 @@ const Auth = () => {
       if (error) throw error;
 
       toast({
-        title: "Login successful!",
-        description: "Welcome to DimaMail.",
+        title: t('auth.loginSuccess'),
+        description: t('auth.loginSuccessDesc'),
       });
       
       navigate("/dashboard");
     } catch (error: any) {
       toast({
-        title: "Login error",
+        title: t('auth.loginError'),
         description: error.message,
         variant: "destructive",
       });
@@ -112,39 +114,39 @@ const Auth = () => {
             <span className="text-accent">.</span>
           </h1>
           <p className="text-muted-foreground">
-            Professional email marketing platform
+            {t('auth.subtitle')}
           </p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Access your account</CardTitle>
+            <CardTitle>{t('auth.cardTitle')}</CardTitle>
             <CardDescription>
-              Sign in or create a new account
+              {t('auth.cardDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                <TabsTrigger value="login">{t('auth.login')}</TabsTrigger>
+                <TabsTrigger value="signup">{t('auth.signup')}</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="login-email">Email</Label>
+                    <Label htmlFor="login-email">{t('auth.email')}</Label>
                     <Input
                       id="login-email"
                       type="email"
-                      placeholder="your@email.com"
+                      placeholder={t('auth.emailPlaceholder')}
                       value={loginData.email}
                       onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="login-password">Password</Label>
+                    <Label htmlFor="login-password">{t('auth.password')}</Label>
                     <div className="relative">
                       <Input
                         id="login-password"
@@ -168,7 +170,7 @@ const Auth = () => {
                     </div>
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Signing in..." : "Sign In"}
+                    {loading ? t('auth.signingIn') : t('auth.signIn')}
                   </Button>
                 </form>
               </TabsContent>
@@ -177,7 +179,7 @@ const Auth = () => {
                 <form onSubmit={handleSignup} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="prenom">First Name</Label>
+                      <Label htmlFor="prenom">{t('auth.firstName')}</Label>
                       <Input
                         id="prenom"
                         type="text"
@@ -187,7 +189,7 @@ const Auth = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="nom">Last Name</Label>
+                      <Label htmlFor="nom">{t('auth.lastName')}</Label>
                       <Input
                         id="nom"
                         type="text"
@@ -198,7 +200,7 @@ const Auth = () => {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="nom_entreprise">Company Name</Label>
+                    <Label htmlFor="nom_entreprise">{t('auth.companyName')}</Label>
                     <Input
                       id="nom_entreprise"
                       type="text"
@@ -208,18 +210,18 @@ const Auth = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
+                    <Label htmlFor="signup-email">{t('auth.email')}</Label>
                     <Input
                       id="signup-email"
                       type="email"
-                      placeholder="your@email.com"
+                      placeholder={t('auth.emailPlaceholder')}
                       value={signupData.email}
                       onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
+                    <Label htmlFor="signup-password">{t('auth.password')}</Label>
                     <div className="relative">
                       <Input
                         id="signup-password"
@@ -244,7 +246,7 @@ const Auth = () => {
                     </div>
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Creating account..." : "Create Account"}
+                    {loading ? t('auth.creatingAccount') : t('auth.createAccount')}
                   </Button>
                 </form>
               </TabsContent>

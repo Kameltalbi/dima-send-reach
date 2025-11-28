@@ -306,30 +306,31 @@ export default function Templates() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8 space-y-4 sm:space-y-8">
         {/* Header élégant */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
               Templates d'emails
             </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground">
               Créez et gérez vos modèles d'emails professionnels
           </p>
         </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
             <Button 
               onClick={handleLoadExamples} 
               variant="outline" 
-              className="gap-2 border-2"
+              className="gap-2 border-2 w-full sm:w-auto"
               disabled={isLoading}
             >
               <Sparkles className="h-4 w-4" />
-              Charger des exemples
+              <span className="hidden sm:inline">Charger des exemples</span>
+              <span className="sm:hidden">Exemples</span>
             </Button>
             <Button 
               onClick={() => setShowCreateModal(true)} 
-              className="gap-2 shadow-lg hover:shadow-xl transition-shadow"
+              className="gap-2 shadow-lg hover:shadow-xl transition-shadow w-full sm:w-auto"
               size="lg"
             >
               <Plus className="h-4 w-4" />
@@ -341,7 +342,7 @@ export default function Templates() {
         {/* Barre de recherche et filtres */}
         <Card className="border-2 shadow-sm bg-card/50 backdrop-blur-sm">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -351,35 +352,37 @@ export default function Templates() {
                   className="pl-11 h-11 text-base border-2 focus:border-primary"
                 />
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="gap-2 h-11 border-2">
-                    <Filter className="h-4 w-4" />
-                    Trier
-                    <ChevronDown className="h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem 
-                    onClick={() => setSortBy("recent")}
-                    className={sortBy === "recent" ? "bg-primary/10" : ""}
-                  >
-                    Plus récent
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={() => setSortBy("name")}
-                    className={sortBy === "name" ? "bg-primary/10" : ""}
-                  >
-                    Par nom
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={() => setSortBy("type")}
-                    className={sortBy === "type" ? "bg-primary/10" : ""}
-                  >
-                    Par type
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex items-center gap-2 sm:gap-4">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="gap-2 h-11 border-2 flex-1 sm:flex-initial">
+                      <Filter className="h-4 w-4" />
+                      <span className="hidden sm:inline">Trier</span>
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem 
+                      onClick={() => setSortBy("recent")}
+                      className={sortBy === "recent" ? "bg-primary/10" : ""}
+                    >
+                      Plus récent
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => setSortBy("name")}
+                      className={sortBy === "name" ? "bg-primary/10" : ""}
+                    >
+                      Par nom
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => setSortBy("type")}
+                      className={sortBy === "type" ? "bg-primary/10" : ""}
+                    >
+                      Par type
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
               <div className="flex items-center gap-1 border-2 rounded-lg p-1 bg-muted/50">
                 <Button
                   variant={viewMode === "grid" ? "default" : "ghost"}

@@ -28,6 +28,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { AppLayout } from "@/components/layouts/AppLayout";
+import { useTranslation } from "react-i18next";
 
 type PaymentMethod = "card" | "check" | "transfer" | "cash";
 
@@ -62,6 +63,7 @@ const plans = {
 };
 
 const Checkout = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -140,7 +142,7 @@ const Checkout = () => {
       queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Erreur lors de la création de la commande");
+      toast.error(error.message || t('checkout.orderError'));
     },
   });
 
@@ -168,17 +170,17 @@ const Checkout = () => {
       if (data?.paymentUrl) {
         window.location.href = data.paymentUrl;
       } else {
-        throw new Error("URL de paiement non reçue");
+        throw new Error(t('checkout.paymentError'));
       }
     } catch (error: any) {
-      toast.error(error.message || "Erreur lors de la création du paiement");
+      toast.error(error.message || t('checkout.paymentError'));
       setIsProcessing(false);
     }
   };
 
   const handleManualPayment = async () => {
     if (!paymentInfo.companyName || !paymentInfo.address || !paymentInfo.email) {
-      toast.error("Veuillez remplir tous les champs obligatoires");
+      toast.error(t('checkout.fillRequired'));
       return;
     }
 
@@ -190,9 +192,9 @@ const Checkout = () => {
       // TODO: Implémenter l'envoi d'email
 
       setIsSuccess(true);
-      toast.success("Commande créée ! Vous recevrez les instructions de paiement par email.");
+      toast.success(t('checkout.orderCreated'));
     } catch (error: any) {
-      toast.error(error.message || "Erreur lors de la création de la commande");
+      toast.error(error.message || t('checkout.orderError'));
     } finally {
       setIsProcessing(false);
     }
@@ -215,14 +217,14 @@ const Checkout = () => {
               <div className="mx-auto mb-4 w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
                 <CheckCircle2 className="h-8 w-8 text-green-600" />
               </div>
-              <CardTitle className="text-2xl">Commande confirmée !</CardTitle>
+              <CardTitle className="text-2xl">{t('checkout.orderConfirmed')}</CardTitle>
               <CardDescription>
-                Votre commande a été enregistrée avec succès
+                {t('checkout.orderConfirmedDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Numéro de commande</p>
+                <p className="text-sm text-muted-foreground">{t('checkout.orderNumber')}</p>
                 <p className="text-lg font-mono font-semibold">{orderId}</p>
               </div>
 
@@ -230,26 +232,34 @@ const Checkout = () => {
                 <Alert>
                   <Info className="h-4 w-4" />
                   <AlertDescription>
-                    Votre abonnement {selectedPlan.name} est maintenant actif. Vous pouvez commencer à utiliser toutes les fonctionnalités.
+                    {t('checkout.orderActive', { plan: selectedPlan.name })}
                   </AlertDescription>
                 </Alert>
               ) : (
                 <Alert>
                   <Info className="h-4 w-4" />
                   <AlertDescription>
-                    <strong>Prochaines étapes :</strong>
+                    <strong>{t('checkout.nextSteps')}</strong>
                     <ul className="list-disc list-inside mt-2 space-y-1">
                       {paymentMethod === "check" && (
-                        <li>Envoyez votre chèque à l'adresse indiquée ci-dessous</li>
+                        <li>{t('checkout.checkInstructions.send')}</li>
                       )}
                       {paymentMethod === "transfer" && (
-                        <li>Effectuez le virement bancaire selon les instructions envoyées par email</li>
+                        <li>{t('checkout.transferInstructions.email')}</li>
                       )}
                       {paymentMethod === "cash" && (
-                        <li>Contactez-nous pour organiser le paiement en espèces</li>
+                        <li>{t('checkout.cashInstructions.contact')}</li>
                       )}
-                      <li>Vous recevrez un email de confirmation avec les détails</li>
-                      <li>Votre abonnement sera activé dès réception du paiement</li>
+                      <li>{t('checkout.transferInstructions.email')}</li>
+                      {paymentMethod === "check" && (
+                        <li>{t('checkout.checkInstructions.activate')}</li>
+                      )}
+                      {paymentMethod === "transfer" && (
+                        <li>{t('checkout.checkInstructions.activate')}</li>
+                      )}
+                      {paymentMethod === "cash" && (
+                        <li>{t('checkout.cashInstructions.activate')}</li>
+                      )}
                     </ul>
                   </AlertDescription>
                 </Alert>
@@ -257,10 +267,10 @@ const Checkout = () => {
 
               <div className="flex gap-4">
                 <Button variant="outline" onClick={() => navigate("/dashboard")} className="flex-1">
-                  Retour au tableau de bord
+                  {t('checkout.backToDashboard')}
                 </Button>
                 <Button onClick={() => navigate("/parametres")} className="flex-1">
-                  Voir mon abonnement
+                  {t('checkout.viewSubscription')}
                 </Button>
               </div>
             </CardContent>
@@ -272,24 +282,24 @@ const Checkout = () => {
 
   return (
     <AppLayout>
-      <div className="max-w-5xl mx-auto py-8">
+      <div className="max-w-5xl mx-auto py-4 sm:py-8 px-4 sm:px-6">
         <Button
           variant="ghost"
           onClick={() => navigate("/pricing")}
-          className="mb-6"
+          className="mb-4 sm:mb-6"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Retour aux tarifs
+          {t('checkout.backToPricing')}
         </Button>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-4 sm:gap-8">
           {/* Colonne principale - Formulaire */}
           <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Méthode de paiement</CardTitle>
+                <CardTitle>{t('checkout.paymentMethod')}</CardTitle>
                 <CardDescription>
-                  Choisissez votre méthode de paiement préférée
+                  {t('checkout.paymentMethodDesc')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -303,13 +313,13 @@ const Checkout = () => {
                           <div className="flex items-center gap-3">
                             <CreditCard className="h-5 w-5 text-primary" />
                             <div>
-                              <p className="font-medium">Carte bancaire</p>
+                              <p className="font-medium">{t('checkout.card')}</p>
                               <p className="text-sm text-muted-foreground">
-                                Paiement sécurisé par Konnect
+                                {t('checkout.cardSecure')}
                               </p>
                             </div>
                           </div>
-                          <Badge variant="outline">Recommandé</Badge>
+                          <Badge variant="outline">{t('checkout.cardRecommended')}</Badge>
                         </div>
                       </Label>
                     </div>
@@ -321,9 +331,9 @@ const Checkout = () => {
                         <div className="flex items-center gap-3">
                           <Building2 className="h-5 w-5 text-primary" />
                           <div>
-                            <p className="font-medium">Virement bancaire</p>
+                            <p className="font-medium">{t('checkout.transfer')}</p>
                             <p className="text-sm text-muted-foreground">
-                              Instructions envoyées par email
+                              {t('checkout.transferDesc')}
                             </p>
                           </div>
                         </div>
@@ -337,9 +347,9 @@ const Checkout = () => {
                         <div className="flex items-center gap-3">
                           <Receipt className="h-5 w-5 text-primary" />
                           <div>
-                            <p className="font-medium">Chèque</p>
+                            <p className="font-medium">{t('checkout.check')}</p>
                             <p className="text-sm text-muted-foreground">
-                              Envoyez votre chèque par courrier
+                              {t('checkout.checkDesc')}
                             </p>
                           </div>
                         </div>
@@ -353,9 +363,9 @@ const Checkout = () => {
                         <div className="flex items-center gap-3">
                           <Banknote className="h-5 w-5 text-primary" />
                           <div>
-                            <p className="font-medium">Espèces</p>
+                            <p className="font-medium">{t('checkout.cash')}</p>
                             <p className="text-sm text-muted-foreground">
-                              Paiement en personne (sur rendez-vous)
+                              {t('checkout.cashDesc')}
                             </p>
                           </div>
                         </div>
@@ -370,25 +380,25 @@ const Checkout = () => {
             {paymentMethod === "card" && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Informations de paiement</CardTitle>
+                  <CardTitle>{t('checkout.billingInfo')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Alert>
                     <Info className="h-4 w-4" />
                     <AlertDescription>
-                      Le paiement sera traité de manière sécurisée via Konnect. Vous serez redirigé vers la page de paiement sécurisée de Konnect pour compléter votre transaction.
+                      {t('checkout.cardRedirect')}
                     </AlertDescription>
                   </Alert>
                   <div className="p-8 border-2 border-dashed rounded-lg text-center bg-muted/30">
                     <CreditCard className="h-12 w-12 mx-auto mb-4 text-primary" />
-                    <p className="font-medium mb-2">Paiement sécurisé par Konnect</p>
+                    <p className="font-medium mb-2">{t('checkout.cardSecureTitle')}</p>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Vous serez redirigé vers la page de paiement Konnect après avoir cliqué sur "Payer maintenant"
+                      {t('checkout.cardRedirectAfter')}
                     </p>
                     <Alert className="bg-blue-50 border-blue-200 text-left">
                       <Info className="h-4 w-4 text-blue-600" />
                       <AlertDescription className="text-blue-800 text-sm">
-                        <strong>Frais Konnect :</strong> 1.3% pour les cartes tunisiennes, 2.9% pour les cartes internationales
+                        <strong>{t('checkout.cardFees')}</strong> {t('checkout.cardFeesDesc')}
                       </AlertDescription>
                     </Alert>
                   </div>
@@ -400,28 +410,28 @@ const Checkout = () => {
             {(paymentMethod === "check" || paymentMethod === "transfer" || paymentMethod === "cash") && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Informations de facturation</CardTitle>
+                  <CardTitle>{t('checkout.billingInfo')}</CardTitle>
                   <CardDescription>
-                    Ces informations seront utilisées pour la facturation et la confirmation
+                    {t('checkout.billingInfoDesc')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="companyName">
-                        Nom de l'entreprise <span className="text-destructive">*</span>
+                        {t('checkout.companyNameRequired')}
                       </Label>
                       <Input
                         id="companyName"
                         value={paymentInfo.companyName}
                         onChange={(e) => setPaymentInfo({ ...paymentInfo, companyName: e.target.value })}
-                        placeholder="Votre entreprise"
+                        placeholder={t('checkout.companyName')}
                         required
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="email">
-                        Email <span className="text-destructive">*</span>
+                        {t('checkout.emailRequired')}
                       </Label>
                       <Input
                         id="email"
@@ -436,40 +446,40 @@ const Checkout = () => {
 
                   <div className="space-y-2">
                     <Label htmlFor="address">
-                      Adresse <span className="text-destructive">*</span>
+                      {t('checkout.addressRequired')}
                     </Label>
                     <Input
                       id="address"
                       value={paymentInfo.address}
                       onChange={(e) => setPaymentInfo({ ...paymentInfo, address: e.target.value })}
-                      placeholder="123 Rue Example"
+                      placeholder={t('checkout.address')}
                       required
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="city">Ville</Label>
+                      <Label htmlFor="city">{t('checkout.city')}</Label>
                       <Input
                         id="city"
                         value={paymentInfo.city}
                         onChange={(e) => setPaymentInfo({ ...paymentInfo, city: e.target.value })}
-                        placeholder="Tunis"
+                        placeholder={t('checkout.city')}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="postalCode">Code postal</Label>
+                      <Label htmlFor="postalCode">{t('checkout.postalCode')}</Label>
                       <Input
                         id="postalCode"
                         value={paymentInfo.postalCode}
                         onChange={(e) => setPaymentInfo({ ...paymentInfo, postalCode: e.target.value })}
-                        placeholder="1000"
+                        placeholder={t('checkout.postalCode')}
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Téléphone</Label>
+                    <Label htmlFor="phone">{t('checkout.phone')}</Label>
                     <Input
                       id="phone"
                       type="tel"
@@ -480,12 +490,12 @@ const Checkout = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="notes">Notes supplémentaires (optionnel)</Label>
+                    <Label htmlFor="notes">{t('checkout.notes')}</Label>
                     <Textarea
                       id="notes"
                       value={paymentInfo.notes}
                       onChange={(e) => setPaymentInfo({ ...paymentInfo, notes: e.target.value })}
-                      placeholder="Informations supplémentaires..."
+                      placeholder={t('checkout.notes')}
                       rows={3}
                     />
                   </div>
@@ -494,12 +504,12 @@ const Checkout = () => {
                     <Alert>
                       <Info className="h-4 w-4" />
                       <AlertDescription>
-                        <strong>Instructions pour le paiement par chèque :</strong>
+                        <strong>{t('checkout.checkInstructions.title')}</strong>
                         <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
-                          <li>Libellez le chèque à l'ordre de "DimaMail"</li>
-                          <li>Montant : {selectedPlan.price} {selectedPlan.currency}</li>
-                          <li>Envoyez le chèque à : [Adresse à compléter]</li>
-                          <li>Votre abonnement sera activé dès réception du chèque</li>
+                          <li>{t('checkout.checkInstructions.libelle')}</li>
+                          <li>{t('checkout.checkInstructions.amount', { amount: selectedPlan.price, currency: selectedPlan.currency })}</li>
+                          <li>{t('checkout.checkInstructions.send')}</li>
+                          <li>{t('checkout.checkInstructions.activate')}</li>
                         </ul>
                       </AlertDescription>
                     </Alert>
@@ -509,12 +519,12 @@ const Checkout = () => {
                     <Alert>
                       <Info className="h-4 w-4" />
                       <AlertDescription>
-                        <strong>Instructions pour le virement bancaire :</strong>
+                        <strong>{t('checkout.transferInstructions.title')}</strong>
                         <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
-                          <li>Montant : {selectedPlan.price} {selectedPlan.currency}</li>
-                          <li>IBAN : [À compléter]</li>
-                          <li>Référence : Utilisez votre numéro de commande</li>
-                          <li>Vous recevrez les détails complets par email après confirmation</li>
+                          <li>{t('checkout.transferInstructions.amount', { amount: selectedPlan.price, currency: selectedPlan.currency })}</li>
+                          <li>{t('checkout.transferInstructions.iban')}</li>
+                          <li>{t('checkout.transferInstructions.reference')}</li>
+                          <li>{t('checkout.transferInstructions.email')}</li>
                         </ul>
                       </AlertDescription>
                     </Alert>
@@ -524,12 +534,12 @@ const Checkout = () => {
                     <Alert>
                       <Info className="h-4 w-4" />
                       <AlertDescription>
-                        <strong>Paiement en espèces :</strong>
+                        <strong>{t('checkout.cashInstructions.title')}</strong>
                         <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
-                          <li>Montant : {selectedPlan.price} {selectedPlan.currency}</li>
-                          <li>Contactez-nous pour organiser un rendez-vous</li>
-                          <li>Email : support@dimamail.com</li>
-                          <li>Votre abonnement sera activé immédiatement après le paiement</li>
+                          <li>{t('checkout.cashInstructions.amount', { amount: selectedPlan.price, currency: selectedPlan.currency })}</li>
+                          <li>{t('checkout.cashInstructions.contact')}</li>
+                          <li>{t('checkout.cashInstructions.email')}</li>
+                          <li>{t('checkout.cashInstructions.activate')}</li>
                         </ul>
                       </AlertDescription>
                     </Alert>
@@ -541,31 +551,31 @@ const Checkout = () => {
 
           {/* Colonne latérale - Récapitulatif */}
           <div className="lg:col-span-1">
-            <Card className="sticky top-6">
+            <Card className="lg:sticky lg:top-6">
               <CardHeader>
-                <CardTitle>Récapitulatif</CardTitle>
+                <CardTitle>{t('checkout.summary')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Plan</span>
-                    <span className="font-medium">{selectedPlan.name}</span>
+                    <span className="text-muted-foreground text-sm">{t('checkout.plan')}</span>
+                    <span className="font-medium text-sm">{selectedPlan.name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Période</span>
-                    <span className="font-medium">Annuel</span>
+                    <span className="text-muted-foreground text-sm">{t('checkout.period')}</span>
+                    <span className="font-medium text-sm">{t('checkout.annual')}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Emails inclus</span>
-                    <span className="font-medium text-sm">{selectedPlan.emails}</span>
+                    <span className="text-muted-foreground text-sm">{t('checkout.emailsIncluded')}</span>
+                    <span className="font-medium text-xs sm:text-sm">{selectedPlan.emails}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Utilisateurs</span>
-                    <span className="font-medium text-sm">{selectedPlan.users}</span>
+                    <span className="text-muted-foreground text-sm">{t('checkout.users')}</span>
+                    <span className="font-medium text-xs sm:text-sm">{selectedPlan.users}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Domaines</span>
-                    <span className="font-medium text-sm">{selectedPlan.domains}</span>
+                    <span className="text-muted-foreground text-sm">{t('checkout.domains')}</span>
+                    <span className="font-medium text-xs sm:text-sm">{selectedPlan.domains}</span>
                   </div>
                 </div>
 
@@ -573,7 +583,7 @@ const Checkout = () => {
 
                 <div className="space-y-2">
                   <div className="flex justify-between text-lg font-semibold">
-                    <span>Total</span>
+                    <span>{t('checkout.total')}</span>
                     <span>
                       {selectedPlan.price} {selectedPlan.currency}
                       <span className="text-sm font-normal text-muted-foreground ml-1">
@@ -594,23 +604,23 @@ const Checkout = () => {
                   {isProcessing ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Traitement...
+                      {t('checkout.processing')}
                     </>
                   ) : paymentMethod === "card" ? (
                     <>
                       <CreditCard className="h-4 w-4 mr-2" />
-                      Payer maintenant
+                      {t('checkout.payNow')}
                     </>
                   ) : (
                     <>
                       <CheckCircle2 className="h-4 w-4 mr-2" />
-                      Confirmer la commande
+                      {t('checkout.confirmOrder')}
                     </>
                   )}
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground">
-                  En confirmant, vous acceptez nos conditions générales de vente
+                  {t('checkout.terms')}
                 </p>
               </CardContent>
             </Card>
