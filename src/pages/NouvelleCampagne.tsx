@@ -179,7 +179,7 @@ const NouvelleCampagne = () => {
         expediteur_email: formData.expediteur_email,
         list_id: formData.list_id === "all" ? null : formData.list_id,
         html_contenu: htmlContent,
-        statut: isDraft ? "brouillon" : formData.whenToSend === "now" ? "en_attente" : "en_attente",
+        statut: isDraft ? "brouillon" : formData.whenToSend === "now" ? "en_cours" : "en_attente",
         date_envoi: dateEnvoi,
       };
 
@@ -191,16 +191,39 @@ const NouvelleCampagne = () => {
 
       if (error) throw error;
 
-      // Si ce n'est pas un brouillon et qu'on envoie maintenant, créer les destinataires
+      // Si ce n'est pas un brouillon et qu'on envoie maintenant, créer les destinataires et lancer l'envoi
       if (!isDraft && formData.whenToSend === "now" && data) {
         await createRecipients(data.id);
+        
+        // Lancer l'envoi via l'Edge Function
+        toast.info("Envoi de la campagne en cours...");
+        const { data: sendResult, error: sendError } = await supabase.functions.invoke("send-email", {
+          body: {
+            campaignId: data.id,
+          },
+        });
+
+        if (sendError) {
+          console.error("Erreur lors de l'envoi:", sendError);
+          throw new Error("La campagne a été créée mais l'envoi a échoué. Veuillez réessayer depuis la liste des campagnes.");
+        }
+
+        if (!sendResult?.success) {
+          throw new Error(sendResult?.message || "Erreur lors de l'envoi de la campagne");
+        }
       }
 
       return data;
     },
     onSuccess: (data, isDraft) => {
       queryClient.invalidateQueries({ queryKey: ["campaigns"] });
-      toast.success(isDraft ? "Campagne enregistrée en brouillon" : "Campagne créée et en attente d'envoi");
+      if (isDraft) {
+        toast.success("Campagne enregistrée en brouillon");
+      } else if (formData.whenToSend === "now") {
+        toast.success("Campagne envoyée avec succès ! Consultez les statistiques pour suivre les résultats.");
+      } else {
+        toast.success("Campagne programmée avec succès");
+      }
       navigate("/campagnes");
     },
     onError: (error: any) => {
