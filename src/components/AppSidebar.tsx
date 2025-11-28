@@ -12,7 +12,7 @@ import {
   Crown
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Logo } from "@/components/Logo";
@@ -52,6 +52,7 @@ const superAdminItems = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
+  const navigate = useNavigate();
   const { signOut } = useAuth();
   const { isSuperAdmin } = useUserRole();
   const isCollapsed = state === "collapsed";
@@ -132,6 +133,13 @@ export function AppSidebar() {
                       <NavLink 
                         to={item.url}
                         className="flex items-center gap-3"
+                        onClick={(e) => {
+                          // Forcer la navigation vers SuperAdmin avec replace pour éviter les redirections
+                          if (item.url === "/superadmin") {
+                            e.preventDefault();
+                            navigate("/superadmin", { replace: true });
+                          }
+                        }}
                       >
                         <item.icon className="h-5 w-5" />
                         {!isCollapsed && <span>{item.title}</span>}

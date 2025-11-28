@@ -85,12 +85,20 @@ const Auth = () => {
 
       if (error) throw error;
 
+      // Vérifier si l'utilisateur est superadmin
+      const { data: isSuperadmin } = await supabase.rpc('is_superadmin');
+      
       toast({
         title: t('auth.loginSuccess'),
         description: t('auth.loginSuccessDesc'),
       });
       
-      navigate("/dashboard");
+      // Rediriger vers SuperAdmin si superadmin, sinon vers Dashboard
+      if (isSuperadmin) {
+        navigate("/superadmin", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     } catch (error: any) {
       toast({
         title: t('auth.loginError'),
