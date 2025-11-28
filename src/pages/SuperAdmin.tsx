@@ -85,14 +85,14 @@ export default function SuperAdmin() {
     statut: "active",
     notes: "",
   });
-  const [subFormData, setSubFormData] = useState({
-    organization_id: "",
-    plan_type: "free",
-    statut: "active",
-    email_limit: 1000,
-    date_fin: "",
-    notes: "",
-  });
+   const [subFormData, setSubFormData] = useState({
+     organization_id: "",
+     plan_type: "free",
+     statut: "active",
+     email_limit: 1000,
+     date_fin: "",
+     notes: "",
+   });
   const [extendDays, setExtendDays] = useState(30);
   const queryClient = useQueryClient();
 
@@ -245,6 +245,27 @@ export default function SuperAdmin() {
     },
   });
 
+  // Mutation pour modifier un abonnement
+  const updateSubMutation = useMutation({
+    mutationFn: async ({ id, ...data }: any) => {
+      const { error } = await supabase
+        .from("subscriptions")
+        .update(data)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["superadmin-subscriptions"] });
+      toast.success("Abonnement modifié avec succès");
+      setIsSubDialogOpen(false);
+      setSelectedSub(null);
+      resetSubForm();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Erreur lors de la modification");
+    },
+  });
+
   // Mutation pour prolonger un abonnement
   const extendSubMutation = useMutation({
     mutationFn: async ({ id, days }: { id: string; days: number }) => {
@@ -287,15 +308,15 @@ export default function SuperAdmin() {
   };
 
   const resetSubForm = () => {
-    setSubFormData({
-      organization_id: "",
-      plan_type: "free",
-      statut: "active",
-      email_limit: 1000,
-      date_fin: "",
-      notes: "",
-    });
-  };
+     setSubFormData({
+       organization_id: "",
+       plan_type: "free",
+       statut: "active",
+       email_limit: 1000,
+       date_fin: "",
+       notes: "",
+     });
+   };
 
   const handleEditOrg = (org: any) => {
     setSelectedOrg(org);
@@ -318,6 +339,19 @@ export default function SuperAdmin() {
     setIsExtendDialogOpen(true);
   };
 
+  const handleEditSub = (sub: any) => {
+    setSelectedSub(sub);
+    setSubFormData({
+      organization_id: sub.organization_id,
+      plan_type: sub.plan_type,
+      statut: sub.statut,
+      email_limit: sub.email_limit,
+      date_fin: sub.date_fin ? sub.date_fin.split("T")[0] : "",
+      notes: sub.notes || "",
+    });
+    setIsSubDialogOpen(true);
+  };
+
   const handleSubmitOrg = () => {
     if (!orgFormData.nom || !orgFormData.email_contact) {
       toast.error("Veuillez remplir tous les champs obligatoires");
@@ -337,9 +371,17 @@ export default function SuperAdmin() {
       return;
     }
 
-    createSubMutation.mutate(subFormData);
-  };
+    const payload = {
+      ...subFormData,
+      date_fin: subFormData.date_fin || null,
+    };
 
+    if (selectedSub) {
+      updateSubMutation.mutate({ id: selectedSub.id, ...payload });
+    } else {
+      createSubMutation.mutate(payload);
+    }
+  };
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
       active: "default",
@@ -449,15 +491,16 @@ export default function SuperAdmin() {
                 </Button>
               )}
               {activeView === "subscriptions" && (
-                <Button onClick={() => {
-                  resetSubForm();
-                  setIsSubDialogOpen(true);
-                }} className="w-full sm:w-auto">
-                  <Plus className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Nouvel abonnement</span>
-                  <span className="sm:hidden">Nouveau</span>
-                </Button>
-              )}
+                 <Button onClick={() => {
+                   resetSubForm();
+                   setSelectedSub(null);
+                   setIsSubDialogOpen(true);
+                 }} className="w-full sm:w-auto">
+                   <Plus className="h-4 w-4 mr-2" />
+                   <span className="hidden sm:inline">Nouvel abonnement</span>
+                   <span className="sm:hidden">Nouveau</span>
+                 </Button>
+               )}
             </div>
           </div>
 
@@ -581,20 +624,25 @@ export default function SuperAdmin() {
                                 : "Illimité"}
                             </TableCell>
                             <TableCell className="text-right">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon">
-                                    <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => handleExtendSub(sub)}>
-                                    <Calendar className="h-4 w-4 mr-2" />
-                                    Prolonger
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </TableCell>
+                               <DropdownMenu>
+                                 <DropdownMenuTrigger asChild>
+                                   <Button variant="ghost" size="icon">
+                                     <MoreVertical className="h-4 w-4" />
+                                   </Button>
+                                 </DropdownMenuTrigger>
+                                 <DropdownMenuContent align="end">
+                                   <DropdownMenuItem onClick={() => handleEditSub(sub)}>
+                                     <Edit className="h-4 w-4 mr-2" />
+                                     Modifier
+                                   </DropdownMenuItem>
+                                   <DropdownMenuSeparator />
+                                   <DropdownMenuItem onClick={() => handleExtendSub(sub)}>
+                                     <Calendar className="h-4 w-4 mr-2" />
+                                     Prolonger
+                                   </DropdownMenuItem>
+                                 </DropdownMenuContent>
+                               </DropdownMenu>
+                             </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -746,16 +794,20 @@ export default function SuperAdmin() {
       </Dialog>
 
       {/* Subscription Dialog */}
-      <Dialog open={isSubDialogOpen} onOpenChange={setIsSubDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Nouvel abonnement</DialogTitle>
-            <DialogDescription>
-              Créez un nouvel abonnement pour une organisation
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
+       <Dialog open={isSubDialogOpen} onOpenChange={setIsSubDialogOpen}>
+         <DialogContent>
+           <DialogHeader>
+             <DialogTitle>
+               {selectedSub ? "Modifier l'abonnement" : "Nouvel abonnement"}
+             </DialogTitle>
+             <DialogDescription>
+               {selectedSub
+                 ? `Modifiez l'abonnement de ${selectedSub.organizations?.nom || "l'organisation"}`
+                 : "Créez un nouvel abonnement pour une organisation"}
+             </DialogDescription>
+           </DialogHeader>
+           <div className="space-y-4">
+             <div className="space-y-2">
               <Label htmlFor="org_id">Organisation *</Label>
               <Select
                 value={subFormData.organization_id}
@@ -852,11 +904,13 @@ export default function SuperAdmin() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsSubDialogOpen(false)}>
-              Annuler
-            </Button>
-            <Button onClick={handleSubmitSub}>Créer</Button>
-          </DialogFooter>
+             <Button variant="outline" onClick={() => setIsSubDialogOpen(false)}>
+               Annuler
+             </Button>
+             <Button onClick={handleSubmitSub}>
+               {selectedSub ? "Modifier" : "Créer"}
+             </Button>
+           </DialogFooter>
         </DialogContent>
       </Dialog>
 
