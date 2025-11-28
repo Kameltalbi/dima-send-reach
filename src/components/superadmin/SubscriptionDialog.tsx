@@ -46,6 +46,10 @@ export function SubscriptionDialog({
     },
   });
 
+  const planType = watch("plan_type");
+  const statut = watch("statut");
+  const organizationId = watch("organization_id");
+
   const { data: organizations } = useQuery({
     queryKey: ["organizations"],
     queryFn: async () => {
@@ -120,7 +124,7 @@ export function SubscriptionDialog({
           <div className="space-y-2">
             <Label htmlFor="organization_id">Organisation</Label>
             <Select
-              defaultValue={subscription?.organization_id}
+              value={organizationId}
               onValueChange={(value) => setValue("organization_id", value)}
             >
               <SelectTrigger>
@@ -139,17 +143,17 @@ export function SubscriptionDialog({
           <div className="space-y-2">
             <Label htmlFor="plan_type">Type de plan</Label>
             <Select
-              defaultValue={subscription?.plan_type || "free"}
+              value={planType}
               onValueChange={(value) => setValue("plan_type", value)}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="free">Gratuit (1 000 emails)</SelectItem>
-                <SelectItem value="starter">Starter (10 000 emails)</SelectItem>
-                <SelectItem value="pro">Pro (50 000 emails)</SelectItem>
-                <SelectItem value="enterprise">Enterprise (illimité)</SelectItem>
+                <SelectItem value="free">Gratuit (3 000 emails/mois)</SelectItem>
+                <SelectItem value="starter">Starter (10 000 emails/mois)</SelectItem>
+                <SelectItem value="essential">Essential (50 000 emails/mois)</SelectItem>
+                <SelectItem value="pro">Pro (200 000 emails/mois)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -157,7 +161,7 @@ export function SubscriptionDialog({
           <div className="space-y-2">
             <Label htmlFor="statut">Statut</Label>
             <Select
-              defaultValue={subscription?.statut || "active"}
+              value={statut}
               onValueChange={(value) => setValue("statut", value)}
             >
               <SelectTrigger>
