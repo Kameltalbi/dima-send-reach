@@ -245,348 +245,437 @@ const Checkout = () => {
 
   return (
     <AppLayout>
-      <div className="max-w-5xl mx-auto py-4 sm:py-8 px-4 sm:px-6">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/pricing")}
-          className="mb-4 sm:mb-6"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          {t('checkout.backToPricing')}
-        </Button>
-
-        <div className="grid lg:grid-cols-3 gap-4 sm:gap-8">
-          {/* Colonne principale - Formulaire */}
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('checkout.paymentMethod')}</CardTitle>
-                <CardDescription>
-                  {t('checkout.paymentMethodDesc')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}>
-                  <div className="space-y-4">
-                    {/* Carte bancaire */}
-                    <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-muted/50 cursor-pointer">
-                      <RadioGroupItem value="card" id="card" className="mt-1" />
-                      <Label htmlFor="card" className="flex-1 cursor-pointer">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <CreditCard className="h-5 w-5 text-primary" />
-                            <div>
-                              <p className="font-medium">{t('checkout.card')}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {t('checkout.cardSecure')}
-                              </p>
-                            </div>
-                          </div>
-                          <Badge variant="outline">{t('checkout.cardRecommended')}</Badge>
-                        </div>
-                      </Label>
-                    </div>
-
-                    {/* Virement bancaire */}
-                    <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-muted/50 cursor-pointer">
-                      <RadioGroupItem value="transfer" id="transfer" className="mt-1" />
-                      <Label htmlFor="transfer" className="flex-1 cursor-pointer">
-                        <div className="flex items-center gap-3">
-                          <Building2 className="h-5 w-5 text-primary" />
-                          <div>
-                            <p className="font-medium">{t('checkout.transfer')}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {t('checkout.transferDesc')}
-                            </p>
-                          </div>
-                        </div>
-                      </Label>
-                    </div>
-
-                    {/* Chèque */}
-                    <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-muted/50 cursor-pointer">
-                      <RadioGroupItem value="check" id="check" className="mt-1" />
-                      <Label htmlFor="check" className="flex-1 cursor-pointer">
-                        <div className="flex items-center gap-3">
-                          <Receipt className="h-5 w-5 text-primary" />
-                          <div>
-                            <p className="font-medium">{t('checkout.check')}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {t('checkout.checkDesc')}
-                            </p>
-                          </div>
-                        </div>
-                      </Label>
-                    </div>
-
-                    {/* Espèces */}
-                    <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-muted/50 cursor-pointer">
-                      <RadioGroupItem value="cash" id="cash" className="mt-1" />
-                      <Label htmlFor="cash" className="flex-1 cursor-pointer">
-                        <div className="flex items-center gap-3">
-                          <Banknote className="h-5 w-5 text-primary" />
-                          <div>
-                            <p className="font-medium">{t('checkout.cash')}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {t('checkout.cashDesc')}
-                            </p>
-                          </div>
-                        </div>
-                      </Label>
-                    </div>
-                  </div>
-                </RadioGroup>
-              </CardContent>
-            </Card>
-
-            {/* Formulaire de paiement par carte */}
-            {paymentMethod === "card" && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t('checkout.billingInfo')}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Alert>
-                    <Info className="h-4 w-4" />
-                    <AlertDescription>
-                      {t('checkout.cardRedirect')}
-                    </AlertDescription>
-                  </Alert>
-                  <div className="p-8 border-2 border-dashed rounded-lg text-center bg-muted/30">
-                    <CreditCard className="h-12 w-12 mx-auto mb-4 text-primary" />
-                    <p className="font-medium mb-2">{t('checkout.cardSecureTitle')}</p>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {t('checkout.cardRedirectAfter')}
-                    </p>
-                    <Alert className="bg-blue-50 border-blue-200 text-left">
-                      <Info className="h-4 w-4 text-blue-600" />
-                      <AlertDescription className="text-blue-800 text-sm">
-                        <strong>{t('checkout.cardFees')}</strong> {t('checkout.cardFeesDesc')}
-                      </AlertDescription>
-                    </Alert>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Formulaire pour méthodes manuelles */}
-            {(paymentMethod === "check" || paymentMethod === "transfer" || paymentMethod === "cash") && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t('checkout.billingInfo')}</CardTitle>
-                  <CardDescription>
-                    {t('checkout.billingInfoDesc')}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="companyName">
-                        {t('checkout.companyNameRequired')}
-                      </Label>
-                      <Input
-                        id="companyName"
-                        value={paymentInfo.companyName}
-                        onChange={(e) => setPaymentInfo({ ...paymentInfo, companyName: e.target.value })}
-                        placeholder={t('checkout.companyName')}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">
-                        {t('checkout.emailRequired')}
-                      </Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={paymentInfo.email}
-                        onChange={(e) => setPaymentInfo({ ...paymentInfo, email: e.target.value })}
-                        placeholder="contact@entreprise.com"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="address">
-                      {t('checkout.addressRequired')}
-                    </Label>
-                    <Input
-                      id="address"
-                      value={paymentInfo.address}
-                      onChange={(e) => setPaymentInfo({ ...paymentInfo, address: e.target.value })}
-                      placeholder={t('checkout.address')}
-                      required
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="city">{t('checkout.city')}</Label>
-                      <Input
-                        id="city"
-                        value={paymentInfo.city}
-                        onChange={(e) => setPaymentInfo({ ...paymentInfo, city: e.target.value })}
-                        placeholder={t('checkout.city')}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="postalCode">{t('checkout.postalCode')}</Label>
-                      <Input
-                        id="postalCode"
-                        value={paymentInfo.postalCode}
-                        onChange={(e) => setPaymentInfo({ ...paymentInfo, postalCode: e.target.value })}
-                        placeholder={t('checkout.postalCode')}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">{t('checkout.phone')}</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={paymentInfo.phone}
-                      onChange={(e) => setPaymentInfo({ ...paymentInfo, phone: e.target.value })}
-                      placeholder="+216 XX XXX XXX"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">{t('checkout.notes')}</Label>
-                    <Textarea
-                      id="notes"
-                      value={paymentInfo.notes}
-                      onChange={(e) => setPaymentInfo({ ...paymentInfo, notes: e.target.value })}
-                      placeholder={t('checkout.notes')}
-                      rows={3}
-                    />
-                  </div>
-
-                  {paymentMethod === "check" && (
-                    <Alert>
-                      <Info className="h-4 w-4" />
-                      <AlertDescription>
-                        <strong>{t('checkout.checkInstructions.title')}</strong>
-                        <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
-                          <li>{t('checkout.checkInstructions.libelle')}</li>
-                          <li>{t('checkout.checkInstructions.amount', { amount: selectedPlan.price, currency: selectedPlan.currency })}</li>
-                          <li>{t('checkout.checkInstructions.send')}</li>
-                          <li>{t('checkout.checkInstructions.activate')}</li>
-                        </ul>
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
-                  {paymentMethod === "transfer" && (
-                    <Alert>
-                      <Info className="h-4 w-4" />
-                      <AlertDescription>
-                        <strong>{t('checkout.transferInstructions.title')}</strong>
-                        <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
-                          <li>{t('checkout.transferInstructions.amount', { amount: selectedPlan.price, currency: selectedPlan.currency })}</li>
-                          <li>{t('checkout.transferInstructions.iban')}</li>
-                          <li>{t('checkout.transferInstructions.reference')}</li>
-                          <li>{t('checkout.transferInstructions.email')}</li>
-                        </ul>
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
-                  {paymentMethod === "cash" && (
-                    <Alert>
-                      <Info className="h-4 w-4" />
-                      <AlertDescription>
-                        <strong>{t('checkout.cashInstructions.title')}</strong>
-                        <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
-                          <li>{t('checkout.cashInstructions.amount', { amount: selectedPlan.price, currency: selectedPlan.currency })}</li>
-                          <li>{t('checkout.cashInstructions.contact')}</li>
-                          <li>{t('checkout.cashInstructions.email')}</li>
-                          <li>{t('checkout.cashInstructions.activate')}</li>
-                        </ul>
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/pricing")}
+              className="mb-6 hover:bg-muted"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              {t('checkout.backToPricing')}
+            </Button>
+            
+            <div className="space-y-2">
+              <h1 className="text-3xl sm:text-4xl font-bold text-foreground">
+                Complete your order
+              </h1>
+              <p className="text-lg text-muted-foreground">
+                Choose your payment method and finalize your {selectedPlan.name} subscription
+              </p>
+            </div>
           </div>
 
-          {/* Colonne latérale - Récapitulatif */}
-          <div className="lg:col-span-1">
-            <Card className="lg:sticky lg:top-6">
-              <CardHeader>
-                <CardTitle>{t('checkout.summary')}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground text-sm">{t('checkout.plan')}</span>
-                    <span className="font-medium text-sm">{selectedPlan.name}</span>
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Payment Methods */}
+              <Card className="border-2 shadow-lg">
+                <CardHeader className="border-b bg-muted/30">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <CreditCard className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl">Payment Method</CardTitle>
+                      <CardDescription>
+                        Select your preferred payment option
+                      </CardDescription>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground text-sm">{t('checkout.period')}</span>
-                    <span className="font-medium text-sm">{t('checkout.annual')}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground text-sm">{t('checkout.emailsIncluded')}</span>
-                    <span className="font-medium text-xs sm:text-sm">{selectedPlan.emails}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground text-sm">{t('checkout.users')}</span>
-                    <span className="font-medium text-xs sm:text-sm">{selectedPlan.users}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground text-sm">{t('checkout.domains')}</span>
-                    <span className="font-medium text-xs sm:text-sm">{selectedPlan.domains}</span>
-                  </div>
-                </div>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <RadioGroup 
+                    value={paymentMethod} 
+                    onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}
+                    className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                  >
+                    {/* Card Payment */}
+                    <div className={`relative cursor-pointer rounded-xl border-2 p-5 transition-all hover:shadow-md ${
+                      paymentMethod === "card" 
+                        ? "border-primary bg-primary/5 shadow-md" 
+                        : "border-border hover:border-primary/50"
+                    }`}>
+                      <RadioGroupItem value="card" id="card" className="sr-only" />
+                      <Label htmlFor="card" className="cursor-pointer flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <CreditCard className="h-6 w-6 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-foreground">Card Payment</p>
+                              <p className="text-sm text-muted-foreground">Secure & Instant</p>
+                            </div>
+                          </div>
+                          <Badge variant={paymentMethod === "card" ? "default" : "outline"}>
+                            Recommended
+                          </Badge>
+                        </div>
+                      </Label>
+                    </div>
 
-                <Separator />
+                    {/* Bank Transfer */}
+                    <div className={`relative cursor-pointer rounded-xl border-2 p-5 transition-all hover:shadow-md ${
+                      paymentMethod === "transfer" 
+                        ? "border-primary bg-primary/5 shadow-md" 
+                        : "border-border hover:border-primary/50"
+                    }`}>
+                      <RadioGroupItem value="transfer" id="transfer" className="sr-only" />
+                      <Label htmlFor="transfer" className="cursor-pointer flex flex-col gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-lg bg-secondary/20 flex items-center justify-center">
+                            <Building2 className="h-6 w-6 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-foreground">Bank Transfer</p>
+                            <p className="text-sm text-muted-foreground">1-2 business days</p>
+                          </div>
+                        </div>
+                      </Label>
+                    </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between text-lg font-semibold">
-                    <span>{t('checkout.total')}</span>
-                    <span>
-                      {selectedPlan.price} {selectedPlan.currency}
-                      <span className="text-sm font-normal text-muted-foreground ml-1">
-                        {selectedPlan.period}
-                      </span>
-                    </span>
+                    {/* Check */}
+                    <div className={`relative cursor-pointer rounded-xl border-2 p-5 transition-all hover:shadow-md ${
+                      paymentMethod === "check" 
+                        ? "border-primary bg-primary/5 shadow-md" 
+                        : "border-border hover:border-primary/50"
+                    }`}>
+                      <RadioGroupItem value="check" id="check" className="sr-only" />
+                      <Label htmlFor="check" className="cursor-pointer flex flex-col gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-lg bg-secondary/20 flex items-center justify-center">
+                            <Receipt className="h-6 w-6 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-foreground">Check</p>
+                            <p className="text-sm text-muted-foreground">Traditional payment</p>
+                          </div>
+                        </div>
+                      </Label>
+                    </div>
+
+                    {/* Cash */}
+                    <div className={`relative cursor-pointer rounded-xl border-2 p-5 transition-all hover:shadow-md ${
+                      paymentMethod === "cash" 
+                        ? "border-primary bg-primary/5 shadow-md" 
+                        : "border-border hover:border-primary/50"
+                    }`}>
+                      <RadioGroupItem value="cash" id="cash" className="sr-only" />
+                      <Label htmlFor="cash" className="cursor-pointer flex flex-col gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-lg bg-secondary/20 flex items-center justify-center">
+                            <Banknote className="h-6 w-6 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-foreground">Cash</p>
+                            <p className="text-sm text-muted-foreground">In-person payment</p>
+                          </div>
+                        </div>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </CardContent>
+              </Card>
+
+              {/* Card Payment Section */}
+              {paymentMethod === "card" && (
+                <Card className="border-2 shadow-lg">
+                  <CardHeader className="border-b bg-muted/30">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <CreditCard className="h-5 w-5 text-primary" />
+                      </div>
+                      <CardTitle className="text-xl">Secure Card Payment</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-6 space-y-6">
+                    <Alert className="border-primary/20 bg-primary/5">
+                      <Info className="h-4 w-4 text-primary" />
+                      <AlertDescription className="text-sm">
+                        You'll be redirected to our secure payment partner to complete your transaction.
+                      </AlertDescription>
+                    </Alert>
+                    
+                    <div className="bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl p-8 text-center border-2 border-dashed border-border">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                        <CreditCard className="h-8 w-8 text-primary" />
+                      </div>
+                      <h3 className="font-semibold text-lg mb-2">Secure Payment Gateway</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Your payment will be processed through our PCI-DSS compliant payment partner
+                      </p>
+                      <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                        <span>SSL Encrypted</span>
+                        <span>•</span>
+                        <span>Secure Transaction</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Manual Payment Methods */}
+              {(paymentMethod === "check" || paymentMethod === "transfer" || paymentMethod === "cash") && (
+                <Card className="border-2 shadow-lg">
+                  <CardHeader className="border-b bg-muted/30">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Building className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl">Billing Information</CardTitle>
+                        <CardDescription>
+                          Required for processing your order
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-6 space-y-6">
+                    {/* Company & Email Row */}
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="companyName" className="text-sm font-medium flex items-center gap-2">
+                          <Building className="h-4 w-4 text-muted-foreground" />
+                          Company Name
+                          <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id="companyName"
+                          value={paymentInfo.companyName}
+                          onChange={(e) => setPaymentInfo({ ...paymentInfo, companyName: e.target.value })}
+                          placeholder="Your Company LLC"
+                          className="h-11"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-muted-foreground" />
+                          Email Address
+                          <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={paymentInfo.email}
+                          onChange={(e) => setPaymentInfo({ ...paymentInfo, email: e.target.value })}
+                          placeholder="contact@company.com"
+                          className="h-11"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Address */}
+                    <div className="space-y-2">
+                      <Label htmlFor="address" className="text-sm font-medium">
+                        Street Address
+                        <span className="text-destructive ml-1">*</span>
+                      </Label>
+                      <Input
+                        id="address"
+                        value={paymentInfo.address}
+                        onChange={(e) => setPaymentInfo({ ...paymentInfo, address: e.target.value })}
+                        placeholder="123 Business Street"
+                        className="h-11"
+                        required
+                      />
+                    </div>
+
+                    {/* City & Postal */}
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="city" className="text-sm font-medium">City</Label>
+                        <Input
+                          id="city"
+                          value={paymentInfo.city}
+                          onChange={(e) => setPaymentInfo({ ...paymentInfo, city: e.target.value })}
+                          placeholder="Tunis"
+                          className="h-11"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="postalCode" className="text-sm font-medium">Postal Code</Label>
+                        <Input
+                          id="postalCode"
+                          value={paymentInfo.postalCode}
+                          onChange={(e) => setPaymentInfo({ ...paymentInfo, postalCode: e.target.value })}
+                          placeholder="1000"
+                          className="h-11"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Phone */}
+                    <div className="space-y-2">
+                      <Label htmlFor="phone" className="text-sm font-medium flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        Phone Number
+                      </Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={paymentInfo.phone}
+                        onChange={(e) => setPaymentInfo({ ...paymentInfo, phone: e.target.value })}
+                        placeholder="+216 XX XXX XXX"
+                        className="h-11"
+                      />
+                    </div>
+
+                    {/* Notes */}
+                    <div className="space-y-2">
+                      <Label htmlFor="notes" className="text-sm font-medium">Additional Notes</Label>
+                      <Textarea
+                        id="notes"
+                        value={paymentInfo.notes}
+                        onChange={(e) => setPaymentInfo({ ...paymentInfo, notes: e.target.value })}
+                        placeholder="Any special instructions..."
+                        rows={3}
+                        className="resize-none"
+                      />
+                    </div>
+
+                    {/* Payment Instructions */}
+                    {paymentMethod === "check" && (
+                      <Alert className="border-primary/20 bg-primary/5">
+                        <FileText className="h-4 w-4 text-primary" />
+                        <AlertDescription>
+                          <strong className="block mb-2">Check Payment Instructions:</strong>
+                          <ul className="list-disc list-inside space-y-1 text-sm">
+                            <li>Make check payable to "DimaMail"</li>
+                            <li>Amount: {selectedPlan.price} {selectedPlan.currency}</li>
+                            <li>Mail to our business address</li>
+                            <li>Your subscription will be activated upon receipt</li>
+                          </ul>
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    {paymentMethod === "transfer" && (
+                      <Alert className="border-primary/20 bg-primary/5">
+                        <FileText className="h-4 w-4 text-primary" />
+                        <AlertDescription>
+                          <strong className="block mb-2">Bank Transfer Instructions:</strong>
+                          <ul className="list-disc list-inside space-y-1 text-sm">
+                            <li>Amount: {selectedPlan.price} {selectedPlan.currency}</li>
+                            <li>Bank details will be sent to your email</li>
+                            <li>Include your order reference in the transfer</li>
+                            <li>Activation upon payment confirmation</li>
+                          </ul>
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    {paymentMethod === "cash" && (
+                      <Alert className="border-primary/20 bg-primary/5">
+                        <FileText className="h-4 w-4 text-primary" />
+                        <AlertDescription>
+                          <strong className="block mb-2">Cash Payment Instructions:</strong>
+                          <ul className="list-disc list-inside space-y-1 text-sm">
+                            <li>Amount: {selectedPlan.price} {selectedPlan.currency}</li>
+                            <li>We'll contact you to schedule an appointment</li>
+                            <li>Payment at our office location</li>
+                            <li>Immediate activation after payment</li>
+                          </ul>
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Summary Sidebar */}
+            <div className="lg:col-span-1">
+              <Card className="border-2 shadow-lg lg:sticky lg:top-6">
+                <CardHeader className="border-b bg-muted/30">
+                  <CardTitle className="text-xl">Order Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 space-y-6">
+                  {/* Plan Details */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b">
+                      <span className="text-sm text-muted-foreground">Plan</span>
+                      <Badge variant="outline" className="font-semibold">
+                        {selectedPlan.name}
+                      </Badge>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Billing Period</span>
+                        <span className="font-medium">Annual</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Emails/month</span>
+                        <span className="font-medium">{selectedPlan.emails}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Users</span>
+                        <span className="font-medium">{selectedPlan.users}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Domains</span>
+                        <span className="font-medium">{selectedPlan.domains}</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
 
-                <Separator />
+                  <Separator />
 
-                <Button
-                  onClick={handleSubmit}
-                  disabled={isProcessing}
-                  className="w-full"
-                  size="lg"
-                >
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      {t('checkout.processing')}
-                    </>
-                  ) : paymentMethod === "card" ? (
-                    <>
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      {t('checkout.payNow')}
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                      {t('checkout.confirmOrder')}
-                    </>
-                  )}
-                </Button>
+                  {/* Total */}
+                  <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-4 border border-primary/20">
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-sm font-medium text-muted-foreground">Total Amount</span>
+                      <div className="text-right">
+                        <span className="text-3xl font-bold text-primary">
+                          {selectedPlan.price}
+                        </span>
+                        <span className="text-lg font-semibold text-primary ml-1">
+                          {selectedPlan.currency}
+                        </span>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {selectedPlan.period}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
-                <p className="text-xs text-center text-muted-foreground">
-                  {t('checkout.terms')}
-                </p>
-              </CardContent>
-            </Card>
+                  {/* Action Button */}
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={isProcessing}
+                    className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all"
+                    size="lg"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : paymentMethod === "card" ? (
+                      <>
+                        <CreditCard className="h-5 w-5 mr-2" />
+                        Proceed to Payment
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="h-5 w-5 mr-2" />
+                        Confirm Order
+                      </>
+                    )}
+                  </Button>
+
+                  <p className="text-xs text-center text-muted-foreground leading-relaxed">
+                    By proceeding, you agree to our Terms of Service and Privacy Policy
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>
