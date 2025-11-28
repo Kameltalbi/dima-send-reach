@@ -1,1 +1,7 @@
 project_id = "myrrgvflilxguuucikyq"
+
+[functions.send-email]
+verify_jwt = false
+
+[functions.process-scheduled-campaigns]
+verify_jwt = false
