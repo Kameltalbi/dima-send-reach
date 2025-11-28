@@ -163,32 +163,50 @@ export type Database = {
         Row: {
           created_at: string
           email: string
+          fonction: string | null
           id: string
           nom: string
+          pays: string | null
           prenom: string
           segment: string | null
+          site_web: string | null
+          societe: string | null
           statut: string
+          telephone: string | null
           user_id: string
+          ville: string | null
         }
         Insert: {
           created_at?: string
           email: string
+          fonction?: string | null
           id?: string
           nom: string
+          pays?: string | null
           prenom: string
           segment?: string | null
+          site_web?: string | null
+          societe?: string | null
           statut?: string
+          telephone?: string | null
           user_id: string
+          ville?: string | null
         }
         Update: {
           created_at?: string
           email?: string
+          fonction?: string | null
           id?: string
           nom?: string
+          pays?: string | null
           prenom?: string
           segment?: string | null
+          site_web?: string | null
+          societe?: string | null
           statut?: string
+          telephone?: string | null
           user_id?: string
+          ville?: string | null
         }
         Relationships: []
       }
