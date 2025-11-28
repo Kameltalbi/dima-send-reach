@@ -103,3 +103,524 @@ All colors MUST be HSL.
     @apply font-heading;
   }
 }
+
+/* Styles personnalisés pour GrapesJS Email Builder - Design moderne et épuré */
+.gjs-editor {
+  font-family: inherit;
+  background: transparent;
+}
+
+/* Blocs - Design moderne et professionnel */
+.gjs-blocks-c {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  padding: 12px !important;
+  background: hsl(var(--card)) !important;
+}
+
+.gjs-block {
+  border-radius: 10px;
+  border: 2px solid hsl(var(--border));
+  background: hsl(var(--card)) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 14px 16px;
+  cursor: grab;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+  color: hsl(var(--foreground)) !important;
+}
+
+.gjs-block::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: hsl(var(--primary));
+  transform: scaleY(0);
+  transition: transform 0.25s ease;
+}
+
+.gjs-block:hover::before {
+  transform: scaleY(1);
+}
+
+.gjs-block:active {
+  cursor: grabbing;
+  transform: scale(0.98);
+}
+
+.gjs-block:hover {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  background: hsl(var(--card));
+}
+
+.gjs-block-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin: 0;
+  flex: 1;
+  line-height: 1.4;
+}
+
+.gjs-block-media {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: hsl(var(--muted));
+  border-radius: 6px;
+  opacity: 0.8;
+  transition: all 0.25s ease;
+  flex-shrink: 0;
+}
+
+.gjs-block:hover .gjs-block-media {
+  opacity: 1;
+  background: hsl(var(--primary) / 0.1);
+  transform: scale(1.05);
+}
+
+.gjs-block-media svg,
+.gjs-block-media img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+/* Catégories de blocs */
+.gjs-blocks-c .gjs-title {
+  background: hsl(var(--muted) / 0.3) !important;
+  color: hsl(var(--foreground)) !important;
+  border-bottom: 2px solid hsl(var(--border)) !important;
+  padding: 12px 16px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  font-size: 11px !important;
+  letter-spacing: 1px !important;
+}
+
+.gjs-blocks-c .gjs-title:hover {
+  background: hsl(var(--muted) / 0.5) !important;
+}
+
+/* Panneau de blocs - s'assurer qu'il n'y a pas de fond noir */
+.gjs-pn-panel.gjs-pn-blocks {
+  background: hsl(var(--card)) !important;
+}
+
+.gjs-pn-panel.gjs-pn-blocks .gjs-pn-content {
+  background: hsl(var(--card)) !important;
+}
+
+/* Tous les éléments dans le panneau de blocs */
+#blocks {
+  background: hsl(var(--card)) !important;
+}
+
+#blocks * {
+  background-color: transparent !important;
+}
+
+#blocks .gjs-block {
+  background: hsl(var(--card)) !important;
+}
+
+/* Catégories */
+.gjs-blocks-c .gjs-category {
+  background: transparent !important;
+}
+
+.gjs-blocks-c .gjs-category-title {
+  background: hsl(var(--muted) / 0.3) !important;
+  color: hsl(var(--foreground)) !important;
+  border-bottom: 2px solid hsl(var(--border)) !important;
+}
+
+/* Forcer le fond blanc partout dans le panneau de blocs */
+.gjs-blocks-c,
+.gjs-blocks-c .gjs-block,
+.gjs-blocks-c .gjs-title,
+.gjs-blocks-c .gjs-category {
+  background-color: hsl(var(--card)) !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+/* Texte des blocs */
+.gjs-block-label,
+.gjs-block-media {
+  color: hsl(var(--foreground)) !important;
+}
+
+/* Panneau de blocs - Forcer le fond blanc */
+.gjs-pn-panel {
+  background: hsl(var(--card)) !important;
+}
+
+.gjs-pn-panel.gjs-pn-blocks {
+  background: hsl(var(--card)) !important;
+}
+
+.gjs-pn-panel.gjs-pn-blocks .gjs-pn-content {
+  background: hsl(var(--card)) !important;
+}
+
+/* Canvas - Design épuré */
+.gjs-cv-canvas {
+  background: transparent !important;
+  border: none !important;
+}
+
+.gjs-frame {
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  background: white !important;
+}
+
+.gjs-cv-canvas__frames {
+  padding: 0;
+  background: transparent !important;
+}
+
+/* Fix pour éviter les fonds noirs */
+.gjs-cv-canvas__frames > iframe {
+  background: white !important;
+}
+
+.gjs-cv-canvas__frames > iframe body {
+  background: white !important;
+}
+
+/* Style Manager - Design moderne et professionnel */
+.gjs-sm-sector {
+  border: none;
+  border-radius: 8px;
+  background: hsl(var(--muted) / 0.3);
+  margin-bottom: 12px;
+  padding: 0;
+  overflow: hidden;
+  transition: all 0.25s ease;
+}
+
+.gjs-sm-sector:hover {
+  background: hsl(var(--muted) / 0.4);
+}
+
+.gjs-sm-sector:last-child {
+  margin-bottom: 0;
+}
+
+.gjs-sm-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: hsl(var(--foreground));
+  padding: 14px 16px;
+  margin: 0;
+  background: hsl(var(--muted) / 0.5);
+  border-bottom: 2px solid hsl(var(--border));
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.25s ease;
+  user-select: none;
+}
+
+.gjs-sm-title:hover {
+  background: hsl(var(--muted) / 0.6);
+  color: hsl(var(--primary));
+}
+
+.gjs-sm-title::after {
+  content: '▼';
+  font-size: 10px;
+  opacity: 0.5;
+  transition: transform 0.25s ease;
+}
+
+.gjs-sm-sector.gjs-sm-open .gjs-sm-title::after {
+  transform: rotate(180deg);
+}
+
+.gjs-sm-properties {
+  padding: 12px 16px;
+  background: hsl(var(--card));
+}
+
+.gjs-sm-property {
+  border-bottom: 1px solid hsl(var(--border) / 0.3);
+  padding: 12px 0;
+  margin: 0;
+  transition: background 0.2s ease;
+}
+
+.gjs-sm-property:hover {
+  background: hsl(var(--muted) / 0.2);
+  margin: 0 -8px;
+  padding-left: 8px;
+  padding-right: 8px;
+  border-radius: 6px;
+}
+
+.gjs-sm-property:last-child {
+  border-bottom: none;
+}
+
+.gjs-sm-property .gjs-sm-label {
+  font-weight: 600;
+  font-size: 12px;
+  color: hsl(var(--foreground));
+  margin-bottom: 8px;
+  text-transform: capitalize;
+  letter-spacing: 0.3px;
+}
+
+.gjs-sm-input {
+  border: 2px solid hsl(var(--border));
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  transition: all 0.2s ease;
+  width: 100%;
+  font-family: inherit;
+}
+
+.gjs-sm-input:hover {
+  border-color: hsl(var(--muted-foreground) / 0.3);
+}
+
+.gjs-sm-input:focus {
+  border-color: hsl(var(--primary));
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+  background: hsl(var(--card));
+}
+
+.gjs-sm-select {
+  border: 2px solid hsl(var(--border));
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  transition: all 0.2s ease;
+  width: 100%;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.gjs-sm-select:hover {
+  border-color: hsl(var(--muted-foreground) / 0.3);
+}
+
+.gjs-sm-select:focus {
+  border-color: hsl(var(--primary));
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+}
+
+/* Sélection et highlight */
+.gjs-selected {
+  outline: 2px solid hsl(var(--primary)) !important;
+  outline-offset: 2px;
+}
+
+.gjs-highlighter {
+  outline: 2px dashed hsl(var(--primary) / 0.6) !important;
+  outline-offset: 2px;
+}
+
+/* Toolbar - Design épuré */
+.gjs-toolbar {
+  background: white;
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 4px;
+  gap: 4px;
+}
+
+.gjs-toolbar-item {
+  border-radius: 6px;
+  transition: all 0.2s;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.gjs-toolbar-item:hover {
+  background: hsl(var(--muted));
+}
+
+.gjs-toolbar-item.gjs-toolbar-item-active {
+  background: hsl(var(--primary));
+  color: white;
+}
+
+/* Composite properties */
+.gjs-sm-composite {
+  border-top: 2px solid hsl(var(--border) / 0.3);
+  margin-top: 12px;
+  padding-top: 12px;
+  background: hsl(var(--muted) / 0.2);
+  border-radius: 6px;
+  padding: 12px;
+  margin-left: -8px;
+  margin-right: -8px;
+}
+
+.gjs-sm-composite .gjs-sm-property {
+  padding-left: 8px;
+  border-bottom: 1px solid hsl(var(--border) / 0.2);
+}
+
+.gjs-sm-composite .gjs-sm-property:last-child {
+  border-bottom: none;
+}
+
+.gjs-sm-composite .gjs-sm-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: hsl(var(--primary));
+  margin-bottom: 10px;
+}
+
+/* Layers */
+.gjs-layer-item {
+  padding: 8px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  transition: background 0.2s;
+}
+
+.gjs-layer-item:hover {
+  background: hsl(var(--muted) / 0.5);
+}
+
+.gjs-layer-item.gjs-layer-item-selected {
+  background: hsl(var(--primary) / 0.1);
+  border-left: 3px solid hsl(var(--primary));
+}
+
+/* Amélioration générale */
+.gjs-sm-properties {
+  padding: 0;
+}
+
+.gjs-sm-property__wrp {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gjs-sm-field {
+  margin: 0;
+}
+
+/* Scrollbar personnalisée */
+.gjs-sm-properties::-webkit-scrollbar,
+.gjs-blocks-c::-webkit-scrollbar {
+  width: 8px;
+}
+
+.gjs-sm-properties::-webkit-scrollbar-track,
+.gjs-blocks-c::-webkit-scrollbar-track {
+  background: hsl(var(--muted) / 0.3);
+  border-radius: 4px;
+}
+
+.gjs-sm-properties::-webkit-scrollbar-thumb,
+.gjs-blocks-c::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.gjs-sm-properties::-webkit-scrollbar-thumb:hover,
+.gjs-blocks-c::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.5);
+  background-clip: padding-box;
+}
+
+/* Amélioration des champs de couleur */
+.gjs-field-color-picker {
+  border: 2px solid hsl(var(--border));
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.gjs-field-color-picker-c {
+  border: none;
+}
+
+/* Amélioration des champs de nombre */
+.gjs-field-number {
+  border: 2px solid hsl(var(--border));
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  background: hsl(var(--card));
+  transition: all 0.2s ease;
+}
+
+.gjs-field-number:focus {
+  border-color: hsl(var(--primary));
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+}
+
+/* Amélioration des unités */
+.gjs-field-units {
+  border-left: 2px solid hsl(var(--border));
+  padding-left: 8px;
+  margin-left: 8px;
+}
+
+/* Amélioration des range sliders */
+.gjs-field-range {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: hsl(var(--muted));
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.gjs-field-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: hsl(var(--primary));
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.gjs-field-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: hsl(var(--primary));
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}

@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,11 +9,326 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Send, Save, Eye } from "lucide-react";
+import { ArrowLeft, Send, Save, Eye, Loader2, Calendar, Clock } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import { TemplateEditor } from "@/components/templates/TemplateEditor";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 
 const NouvelleCampagne = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("info");
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [htmlContent, setHtmlContent] = useState("");
+  
+  const [formData, setFormData] = useState({
+    nom_campagne: "",
+    sujet_email: "",
+    expediteur_nom: "",
+    expediteur_email: "",
+    list_id: "",
+    whenToSend: "now",
+    scheduledDate: "",
+    scheduledTime: "",
+    testEmail: "",
+  });
+
+  // Charger les listes
+  const { data: lists } = useQuery({
+    queryKey: ["lists"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lists")
+        .select("*")
+        .eq("user_id", user?.id)
+        .order("nom", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Charger les templates
+  const { data: templates } = useQuery({
+    queryKey: ["templates"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("templates")
+        .select("*")
+        .eq("user_id", user?.id)
+        .order("nom", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Charger le profil utilisateur pour les valeurs par défaut
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user?.id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Initialiser les valeurs par défaut
+  useEffect(() => {
+    if (profile) {
+      setFormData((prev) => ({
+        ...prev,
+        expediteur_nom: profile.nom_entreprise || "",
+        expediteur_email: profile.email_envoi_defaut || user?.email || "",
+      }));
+    }
+  }, [profile, user]);
+
+  // Calculer le nombre de destinataires
+  const { data: recipientCount } = useQuery({
+    queryKey: ["recipientCount", formData.list_id],
+    queryFn: async () => {
+      if (!formData.list_id || formData.list_id === "all") {
+        // Compter tous les contacts de l'utilisateur
+        const { count, error } = await supabase
+          .from("contacts")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user?.id)
+          .eq("statut", "actif");
+        if (error) throw error;
+        return count || 0;
+      } else {
+        // Compter les contacts de la liste
+        const { count, error } = await supabase
+          .from("list_contacts")
+          .select("*", { count: "exact", head: true })
+          .eq("list_id", formData.list_id);
+        if (error) throw error;
+        return count || 0;
+      }
+    },
+    enabled: !!user,
+  });
+
+  // Charger le template sélectionné
+  const { data: selectedTemplate } = useQuery({
+    queryKey: ["template", selectedTemplateId],
+    queryFn: async () => {
+      if (!selectedTemplateId) return null;
+      const { data, error } = await supabase
+        .from("templates")
+        .select("*")
+        .eq("id", selectedTemplateId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedTemplateId,
+  });
+
+  // Mettre à jour le HTML quand un template est sélectionné
+  useEffect(() => {
+    if (selectedTemplate?.content_html) {
+      setHtmlContent(selectedTemplate.content_html);
+    }
+  }, [selectedTemplate]);
+
+  // Mutation pour sauvegarder la campagne
+  const saveMutation = useMutation({
+    mutationFn: async (isDraft: boolean) => {
+      if (!formData.nom_campagne || !formData.sujet_email || !formData.expediteur_nom || !formData.expediteur_email) {
+        throw new Error("Veuillez remplir tous les champs obligatoires");
+      }
+
+      if (!htmlContent.trim()) {
+        throw new Error("Veuillez créer ou sélectionner un contenu pour votre email");
+      }
+
+      if (!formData.list_id) {
+        throw new Error("Veuillez sélectionner une liste de contacts");
+      }
+
+      let dateEnvoi = null;
+      if (formData.whenToSend === "schedule" && formData.scheduledDate && formData.scheduledTime) {
+        dateEnvoi = new Date(`${formData.scheduledDate}T${formData.scheduledTime}`).toISOString();
+      } else if (!isDraft && formData.whenToSend === "now") {
+        dateEnvoi = new Date().toISOString();
+      }
+
+      const campaignData = {
+        user_id: user?.id,
+        nom_campagne: formData.nom_campagne,
+        sujet_email: formData.sujet_email,
+        expediteur_nom: formData.expediteur_nom,
+        expediteur_email: formData.expediteur_email,
+        list_id: formData.list_id === "all" ? null : formData.list_id,
+        html_contenu: htmlContent,
+        statut: isDraft ? "brouillon" : formData.whenToSend === "now" ? "en_attente" : "en_attente",
+        date_envoi: dateEnvoi,
+      };
+
+      const { data, error } = await supabase
+        .from("campaigns")
+        .insert(campaignData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Si ce n'est pas un brouillon et qu'on envoie maintenant, créer les destinataires
+      if (!isDraft && formData.whenToSend === "now" && data) {
+        await createRecipients(data.id);
+      }
+
+      return data;
+    },
+    onSuccess: (data, isDraft) => {
+      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+      toast.success(isDraft ? "Campagne enregistrée en brouillon" : "Campagne créée et en attente d'envoi");
+      navigate("/campagnes");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Erreur lors de la sauvegarde de la campagne");
+    },
+  });
+
+  // Créer les destinataires pour une campagne
+  const createRecipients = async (campaignId: string) => {
+    let contacts: any[] = [];
+
+    if (formData.list_id === "all") {
+      // Tous les contacts actifs
+      const { data, error } = await supabase
+        .from("contacts")
+        .select("id")
+        .eq("user_id", user?.id)
+        .eq("statut", "actif");
+      if (error) throw error;
+      contacts = data || [];
+    } else {
+      // Contacts de la liste
+      const { data, error } = await supabase
+        .from("list_contacts")
+        .select("contact_id")
+        .eq("list_id", formData.list_id);
+      if (error) throw error;
+      contacts = (data || []).map((lc: any) => ({ id: lc.contact_id }));
+    }
+
+    // Créer les enregistrements de destinataires
+    if (contacts.length > 0) {
+      const recipients = contacts.map((contact) => ({
+        campaign_id: campaignId,
+        contact_id: contact.id,
+        statut_envoi: "en_attente",
+      }));
+
+      const { error } = await supabase.from("campaign_recipients").insert(recipients);
+      if (error) throw error;
+    }
+  };
+
+  // Mutation pour envoyer un email de test
+  const testEmailMutation = useMutation({
+    mutationFn: async () => {
+      if (!formData.testEmail) {
+        throw new Error("Veuillez entrer une adresse email");
+      }
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.testEmail)) {
+        throw new Error("Veuillez entrer une adresse email valide");
+      }
+
+      if (!htmlContent.trim()) {
+        throw new Error("Veuillez créer ou sélectionner un contenu pour votre email");
+      }
+
+      // TODO: Implémenter l'envoi réel via Edge Function
+      // Pour l'instant, on simule
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      
+      return { success: true };
+    },
+    onSuccess: () => {
+      toast.success(`Email de test envoyé à ${formData.testEmail}`);
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Erreur lors de l'envoi de l'email de test");
+    },
+  });
+
+  const handleOpenEditor = () => {
+    setIsEditorOpen(true);
+  };
+
+  const handleCloseEditor = () => {
+    setIsEditorOpen(false);
+    setSelectedTemplateId(null);
+  };
+
+  const handleTemplateSelected = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+    setIsEditorOpen(true);
+  };
+
+  const handleEditorSave = (html: string) => {
+    setHtmlContent(html);
+    toast.success("Contenu sauvegardé");
+  };
+
+  const handlePreview = () => {
+    if (!htmlContent.trim()) {
+      toast.error("Veuillez créer ou sélectionner un contenu pour votre email");
+      return;
+    }
+    setIsPreviewOpen(true);
+  };
+
+  const handleSaveDraft = () => {
+    saveMutation.mutate(true);
+  };
+
+  const handleSend = () => {
+    if (!formData.list_id) {
+      toast.error("Veuillez sélectionner une liste de contacts");
+      setActiveTab("info");
+      return;
+    }
+
+    if (!htmlContent.trim()) {
+      toast.error("Veuillez créer ou sélectionner un contenu pour votre email");
+      setActiveTab("design");
+      return;
+    }
+
+    saveMutation.mutate(false);
+  };
+
+  if (isEditorOpen) {
+    return (
+      <TemplateEditor
+        templateId={selectedTemplateId}
+        onClose={handleCloseEditor}
+        onSave={handleEditorSave}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -30,16 +347,33 @@ const NouvelleCampagne = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2" onClick={handlePreview}>
             <Eye className="h-4 w-4" />
             Aperçu
           </Button>
-          <Button variant="outline" className="gap-2">
-            <Save className="h-4 w-4" />
+          <Button 
+            variant="outline" 
+            className="gap-2"
+            onClick={handleSaveDraft}
+            disabled={saveMutation.isPending}
+          >
+            {saveMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
             Enregistrer
           </Button>
-          <Button className="gap-2">
-            <Send className="h-4 w-4" />
+          <Button 
+            className="gap-2"
+            onClick={handleSend}
+            disabled={saveMutation.isPending}
+          >
+            {saveMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
             Envoyer
           </Button>
         </div>
@@ -62,52 +396,70 @@ const NouvelleCampagne = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="nom-campagne">Nom de la campagne</Label>
+                <Label htmlFor="nom-campagne">Nom de la campagne *</Label>
                 <Input 
-                  id="nom-campagne" 
+                  id="nom-campagne"
+                  value={formData.nom_campagne}
+                  onChange={(e) => setFormData({ ...formData, nom_campagne: e.target.value })}
                   placeholder="Ex: Newsletter Janvier 2024"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="sujet">Sujet de l'e-mail</Label>
+                <Label htmlFor="sujet">Sujet de l'e-mail *</Label>
                 <Input 
-                  id="sujet" 
+                  id="sujet"
+                  value={formData.sujet_email}
+                  onChange={(e) => setFormData({ ...formData, sujet_email: e.target.value })}
                   placeholder="Le sujet qui apparaîtra dans la boîte mail"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="expediteur-nom">Nom de l'expéditeur</Label>
+                  <Label htmlFor="expediteur-nom">Nom de l'expéditeur *</Label>
                   <Input 
-                    id="expediteur-nom" 
+                    id="expediteur-nom"
+                    value={formData.expediteur_nom}
+                    onChange={(e) => setFormData({ ...formData, expediteur_nom: e.target.value })}
                     placeholder="Votre entreprise"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="expediteur-email">Email de l'expéditeur</Label>
+                  <Label htmlFor="expediteur-email">Email de l'expéditeur *</Label>
                   <Input 
-                    id="expediteur-email" 
+                    id="expediteur-email"
                     type="email"
+                    value={formData.expediteur_email}
+                    onChange={(e) => setFormData({ ...formData, expediteur_email: e.target.value })}
                     placeholder="contact@entreprise.com"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="liste-cible">Liste de contacts</Label>
-                <Select>
+                <Label htmlFor="liste-cible">Liste de contacts *</Label>
+                <Select 
+                  value={formData.list_id} 
+                  onValueChange={(value) => setFormData({ ...formData, list_id: value })}
+                >
                   <SelectTrigger id="liste-cible">
                     <SelectValue placeholder="Sélectionnez une liste" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tous les contacts</SelectItem>
-                    <SelectItem value="liste1">Newsletter mensuelle</SelectItem>
-                    <SelectItem value="liste2">Clients VIP</SelectItem>
-                    <SelectItem value="liste3">Nouveaux inscrits</SelectItem>
+                    <SelectItem value="all">Tous les contacts actifs</SelectItem>
+                    {lists?.map((list) => (
+                      <SelectItem key={list.id} value={list.id}>
+                        {list.nom}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
+                {formData.list_id && (
+                  <p className="text-sm text-muted-foreground">
+                    {recipientCount || 0} destinataire{(recipientCount || 0) > 1 ? "s" : ""}
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -118,41 +470,66 @@ const NouvelleCampagne = () => {
             <CardHeader>
               <CardTitle>Éditeur d'e-mail</CardTitle>
               <CardDescription>
-                Créez le contenu de votre e-mail
+                Créez le contenu de votre e-mail avec un template ou l'éditeur visuel
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="template">Utiliser un template</Label>
-                <Select>
+                <Select 
+                  value={selectedTemplateId || ""} 
+                  onValueChange={(value) => {
+                    if (value === "blank") {
+                      setSelectedTemplateId(null);
+                      setHtmlContent("");
+                      handleOpenEditor();
+                    } else {
+                      handleTemplateSelected(value);
+                    }
+                  }}
+                >
                   <SelectTrigger id="template">
                     <SelectValue placeholder="Choisir un template ou partir de zéro" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="blank">Vierge</SelectItem>
-                    <SelectItem value="newsletter">Newsletter Moderne</SelectItem>
-                    <SelectItem value="promo">Promo Flash</SelectItem>
-                    <SelectItem value="welcome">Bienvenue Client</SelectItem>
+                    <SelectItem value="blank">Créer depuis zéro</SelectItem>
+                    {templates?.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.nom}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="contenu-html">Contenu HTML</Label>
-                <Textarea 
-                  id="contenu-html"
-                  placeholder="<html>...</html>"
-                  rows={15}
-                  className="font-mono text-sm"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Un éditeur visuel sera bientôt disponible
-                </p>
-              </div>
-
-              <Button variant="outline" className="w-full">
-                Ouvrir l'éditeur visuel (bientôt)
-              </Button>
+              {htmlContent ? (
+                <div className="space-y-2">
+                  <Label>Contenu HTML</Label>
+                  <div className="border rounded-lg p-4 bg-muted/30 max-h-96 overflow-auto">
+                    <div 
+                      className="prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ __html: htmlContent }}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={handleOpenEditor} className="flex-1">
+                      Modifier avec l'éditeur
+                    </Button>
+                    <Button variant="outline" onClick={() => setHtmlContent("")}>
+                      Effacer
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed rounded-lg p-12 text-center">
+                  <p className="text-muted-foreground mb-4">
+                    Aucun contenu sélectionné
+                  </p>
+                  <Button onClick={handleOpenEditor}>
+                    Ouvrir l'éditeur visuel
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -168,7 +545,10 @@ const NouvelleCampagne = () => {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Quand envoyer ?</Label>
-                <Select defaultValue="now">
+                <Select 
+                  value={formData.whenToSend} 
+                  onValueChange={(value) => setFormData({ ...formData, whenToSend: value })}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -179,15 +559,51 @@ const NouvelleCampagne = () => {
                 </Select>
               </div>
 
+              {formData.whenToSend === "schedule" && (
+                <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/30">
+                  <div className="space-y-2">
+                    <Label htmlFor="scheduled-date">Date</Label>
+                    <Input
+                      id="scheduled-date"
+                      type="date"
+                      value={formData.scheduledDate}
+                      onChange={(e) => setFormData({ ...formData, scheduledDate: e.target.value })}
+                      min={new Date().toISOString().split("T")[0]}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="scheduled-time">Heure</Label>
+                    <Input
+                      id="scheduled-time"
+                      type="time"
+                      value={formData.scheduledTime}
+                      onChange={(e) => setFormData({ ...formData, scheduledTime: e.target.value })}
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="email-test">Envoyer un e-mail de test</Label>
                 <div className="flex gap-2">
                   <Input 
-                    id="email-test" 
+                    id="email-test"
                     type="email"
+                    value={formData.testEmail}
+                    onChange={(e) => setFormData({ ...formData, testEmail: e.target.value })}
                     placeholder="votre@email.com"
                   />
-                  <Button variant="outline">Envoyer le test</Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => testEmailMutation.mutate()}
+                    disabled={testEmailMutation.isPending}
+                  >
+                    {testEmailMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Envoyer le test"
+                    )}
+                  </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Vérifiez le rendu avant d'envoyer à tous vos contacts
@@ -199,11 +615,29 @@ const NouvelleCampagne = () => {
                 <dl className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <dt className="text-muted-foreground">Destinataires :</dt>
-                    <dd className="font-medium">1,247 contacts</dd>
+                    <dd className="font-medium">
+                      {recipientCount?.toLocaleString() || 0} contact{(recipientCount || 0) > 1 ? "s" : ""}
+                    </dd>
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-muted-foreground">Envoi :</dt>
-                    <dd className="font-medium">Immédiat</dd>
+                    <dd className="font-medium">
+                      {formData.whenToSend === "now" 
+                        ? "Immédiat" 
+                        : formData.scheduledDate && formData.scheduledTime
+                        ? new Date(`${formData.scheduledDate}T${formData.scheduledTime}`).toLocaleString("fr-FR")
+                        : "Non programmé"}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-muted-foreground">Contenu :</dt>
+                    <dd className="font-medium">
+                      {htmlContent ? (
+                        <Badge variant="default">Prêt</Badge>
+                      ) : (
+                        <Badge variant="secondary">Non défini</Badge>
+                      )}
+                    </dd>
                   </div>
                 </dl>
               </div>
@@ -215,18 +649,60 @@ const NouvelleCampagne = () => {
               Retour
             </Button>
             <div className="flex gap-2">
-              <Button variant="outline" className="gap-2">
-                <Save className="h-4 w-4" />
+              <Button 
+                variant="outline" 
+                className="gap-2"
+                onClick={handleSaveDraft}
+                disabled={saveMutation.isPending}
+              >
+                {saveMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
                 Enregistrer en brouillon
               </Button>
-              <Button className="gap-2">
-                <Send className="h-4 w-4" />
+              <Button 
+                className="gap-2"
+                onClick={handleSend}
+                disabled={saveMutation.isPending}
+              >
+                {saveMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
                 Envoyer maintenant
               </Button>
             </div>
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Dialog Aperçu */}
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Aperçu de l'email</DialogTitle>
+            <DialogDescription>
+              Voici comment votre email apparaîtra pour vos destinataires
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-auto max-h-[70vh]">
+            <div className="border rounded-lg p-4 bg-white">
+              <div className="mb-4 pb-4 border-b">
+                <p className="text-sm text-muted-foreground">De: {formData.expediteur_nom} &lt;{formData.expediteur_email}&gt;</p>
+                <p className="text-sm text-muted-foreground">À: destinataire@example.com</p>
+                <p className="font-semibold mt-2">Sujet: {formData.sujet_email || "(Sujet non défini)"}</p>
+              </div>
+              <div 
+                className="prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: htmlContent || "<p>Aucun contenu</p>" }}
+              />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

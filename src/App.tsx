@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Contacts from "./pages/Contacts";
 import Listes from "./pages/Listes";
+import GestionListe from "./pages/GestionListe";
 import Campagnes from "./pages/Campagnes";
 import NouvelleCampagne from "./pages/NouvelleCampagne";
 import Statistiques from "./pages/Statistiques";
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
             <Route path="/contacts" element={<AppLayout><Contacts /></AppLayout>} />
             <Route path="/listes" element={<AppLayout><Listes /></AppLayout>} />
+            <Route path="/listes/:id" element={<AppLayout><GestionListe /></AppLayout>} />
             <Route path="/campagnes" element={<AppLayout><Campagnes /></AppLayout>} />
             <Route path="/campagnes/nouvelle" element={<AppLayout><NouvelleCampagne /></AppLayout>} />
             <Route path="/statistiques" element={<AppLayout><Statistiques /></AppLayout>} />
