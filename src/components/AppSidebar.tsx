@@ -15,6 +15,7 @@ import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
+import { Logo } from "@/components/Logo";
 
 import {
   Sidebar,
@@ -62,6 +63,7 @@ export function AppSidebar() {
       <SidebarContent>
         <div className="p-4">
           <div className="flex items-center gap-2 px-2">
+            <Logo className="h-8 w-8 shrink-0" />
             {!isCollapsed && (
               <h2 className="text-xl font-heading font-bold text-sidebar-foreground">
                 Dima<span className="text-sidebar-primary">Mail</span>

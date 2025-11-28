@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none">
+  <!-- Fond avec dégradé -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+  
+  <!-- Enveloppe principale - centrée et grande -->
+  <g transform="translate(600, 200)">
+    <!-- Enveloppe -->
+    <path d="M-250 0L0 120L250 0M-250 0H250M-250 0V350C-250 375 -225 400 0 400C-225 400 -250 375 -250 350V0Z" 
+          stroke="white" 
+          stroke-width="25" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"
+          fill="none"/>
+    
+    <!-- Flèches vers le haut - positionnées au-dessus de l'enveloppe -->
+    <g transform="translate(125, -180)">
+      <!-- Grande flèche -->
+      <path d="M0 80L40 40L80 80M40 40V120" 
+            stroke="#fbbf24" 
+            stroke-width="20" 
+            stroke-linecap="round" 
+            stroke-linejoin="round"
+            fill="none"/>
+      <!-- Petite flèche au-dessus -->
+      <path d="M0 0L20 -20L40 0M20 -20V40" 
+            stroke="#fbbf24" 
+            stroke-width="16" 
+            stroke-linecap="round" 
+            stroke-linejoin="round"
+            fill="none"/>
+    </g>
+  </g>
+  
+  <!-- Texte DimaMail -->
+  <text x="600" y="480" 
+        font-family="Arial, sans-serif" 
+        font-size="100" 
+        font-weight="bold" 
+        fill="white" 
+        text-anchor="middle">
+    Dima<tspan fill="#fbbf24">Mail</tspan>
+  </text>
+  
+  <!-- Sous-titre -->
+  <text x="600" y="550" 
+        font-family="Arial, sans-serif" 
+        font-size="40" 
+        fill="rgba(255,255,255,0.9)" 
+        text-anchor="middle">
+    Plateforme d'Email Marketing
+  </text>
+</svg>

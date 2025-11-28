@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Mail, Zap, BarChart3, Globe, ArrowRight, Check } from "lucide-react";
 import { Link } from "react-router-dom";
-import logo from "@/assets/logo-dima-mail.png";
+import { LogoWithText, LogoLight } from "@/components/Logo";
 import heroEmail from "@/assets/hero-email.jpg";
 
 const Landing = () => {
@@ -12,7 +12,7 @@ const Landing = () => {
       <header className="bg-card shadow-sm sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src={logo} alt="DimaMail" className="h-10" />
+            <LogoWithText className="h-10" />
           </div>
           <nav className="hidden md:flex items-center gap-8">
             <a href="#home" className="text-foreground hover:text-accent transition-colors">Home</a>
@@ -284,7 +284,7 @@ const Landing = () => {
         <div className="container mx-auto px-6">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
-              <img src={logo} alt="DimaMail" className="h-8 mb-4 brightness-0 invert" />
+              <LogoLight className="h-8 w-8 mb-4" />
               <p className="text-sm opacity-80">
                 Professional email marketing platform.
               </p>

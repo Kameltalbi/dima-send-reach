@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Fond avec dégradé -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="12" fill="url(#bgGradient)"/>
+  
+  <!-- Enveloppe principale -->
+  <path d="M16 24L32 36L48 24M16 24H48M16 24V44C16 45.1046 16.8954 46 18 46H46C47.1046 46 48 45.1046 48 44V24" 
+        stroke="white" 
+        stroke-width="3" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"
+        fill="none"/>
+  
+  <!-- Flèches vers le haut - positionnées au-dessus de l'enveloppe -->
+  <g transform="translate(40, 8)">
+    <!-- Grande flèche -->
+    <path d="M4 12L8 8L12 12M8 8V16" 
+          stroke="#fbbf24" 
+          stroke-width="3" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"
+          fill="none"/>
+    <!-- Petite flèche au-dessus -->
+    <path d="M4 4L6 2L8 4M6 2V8" 
+          stroke="#fbbf24" 
+          stroke-width="2.5" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"
+          fill="none"/>
+  </g>
+</svg>
