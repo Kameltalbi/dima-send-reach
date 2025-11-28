@@ -33,24 +33,24 @@ export const EmailQuotaWidget = () => {
 
   if (!quota) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
+      <Card className="border-dashed">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Mail className="h-4 w-4 text-muted-foreground" />
             {t('quota.title', { defaultValue: 'Quota d\'emails' })}
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <Alert>
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>{t('quota.noSubscription', { defaultValue: 'Aucun abonnement actif' })}</AlertTitle>
-            <AlertDescription>
-              {t('quota.noSubscriptionDesc', { defaultValue: 'Veuillez souscrire à un plan pour envoyer des emails.' })}
-            </AlertDescription>
-          </Alert>
-          <Link to="/pricing" className="mt-4 block">
-            <Button className="w-full">{t('quota.viewPlans', { defaultValue: 'Voir les plans' })}</Button>
-          </Link>
+        <CardContent className="pt-0">
+          <div className="text-sm text-muted-foreground space-y-2">
+            <p>{t('quota.noSubscription', { defaultValue: 'Aucun abonnement actif' })}</p>
+            <Link 
+              to="/pricing" 
+              className="text-primary hover:underline text-xs font-medium inline-flex items-center gap-1"
+            >
+              {t('quota.viewPlans', { defaultValue: 'Voir les plans' })}
+              <span>→</span>
+            </Link>
+          </div>
         </CardContent>
       </Card>
     );

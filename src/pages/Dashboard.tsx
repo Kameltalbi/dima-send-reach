@@ -23,6 +23,10 @@ import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { useTranslation } from "react-i18next";
 import { EmailQuotaWidget } from "@/components/dashboard/EmailQuotaWidget";
+import { useEmailQuota } from "@/hooks/useEmailQuota";
+import { useEffect } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface CampaignStat {
   campaign_id: string;
@@ -45,6 +49,7 @@ const Dashboard = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { quota, isLoading: quotaLoading } = useEmailQuota();
   const [timePeriod, setTimePeriod] = useState("week");
   const [stats, setStats] = useState({
     totalEnvoyes: 0,
@@ -66,9 +71,20 @@ const Dashboard = () => {
   const [selectedEmail, setSelectedEmail] = useState(user?.email || "votre@email.com");
   const [status, setStatus] = useState("Running");
 
+  // Vérifier l'abonnement et rediriger si nécessaire
   useEffect(() => {
-    loadDashboardData();
-  }, [user, timePeriod]);
+    if (!quotaLoading && !quota && user) {
+      // Pas d'abonnement actif, rediriger vers la page de pricing
+      navigate("/pricing", { replace: true });
+    }
+  }, [quotaLoading, quota, user, navigate]);
+
+  useEffect(() => {
+    // Ne charger les données que si l'utilisateur a un abonnement
+    if (quota && !quotaLoading) {
+      loadDashboardData();
+    }
+  }, [user, timePeriod, quota, quotaLoading]);
 
   const loadDashboardData = async () => {
     try {
@@ -181,6 +197,23 @@ const Dashboard = () => {
   const getMaxValue = () => {
     return Math.max(...dailyProgress.map(d => d.sent), 24);
   };
+
+  // Afficher un loader pendant la vérification de l'abonnement
+  if (quotaLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">{t('common.loading', { defaultValue: 'Chargement...' })}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Si pas d'abonnement, ne rien afficher (redirection en cours)
+  if (!quota) {
+    return null;
+  }
 
   if (loading) {
     return (

@@ -397,7 +397,6 @@ export default function SuperAdmin() {
       pending: "secondary",
       pending_manual: "secondary",
       failed: "destructive",
-      cancelled: "outline",
       refunded: "outline",
     };
     return <Badge variant={variants[status] || "default"}>{status}</Badge>;
