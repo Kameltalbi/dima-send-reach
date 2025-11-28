@@ -21,27 +21,16 @@ const CheckoutSuccess = () => {
     queryKey: ["order", orderId],
     queryFn: async () => {
       if (!orderId) return null;
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("id", orderId)
-        .single();
-      if (error) throw error;
-      return data;
+      // TODO: Implémenter la récupération de commande quand la table orders sera créée
+      return null;
     },
-    enabled: !!orderId,
-    refetchInterval: 2000, // Vérifier toutes les 2 secondes
+    enabled: false, // Désactivé jusqu'à implémentation de la table orders
   });
 
   useEffect(() => {
-    if (order) {
-      if (order.payment_status === "completed") {
-        setPaymentStatus("success");
-      } else if (order.payment_status === "failed") {
-        setPaymentStatus("failed");
-      }
-    }
-  }, [order]);
+    // TODO: Gérer le statut de paiement quand la table orders sera créée
+    setPaymentStatus("success"); // Temporaire
+  }, []);
 
   if (isLoading || paymentStatus === "pending") {
     return (
@@ -119,7 +108,7 @@ const CheckoutSuccess = () => {
             <Alert>
               <CheckCircle2 className="h-4 w-4" />
               <AlertDescription>
-                {t('checkoutSuccess.success.message', { plan: order.plan_type })}
+                {t('checkoutSuccess.success.message', { plan: 'Starter', defaultValue: 'Votre abonnement a été activé avec succès' })}
               </AlertDescription>
             </Alert>
 

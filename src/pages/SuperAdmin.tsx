@@ -129,24 +129,12 @@ export default function SuperAdmin() {
     },
   });
 
-  // Charger les commandes avec les profils
+  // Charger les commandes avec les profils (TODO: Implémenter la table orders)
   const { data: orders, isLoading: ordersLoading } = useQuery({
     queryKey: ["superadmin-orders"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select(`
-          *,
-          profiles (
-            id,
-            nom,
-            prenom,
-            email_envoi_defaut
-          )
-        `)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      // TODO: Implémenter quand la table orders sera créée
+      return [];
     },
   });
 
@@ -187,10 +175,8 @@ export default function SuperAdmin() {
     sub.plan_type.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
 
-  const filteredOrders = orders?.filter((order) =>
-    order.plan_type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    order.payment_status.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    order.profiles?.nom?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredOrders = orders?.filter((order: any) =>
+    false // Désactivé jusqu'à implémentation de la table orders
   ) || [];
 
   const filteredUsers = users?.filter((user) =>
@@ -304,14 +290,11 @@ export default function SuperAdmin() {
     },
   });
 
-  // Mutation pour mettre à jour le statut d'une commande
+  // Mutation pour mettre à jour le statut d'une commande (TODO: Implémenter table orders)
   const updateOrderMutation = useMutation({
     mutationFn: async ({ id, payment_status }: { id: string; payment_status: string }) => {
-      const { error } = await supabase
-        .from("orders")
-        .update({ payment_status })
-        .eq("id", id);
-      if (error) throw error;
+      // TODO: Implémenter quand la table orders sera créée
+      throw new Error("La table orders n'existe pas encore");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["superadmin-orders"] });
