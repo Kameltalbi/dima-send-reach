@@ -145,6 +145,22 @@ serve(async (req) => {
             return `href="${trackClickUrl}"`;
           }
         );
+        
+        // 3. Ajouter le lien de désinscription
+        const unsubscribeUrl = `${SUPABASE_URL.replace('/functions/v1', '')}/unsubscribe?r=${recipient.id}`;
+        const unsubscribeLink = `
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 12px; color: #666;">
+            <p>Vous ne souhaitez plus recevoir ces emails ?</p>
+            <a href="${unsubscribeUrl}" style="color: #666; text-decoration: underline;">Se désabonner</a>
+          </div>
+        `;
+        
+        // Insérer le lien de désinscription juste avant la balise </body> ou à la fin
+        if (trackedHtml.includes("</body>")) {
+          trackedHtml = trackedHtml.replace("</body>", `${unsubscribeLink}</body>`);
+        } else {
+          trackedHtml += unsubscribeLink;
+        }
 
         const data = await sendWithResend({
           from: `${campaign.expediteur_nom} <${campaign.expediteur_email}>`,
