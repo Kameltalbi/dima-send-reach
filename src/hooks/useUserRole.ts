@@ -22,13 +22,15 @@ export const useUserRole = () => {
           .from("user_roles")
           .select("role")
           .eq("user_id", user.id)
-          .single();
+          .maybeSingle();
 
         if (error) {
           console.error("Error fetching user role:", error);
           setRole("user"); // Par défaut, utilisateur normal
-        } else {
+        } else if (data) {
           setRole(data.role as UserRole);
+        } else {
+          setRole("user"); // Pas de rôle trouvé = utilisateur normal
         }
       } catch (error) {
         console.error("Error:", error);
