@@ -298,10 +298,10 @@ const Checkout = () => {
             
             <div className="space-y-2">
               <h1 className="text-3xl sm:text-4xl font-bold text-foreground">
-                Complete your order
+                {t('checkout.title')}
               </h1>
               <p className="text-lg text-muted-foreground">
-                Choose your payment method and finalize your {selectedPlan.name} subscription
+                {t('checkout.subtitle')} {selectedPlan.name}
               </p>
             </div>
           </div>
@@ -317,9 +317,9 @@ const Checkout = () => {
                       <CreditCard className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <CardTitle className="text-xl">Payment Method</CardTitle>
+                      <CardTitle className="text-xl">{t('checkout.paymentMethod')}</CardTitle>
                       <CardDescription>
-                        Select your preferred payment option
+                        {t('checkout.paymentMethodDesc')}
                       </CardDescription>
                     </div>
                   </div>
@@ -344,12 +344,12 @@ const Checkout = () => {
                               <CreditCard className="h-6 w-6 text-primary" />
                             </div>
                             <div>
-                              <p className="font-semibold text-foreground">Card Payment</p>
-                              <p className="text-sm text-muted-foreground">Secure & Instant</p>
+                              <p className="font-semibold text-foreground">{t('checkout.card')}</p>
+                              <p className="text-sm text-muted-foreground">{t('checkout.cardSecure')}</p>
                             </div>
                           </div>
                           <Badge variant={paymentMethod === "card" ? "default" : "outline"}>
-                            Recommended
+                            {t('checkout.cardRecommended')}
                           </Badge>
                         </div>
                       </Label>
@@ -368,8 +368,8 @@ const Checkout = () => {
                             <Building2 className="h-6 w-6 text-primary" />
                           </div>
                           <div>
-                            <p className="font-semibold text-foreground">Bank Transfer</p>
-                            <p className="text-sm text-muted-foreground">1-2 business days</p>
+                            <p className="font-semibold text-foreground">{t('checkout.transfer')}</p>
+                            <p className="text-sm text-muted-foreground">{t('checkout.transferDesc')}</p>
                           </div>
                         </div>
                       </Label>
@@ -388,8 +388,8 @@ const Checkout = () => {
                             <Receipt className="h-6 w-6 text-primary" />
                           </div>
                           <div>
-                            <p className="font-semibold text-foreground">Check</p>
-                            <p className="text-sm text-muted-foreground">Traditional payment</p>
+                            <p className="font-semibold text-foreground">{t('checkout.check')}</p>
+                            <p className="text-sm text-muted-foreground">{t('checkout.checkDesc')}</p>
                           </div>
                         </div>
                       </Label>
@@ -408,8 +408,8 @@ const Checkout = () => {
                             <Banknote className="h-6 w-6 text-primary" />
                           </div>
                           <div>
-                            <p className="font-semibold text-foreground">Cash</p>
-                            <p className="text-sm text-muted-foreground">In-person payment</p>
+                            <p className="font-semibold text-foreground">{t('checkout.cash')}</p>
+                            <p className="text-sm text-muted-foreground">{t('checkout.cashDesc')}</p>
                           </div>
                         </div>
                       </Label>
@@ -433,7 +433,7 @@ const Checkout = () => {
                     <Alert className="border-primary/20 bg-primary/5">
                       <Info className="h-4 w-4 text-primary" />
                       <AlertDescription className="text-sm">
-                        You'll be redirected to our secure payment partner to complete your transaction.
+                        {t('checkout.cardRedirect')}
                       </AlertDescription>
                     </Alert>
                     
@@ -441,9 +441,9 @@ const Checkout = () => {
                       <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
                         <CreditCard className="h-8 w-8 text-primary" />
                       </div>
-                      <h3 className="font-semibold text-lg mb-2">Secure Payment Gateway</h3>
+                      <h3 className="font-semibold text-lg mb-2">{t('checkout.cardSecureTitle')}</h3>
                       <p className="text-sm text-muted-foreground mb-4">
-                        Your payment will be processed through our PCI-DSS compliant payment partner
+                        {t('checkout.cardRedirectAfter')}
                       </p>
                       <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                         <div className="w-2 h-2 rounded-full bg-green-500"></div>
@@ -465,9 +465,9 @@ const Checkout = () => {
                         <Building className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <CardTitle className="text-xl">Billing Information</CardTitle>
+                        <CardTitle className="text-xl">{t('checkout.billingInfo')}</CardTitle>
                         <CardDescription>
-                          Required for processing your order
+                          {t('checkout.billingInfoDesc')}
                         </CardDescription>
                       </div>
                     </div>
@@ -478,14 +478,13 @@ const Checkout = () => {
                       <div className="space-y-2">
                         <Label htmlFor="companyName" className="text-sm font-medium flex items-center gap-2">
                           <Building className="h-4 w-4 text-muted-foreground" />
-                          Company Name
-                          <span className="text-destructive">*</span>
+                          {t('checkout.companyNameRequired')}
                         </Label>
                         <Input
                           id="companyName"
                           value={paymentInfo.companyName}
                           onChange={(e) => setPaymentInfo({ ...paymentInfo, companyName: e.target.value })}
-                          placeholder="Your Company LLC"
+                          placeholder={t('checkout.companyName')}
                           className="h-11"
                           required
                         />
@@ -493,8 +492,7 @@ const Checkout = () => {
                       <div className="space-y-2">
                         <Label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
                           <Mail className="h-4 w-4 text-muted-foreground" />
-                          Email Address
-                          <span className="text-destructive">*</span>
+                          {t('checkout.emailRequired')}
                         </Label>
                         <Input
                           id="email"
@@ -511,14 +509,13 @@ const Checkout = () => {
                     {/* Address */}
                     <div className="space-y-2">
                       <Label htmlFor="address" className="text-sm font-medium">
-                        Street Address
-                        <span className="text-destructive ml-1">*</span>
+                        {t('checkout.addressRequired')}
                       </Label>
                       <Input
                         id="address"
                         value={paymentInfo.address}
                         onChange={(e) => setPaymentInfo({ ...paymentInfo, address: e.target.value })}
-                        placeholder="123 Business Street"
+                        placeholder={t('checkout.address')}
                         className="h-11"
                         required
                       />
@@ -527,22 +524,22 @@ const Checkout = () => {
                     {/* City & Postal */}
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="city" className="text-sm font-medium">City</Label>
+                        <Label htmlFor="city" className="text-sm font-medium">{t('checkout.city')}</Label>
                         <Input
                           id="city"
                           value={paymentInfo.city}
                           onChange={(e) => setPaymentInfo({ ...paymentInfo, city: e.target.value })}
-                          placeholder="Tunis"
+                          placeholder={t('checkout.city')}
                           className="h-11"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="postalCode" className="text-sm font-medium">Postal Code</Label>
+                        <Label htmlFor="postalCode" className="text-sm font-medium">{t('checkout.postalCode')}</Label>
                         <Input
                           id="postalCode"
                           value={paymentInfo.postalCode}
                           onChange={(e) => setPaymentInfo({ ...paymentInfo, postalCode: e.target.value })}
-                          placeholder="1000"
+                          placeholder={t('checkout.postalCode')}
                           className="h-11"
                         />
                       </div>
@@ -552,7 +549,7 @@ const Checkout = () => {
                     <div className="space-y-2">
                       <Label htmlFor="phone" className="text-sm font-medium flex items-center gap-2">
                         <Phone className="h-4 w-4 text-muted-foreground" />
-                        Phone Number
+                        {t('checkout.phone')}
                       </Label>
                       <Input
                         id="phone"
@@ -566,12 +563,12 @@ const Checkout = () => {
 
                     {/* Notes */}
                     <div className="space-y-2">
-                      <Label htmlFor="notes" className="text-sm font-medium">Additional Notes</Label>
+                      <Label htmlFor="notes" className="text-sm font-medium">{t('checkout.notes')}</Label>
                       <Textarea
                         id="notes"
                         value={paymentInfo.notes}
                         onChange={(e) => setPaymentInfo({ ...paymentInfo, notes: e.target.value })}
-                        placeholder="Any special instructions..."
+                        placeholder={t('checkout.notes')}
                         rows={3}
                         className="resize-none"
                       />
@@ -582,12 +579,12 @@ const Checkout = () => {
                       <Alert className="border-primary/20 bg-primary/5">
                         <FileText className="h-4 w-4 text-primary" />
                         <AlertDescription>
-                          <strong className="block mb-2">Check Payment Instructions:</strong>
+                          <strong className="block mb-2">{t('checkout.checkInstructions.title')}</strong>
                           <ul className="list-disc list-inside space-y-1 text-sm">
-                            <li>Make check payable to "DimaMail"</li>
-                            <li>Amount: {selectedPlan.price} {selectedPlan.currency}</li>
-                            <li>Mail to our business address</li>
-                            <li>Your subscription will be activated upon receipt</li>
+                            <li>{t('checkout.checkInstructions.libelle')}</li>
+                            <li>{t('checkout.checkInstructions.amount', { amount: selectedPlan.price, currency: selectedPlan.currency })}</li>
+                            <li>{t('checkout.checkInstructions.send')}</li>
+                            <li>{t('checkout.checkInstructions.activate')}</li>
                           </ul>
                         </AlertDescription>
                       </Alert>
@@ -597,12 +594,12 @@ const Checkout = () => {
                       <Alert className="border-primary/20 bg-primary/5">
                         <FileText className="h-4 w-4 text-primary" />
                         <AlertDescription>
-                          <strong className="block mb-2">Bank Transfer Instructions:</strong>
+                          <strong className="block mb-2">{t('checkout.transferInstructions.title')}</strong>
                           <ul className="list-disc list-inside space-y-1 text-sm">
-                            <li>Amount: {selectedPlan.price} {selectedPlan.currency}</li>
-                            <li>Bank details will be sent to your email</li>
-                            <li>Include your order reference in the transfer</li>
-                            <li>Activation upon payment confirmation</li>
+                            <li>{t('checkout.transferInstructions.amount', { amount: selectedPlan.price, currency: selectedPlan.currency })}</li>
+                            <li>{t('checkout.transferInstructions.iban')}</li>
+                            <li>{t('checkout.transferInstructions.reference')}</li>
+                            <li>{t('checkout.transferInstructions.email')}</li>
                           </ul>
                         </AlertDescription>
                       </Alert>
@@ -612,12 +609,12 @@ const Checkout = () => {
                       <Alert className="border-primary/20 bg-primary/5">
                         <FileText className="h-4 w-4 text-primary" />
                         <AlertDescription>
-                          <strong className="block mb-2">Cash Payment Instructions:</strong>
+                          <strong className="block mb-2">{t('checkout.cashInstructions.title')}</strong>
                           <ul className="list-disc list-inside space-y-1 text-sm">
-                            <li>Amount: {selectedPlan.price} {selectedPlan.currency}</li>
-                            <li>We'll contact you to schedule an appointment</li>
-                            <li>Payment at our office location</li>
-                            <li>Immediate activation after payment</li>
+                            <li>{t('checkout.cashInstructions.amount', { amount: selectedPlan.price, currency: selectedPlan.currency })}</li>
+                            <li>{t('checkout.cashInstructions.contact')}</li>
+                            <li>{t('checkout.cashInstructions.email')}</li>
+                            <li>{t('checkout.cashInstructions.activate')}</li>
                           </ul>
                         </AlertDescription>
                       </Alert>
@@ -631,13 +628,13 @@ const Checkout = () => {
             <div className="lg:col-span-1">
               <Card className="border-2 shadow-lg lg:sticky lg:top-6">
                 <CardHeader className="border-b bg-muted/30">
-                  <CardTitle className="text-xl">Order Summary</CardTitle>
+                  <CardTitle className="text-xl">{t('checkout.summary')}</CardTitle>
                 </CardHeader>
                 <CardContent className="p-6 space-y-6">
                   {/* Plan Details */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between pb-3 border-b">
-                      <span className="text-sm text-muted-foreground">Plan</span>
+                      <span className="text-sm text-muted-foreground">{t('checkout.plan')}</span>
                       <Badge variant="outline" className="font-semibold">
                         {selectedPlan.name}
                       </Badge>
@@ -645,19 +642,19 @@ const Checkout = () => {
                     
                     <div className="space-y-3">
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Billing Period</span>
-                        <span className="font-medium">Annual</span>
+                        <span className="text-muted-foreground">{t('checkout.period')}</span>
+                        <span className="font-medium">{t('checkout.annual')}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Emails/month</span>
+                        <span className="text-muted-foreground">{t('checkout.emailsIncluded')}</span>
                         <span className="font-medium">{selectedPlan.emails}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Users</span>
+                        <span className="text-muted-foreground">{t('checkout.users')}</span>
                         <span className="font-medium">{selectedPlan.users}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Domains</span>
+                        <span className="text-muted-foreground">{t('checkout.domains')}</span>
                         <span className="font-medium">{selectedPlan.domains}</span>
                       </div>
                     </div>
@@ -668,7 +665,7 @@ const Checkout = () => {
                   {/* Total */}
                   <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-4 border border-primary/20">
                     <div className="flex items-baseline justify-between">
-                      <span className="text-sm font-medium text-muted-foreground">Total Amount</span>
+                      <span className="text-sm font-medium text-muted-foreground">{t('checkout.total')}</span>
                       <div className="text-right">
                         <span className="text-3xl font-bold text-primary">
                           {selectedPlan.price}
@@ -693,23 +690,23 @@ const Checkout = () => {
                     {isProcessing ? (
                       <>
                         <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                        Processing...
+                        {t('checkout.processing')}
                       </>
                     ) : paymentMethod === "card" ? (
                       <>
                         <CreditCard className="h-5 w-5 mr-2" />
-                        Proceed to Payment
+                        {t('checkout.payNow')}
                       </>
                     ) : (
                       <>
                         <CheckCircle2 className="h-5 w-5 mr-2" />
-                        Confirm Order
+                        {t('checkout.confirmOrder')}
                       </>
                     )}
                   </Button>
 
                   <p className="text-xs text-center text-muted-foreground leading-relaxed">
-                    By proceeding, you agree to our Terms of Service and Privacy Policy
+                    {t('checkout.terms')}
                   </p>
                 </CardContent>
               </Card>
