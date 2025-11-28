@@ -61,6 +61,12 @@ const Contacts = () => {
     email: "",
     prenom: "",
     nom: "",
+    telephone: "",
+    fonction: "",
+    societe: "",
+    site_web: "",
+    pays: "",
+    ville: "",
     segment: "",
     statut: "actif",
   });
@@ -174,6 +180,12 @@ const Contacts = () => {
       email: "",
       prenom: "",
       nom: "",
+      telephone: "",
+      fonction: "",
+      societe: "",
+      site_web: "",
+      pays: "",
+      ville: "",
       segment: "",
       statut: "actif",
     });
@@ -190,6 +202,12 @@ const Contacts = () => {
       email: contact.email || "",
       prenom: contact.prenom || "",
       nom: contact.nom || "",
+      telephone: contact.telephone || "",
+      fonction: contact.fonction || "",
+      societe: contact.societe || "",
+      site_web: contact.site_web || "",
+      pays: contact.pays || "",
+      ville: contact.ville || "",
       segment: contact.segment || "",
       statut: contact.statut || "actif",
     });
@@ -227,6 +245,12 @@ const Contacts = () => {
       email: formData.email.trim(),
       prenom: formData.prenom.trim(),
       nom: formData.nom.trim(),
+      telephone: formData.telephone?.trim() || null,
+      fonction: formData.fonction?.trim() || null,
+      societe: formData.societe?.trim() || null,
+      site_web: formData.site_web?.trim() || null,
+      pays: formData.pays?.trim() || null,
+      ville: formData.ville?.trim() || null,
       segment: formData.segment?.trim() || null,
       statut: formData.statut,
     };
@@ -255,6 +279,12 @@ const Contacts = () => {
     const emailIndex = headers.findIndex((h) => h.includes("email"));
     const nomIndex = headers.findIndex((h) => h.includes("nom") && !h.includes("prenom"));
     const prenomIndex = headers.findIndex((h) => h.includes("prenom"));
+    const telephoneIndex = headers.findIndex((h) => h.includes("telephone") || h.includes("tel"));
+    const fonctionIndex = headers.findIndex((h) => h.includes("fonction") || h.includes("poste"));
+    const societeIndex = headers.findIndex((h) => h.includes("societe") || h.includes("entreprise") || h.includes("company"));
+    const siteWebIndex = headers.findIndex((h) => h.includes("site") || h.includes("web") || h.includes("url"));
+    const paysIndex = headers.findIndex((h) => h.includes("pays") || h.includes("country"));
+    const villeIndex = headers.findIndex((h) => h.includes("ville") || h.includes("city"));
     const segmentIndex = headers.findIndex((h) => h.includes("segment"));
 
     if (emailIndex === -1) {
@@ -273,6 +303,12 @@ const Contacts = () => {
           email,
           nom: values[nomIndex] || "",
           prenom: values[prenomIndex] || "",
+          telephone: values[telephoneIndex] || null,
+          fonction: values[fonctionIndex] || null,
+          societe: values[societeIndex] || null,
+          site_web: values[siteWebIndex] || null,
+          pays: values[paysIndex] || null,
+          ville: values[villeIndex] || null,
           segment: values[segmentIndex] || null,
           statut: "actif",
         });
@@ -534,7 +570,83 @@ const Contacts = () => {
                   />
                 </div>
               </div>
+            </div>
 
+            {/* Section 2: Coordonnées professionnelles */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-foreground">Coordonnées professionnelles</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="telephone">Téléphone</Label>
+                  <Input
+                    id="telephone"
+                    type="tel"
+                    value={formData.telephone}
+                    onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
+                    placeholder="+216 XX XXX XXX"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="fonction">Fonction</Label>
+                  <Input
+                    id="fonction"
+                    value={formData.fonction}
+                    onChange={(e) => setFormData({ ...formData, fonction: e.target.value })}
+                    placeholder="Directeur Marketing"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="societe">Société</Label>
+                  <Input
+                    id="societe"
+                    value={formData.societe}
+                    onChange={(e) => setFormData({ ...formData, societe: e.target.value })}
+                    placeholder="Nom de l'entreprise"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="site_web">Site web</Label>
+                  <Input
+                    id="site_web"
+                    type="url"
+                    value={formData.site_web}
+                    onChange={(e) => setFormData({ ...formData, site_web: e.target.value })}
+                    placeholder="https://example.com"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Section 3: Localisation */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-foreground">Localisation</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="pays">Pays</Label>
+                  <Input
+                    id="pays"
+                    value={formData.pays}
+                    onChange={(e) => setFormData({ ...formData, pays: e.target.value })}
+                    placeholder="Tunisie"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ville">Ville</Label>
+                  <Input
+                    id="ville"
+                    value={formData.ville}
+                    onChange={(e) => setFormData({ ...formData, ville: e.target.value })}
+                    placeholder="Tunis"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Section 4: Segmentation */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-foreground">Segmentation</h3>
               <div className="space-y-2">
                 <Label htmlFor="segment">Segment</Label>
                 <Input
@@ -613,7 +725,7 @@ const Contacts = () => {
           <DialogHeader>
             <DialogTitle>Importer des contacts depuis CSV</DialogTitle>
             <DialogDescription>
-              Sélectionnez un fichier CSV avec les colonnes : email, nom, prenom (optionnel), segment (optionnel)
+              Sélectionnez un fichier CSV avec les colonnes : email (obligatoire), nom, prenom, telephone, fonction, societe, site_web, pays, ville, segment (tous optionnels)
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -627,7 +739,7 @@ const Contacts = () => {
                 className="cursor-pointer"
               />
               <p className="text-xs text-muted-foreground">
-                Le fichier doit contenir au minimum une colonne "email". Les colonnes "nom", "prenom" et "segment" sont optionnelles.
+                Le fichier doit contenir au minimum une colonne "email". Les autres colonnes sont optionnelles : nom, prenom, telephone, fonction, societe, site_web, pays, ville, segment.
               </p>
             </div>
           </div>
