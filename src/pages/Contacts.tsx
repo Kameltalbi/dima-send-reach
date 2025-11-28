@@ -127,10 +127,11 @@ const Contacts = () => {
       resetForm();
     },
     onError: (error: any) => {
+      console.error("Erreur création contact:", error);
       if (error.code === "23505") {
         toast.error(t('contacts.emailExists'));
       } else {
-        toast.error(t('contacts.createError'));
+        toast.error(t('contacts.createError') + (error.message ? `: ${error.message}` : ''));
       }
     },
   });
@@ -151,8 +152,9 @@ const Contacts = () => {
       setSelectedContact(null);
       resetForm();
     },
-    onError: () => {
-      toast.error(t('contacts.updateError'));
+    onError: (error: any) => {
+      console.error("Erreur modification contact:", error);
+      toast.error(t('contacts.updateError') + (error.message ? `: ${error.message}` : ''));
     },
   });
 
@@ -239,23 +241,40 @@ const Contacts = () => {
     }
 
     // Valider le format de l'URL si fournie
-    if (formData.site_web && formData.site_web.trim() !== "") {
+    let siteWeb = formData.site_web;
+    if (siteWeb && siteWeb.trim() !== "") {
       try {
         // Ajouter https:// si absent
-        const url = formData.site_web.startsWith('http') 
-          ? formData.site_web 
-          : `https://${formData.site_web}`;
+        const url = siteWeb.startsWith('http') 
+          ? siteWeb 
+          : `https://${siteWeb}`;
         new URL(url);
+        siteWeb = url;
       } catch {
         toast.error("Format d'URL invalide pour le site web");
         return;
       }
     }
 
+    // Préparer les données en convertissant les chaînes vides en null pour les champs optionnels
+    const dataToSubmit = {
+      email: formData.email.trim(),
+      prenom: formData.prenom.trim(),
+      nom: formData.nom.trim(),
+      societe: formData.societe?.trim() || null,
+      fonction: formData.fonction?.trim() || null,
+      telephone: formData.telephone?.trim() || null,
+      site_web: siteWeb?.trim() || null,
+      pays: formData.pays?.trim() || null,
+      ville: formData.ville?.trim() || null,
+      segment: formData.segment?.trim() || null,
+      statut: formData.statut,
+    };
+
     if (selectedContact) {
-      updateMutation.mutate({ id: selectedContact.id, ...formData });
+      updateMutation.mutate({ id: selectedContact.id, ...dataToSubmit });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(dataToSubmit);
     }
   };
 
