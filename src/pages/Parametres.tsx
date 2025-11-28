@@ -14,7 +14,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Loader2, UserPlus, Trash2, Mail, Info } from "lucide-react";
+import { Loader2, UserPlus, Info } from "lucide-react";
 
 const Parametres = () => {
   const { user } = useAuth();
@@ -38,9 +38,15 @@ const Parametres = () => {
     notify_on_campaign_sent: true,
     notify_on_high_engagement: false,
   });
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("user");
-  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [newUserData, setNewUserData] = useState({
+    prenom: "",
+    nom: "",
+    email: "",
+    password: "",
+    nom_entreprise: "",
+  });
+  const [newUserRole, setNewUserRole] = useState("user");
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   // Charger le profil
   const { data: profile, isLoading } = useQuery({
@@ -87,21 +93,6 @@ const Parametres = () => {
     enabled: !!profile?.organization_id,
   });
 
-  // Charger les invitations en attente
-  const { data: invitations } = useQuery({
-    queryKey: ["invitations", profile?.organization_id],
-    queryFn: async () => {
-      if (!profile?.organization_id) return [];
-      const { data, error } = await supabase
-        .from("user_invitations")
-        .select("*")
-        .eq("organization_id", profile.organization_id)
-        .eq("status", "pending");
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!profile?.organization_id,
-  });
 
   // Initialiser les données
   useEffect(() => {
@@ -224,49 +215,68 @@ const Parametres = () => {
     },
   });
 
-  // Mutation pour inviter un utilisateur
-  const inviteUserMutation = useMutation({
+  // Mutation pour créer un utilisateur
+  const createUserMutation = useMutation({
     mutationFn: async () => {
-      if (!inviteEmail || !profile?.organization_id) {
-        throw new Error("Email requis");
+      if (!newUserData.email || !newUserData.password || !newUserData.prenom || !newUserData.nom || !profile?.organization_id) {
+        throw new Error("Tous les champs sont requis");
       }
 
-      const { error } = await supabase.from("user_invitations").insert({
-        email: inviteEmail,
-        role: inviteRole,
-        organization_id: profile.organization_id,
-        invited_by: user?.id,
+      if (newUserData.password.length < 6) {
+        throw new Error("Le mot de passe doit contenir au moins 6 caractères");
+      }
+
+      // Créer l'utilisateur dans Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newUserData.email,
+        password: newUserData.password,
+        options: {
+          data: {
+            prenom: newUserData.prenom,
+            nom: newUserData.nom,
+            nom_entreprise: newUserData.nom_entreprise || profile.nom_entreprise,
+          },
+        },
       });
 
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["invitations"] });
-      toast.success("Invitation envoyée");
-      setInviteEmail("");
-      setInviteRole("user");
-      setShowInviteDialog(false);
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Erreur lors de l'envoi de l'invitation");
-    },
-  });
+      if (authError) throw authError;
+      if (!authData.user) throw new Error("Erreur lors de la création de l'utilisateur");
 
-  // Mutation pour supprimer une invitation
-  const deleteInvitationMutation = useMutation({
-    mutationFn: async (invitationId: string) => {
-      const { error } = await supabase
-        .from("user_invitations")
-        .delete()
-        .eq("id", invitationId);
-      if (error) throw error;
+      // Mettre à jour le profil avec l'organization_id
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ organization_id: profile.organization_id })
+        .eq("id", authData.user.id);
+
+      if (profileError) throw profileError;
+
+      // Créer le rôle si ce n'est pas "user" (rôle par défaut)
+      if (newUserRole !== "user") {
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .insert([{
+            user_id: authData.user.id,
+            role: newUserRole as "superadmin" | "user",
+          }]);
+
+        if (roleError) throw roleError;
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["invitations"] });
-      toast.success("Invitation supprimée");
+      queryClient.invalidateQueries({ queryKey: ["team-members"] });
+      toast.success("Utilisateur créé avec succès");
+      setNewUserData({
+        prenom: "",
+        nom: "",
+        email: "",
+        password: "",
+        nom_entreprise: "",
+      });
+      setNewUserRole("user");
+      setShowCreateDialog(false);
     },
     onError: (error: any) => {
-      toast.error(error.message || "Erreur lors de la suppression");
+      toast.error(error.message || "Erreur lors de la création de l'utilisateur");
     },
   });
 
@@ -436,34 +446,79 @@ const Parametres = () => {
                     Gérez les utilisateurs de votre organisation
                   </CardDescription>
                 </div>
-                <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+                <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
                   <DialogTrigger asChild>
                     <Button>
                       <UserPlus className="h-4 w-4 mr-2" />
-                      Inviter un utilisateur
+                      Créer un utilisateur
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="max-w-md">
                     <DialogHeader>
-                      <DialogTitle>Inviter un nouvel utilisateur</DialogTitle>
+                      <DialogTitle>Créer un nouvel utilisateur</DialogTitle>
                       <DialogDescription>
-                        Envoyez une invitation à un nouveau membre de votre équipe
+                        Créez un compte pour un nouveau membre de votre équipe. Le mot de passe sera transmis en personne.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="new-prenom">Prénom *</Label>
+                          <Input
+                            id="new-prenom"
+                            value={newUserData.prenom}
+                            onChange={(e) => setNewUserData({ ...newUserData, prenom: e.target.value })}
+                            placeholder="Prénom"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="new-nom">Nom *</Label>
+                          <Input
+                            id="new-nom"
+                            value={newUserData.nom}
+                            onChange={(e) => setNewUserData({ ...newUserData, nom: e.target.value })}
+                            placeholder="Nom"
+                          />
+                        </div>
+                      </div>
                       <div className="space-y-2">
-                        <Label htmlFor="invite-email">Email</Label>
+                        <Label htmlFor="new-email">Email *</Label>
                         <Input
-                          id="invite-email"
+                          id="new-email"
                           type="email"
-                          value={inviteEmail}
-                          onChange={(e) => setInviteEmail(e.target.value)}
+                          value={newUserData.email}
+                          onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
                           placeholder="utilisateur@exemple.com"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="invite-role">Rôle</Label>
-                        <Select value={inviteRole} onValueChange={setInviteRole}>
+                        <Label htmlFor="new-password">Mot de passe *</Label>
+                        <Input
+                          id="new-password"
+                          type="password"
+                          value={newUserData.password}
+                          onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
+                          placeholder="Minimum 6 caractères"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Ce mot de passe sera communiqué à l'utilisateur en personne
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-entreprise">Nom de l'entreprise</Label>
+                        <Input
+                          id="new-entreprise"
+                          value={newUserData.nom_entreprise}
+                          onChange={(e) => setNewUserData({ ...newUserData, nom_entreprise: e.target.value })}
+                          placeholder={profile?.nom_entreprise || "Entreprise"}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Laissez vide pour utiliser le nom de votre organisation
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-role">Rôle</Label>
+                        <Select value={newUserRole} onValueChange={setNewUserRole}>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
@@ -475,16 +530,16 @@ const Parametres = () => {
                       </div>
                       <Button
                         className="w-full"
-                        onClick={() => inviteUserMutation.mutate()}
-                        disabled={inviteUserMutation.isPending}
+                        onClick={() => createUserMutation.mutate()}
+                        disabled={createUserMutation.isPending}
                       >
-                        {inviteUserMutation.isPending ? (
+                        {createUserMutation.isPending ? (
                           <>
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Envoi...
+                            Création...
                           </>
                         ) : (
-                          "Envoyer l'invitation"
+                          "Créer l'utilisateur"
                         )}
                       </Button>
                     </div>
@@ -530,55 +585,6 @@ const Parametres = () => {
             </CardContent>
           </Card>
 
-          {invitations && invitations.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Invitations en attente</CardTitle>
-                <CardDescription>
-                  Invitations qui n'ont pas encore été acceptées
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Rôle</TableHead>
-                      <TableHead>Envoyée le</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {invitations.map((invitation: any) => (
-                      <TableRow key={invitation.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Mail className="h-4 w-4 text-muted-foreground" />
-                            {invitation.email}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{invitation.role}</Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {new Date(invitation.created_at).toLocaleDateString("fr-FR")}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteInvitationMutation.mutate(invitation.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          )}
         </TabsContent>
 
         <TabsContent value="preferences" className="space-y-6">
