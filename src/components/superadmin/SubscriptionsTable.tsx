@@ -4,6 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, XCircle } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import {
   Table,
@@ -140,23 +146,45 @@ export function SubscriptionsTable() {
                     ? new Date(sub.date_fin).toLocaleDateString("fr-FR")
                     : "Indéfini"}
                 </TableCell>
-                <TableCell className="text-right space-x-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleEdit(sub)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  {sub.statut === "active" && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => cancelMutation.mutate(sub.id)}
-                    >
-                      <XCircle className="h-4 w-4" />
-                    </Button>
-                  )}
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(sub)}
+                          >
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Modifier
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Modifier l'abonnement</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    {sub.statut === "active" && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => cancelMutation.mutate(sub.id)}
+                            >
+                              <XCircle className="h-4 w-4 mr-2" />
+                              Annuler
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Annuler l'abonnement</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
