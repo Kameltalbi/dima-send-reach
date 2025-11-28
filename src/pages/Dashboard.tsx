@@ -16,6 +16,7 @@ import {
   Filter,
   Inbox,
   AlertTriangle,
+  AlertCircle,
   Folder,
   CheckCircle2
 } from "lucide-react";
@@ -24,9 +25,7 @@ import { Progress } from "@/components/ui/progress";
 import { useTranslation } from "react-i18next";
 import { EmailQuotaWidget } from "@/components/dashboard/EmailQuotaWidget";
 import { useEmailQuota } from "@/hooks/useEmailQuota";
-import { useEffect } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
 
 interface CampaignStat {
   campaign_id: string;

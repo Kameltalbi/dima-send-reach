@@ -58,9 +58,15 @@ const Contacts = () => {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<any>(null);
   const [formData, setFormData] = useState({
-    nom: "",
-    prenom: "",
     email: "",
+    prenom: "",
+    nom: "",
+    societe: "",
+    fonction: "",
+    telephone: "",
+    site_web: "",
+    pays: "",
+    ville: "",
     segment: "",
     statut: "actif",
   });
@@ -169,9 +175,15 @@ const Contacts = () => {
 
   const resetForm = () => {
     setFormData({
-      nom: "",
-      prenom: "",
       email: "",
+      prenom: "",
+      nom: "",
+      societe: "",
+      fonction: "",
+      telephone: "",
+      site_web: "",
+      pays: "",
+      ville: "",
       segment: "",
       statut: "actif",
     });
@@ -185,11 +197,17 @@ const Contacts = () => {
   const handleEdit = (contact: any) => {
     setSelectedContact(contact);
     setFormData({
-      nom: contact.nom,
-      prenom: contact.prenom,
-      email: contact.email,
+      email: contact.email || "",
+      prenom: contact.prenom || "",
+      nom: contact.nom || "",
+      societe: contact.societe || "",
+      fonction: contact.fonction || "",
+      telephone: contact.telephone || "",
+      site_web: contact.site_web || "",
+      pays: contact.pays || "",
+      ville: contact.ville || "",
       segment: contact.segment || "",
-      statut: contact.statut,
+      statut: contact.statut || "actif",
     });
     setIsEditOpen(true);
   };
@@ -200,14 +218,38 @@ const Contacts = () => {
   };
 
   const handleSubmit = () => {
-    if (!formData.nom || !formData.prenom || !formData.email) {
-      toast.error(t('common.fillRequired'));
+    // Vérifier les champs obligatoires dans l'ordre : Email, Prénom, Nom
+    if (!formData.email) {
+      toast.error("L'email est obligatoire");
+      return;
+    }
+    if (!formData.prenom) {
+      toast.error("Le prénom est obligatoire");
+      return;
+    }
+    if (!formData.nom) {
+      toast.error("Le nom est obligatoire");
       return;
     }
 
+    // Valider le format de l'email
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       toast.error(t('common.invalidEmail'));
       return;
+    }
+
+    // Valider le format de l'URL si fournie
+    if (formData.site_web && formData.site_web.trim() !== "") {
+      try {
+        // Ajouter https:// si absent
+        const url = formData.site_web.startsWith('http') 
+          ? formData.site_web 
+          : `https://${formData.site_web}`;
+        new URL(url);
+      } catch {
+        toast.error("Format d'URL invalide pour le site web");
+        return;
+      }
     }
 
     if (selectedContact) {
@@ -466,7 +508,7 @@ const Contacts = () => {
           setSelectedContact(null);
         }
       }}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>
               {selectedContact ? "Modifier le contact" : "Nouveau contact"}
@@ -477,58 +519,167 @@ const Contacts = () => {
                 : "Ajoutez un nouveau contact à votre liste"}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-6 py-4 max-h-[70vh] overflow-y-auto">
+            {/* Section 1: Informations essentielles (en haut) */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-foreground border-b pb-2">
+                Informations essentielles
+              </h3>
               <div className="space-y-2">
-                <Label htmlFor="prenom">Prénom *</Label>
+                <Label htmlFor="email">Email *</Label>
                 <Input
-                  id="prenom"
-                  value={formData.prenom}
-                  onChange={(e) => setFormData({ ...formData, prenom: e.target.value })}
-                  placeholder="Jean"
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="jean.dupont@example.com"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="prenom">Prénom *</Label>
+                  <Input
+                    id="prenom"
+                    value={formData.prenom}
+                    onChange={(e) => setFormData({ ...formData, prenom: e.target.value })}
+                    placeholder="Jean"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="nom">Nom *</Label>
+                  <Input
+                    id="nom"
+                    value={formData.nom}
+                    onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+                    placeholder="Dupont"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Section 2: Informations professionnelles */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-foreground border-b pb-2">
+                Informations professionnelles
+              </h3>
+              <div className="space-y-2">
+                <Label htmlFor="societe">Société</Label>
+                <Input
+                  id="societe"
+                  value={formData.societe}
+                  onChange={(e) => setFormData({ ...formData, societe: e.target.value })}
+                  placeholder="Nom de l'entreprise"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="nom">Nom *</Label>
+                <Label htmlFor="fonction">Fonction / Poste</Label>
                 <Input
-                  id="nom"
-                  value={formData.nom}
-                  onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
-                  placeholder="Dupont"
+                  id="fonction"
+                  value={formData.fonction}
+                  onChange={(e) => setFormData({ ...formData, fonction: e.target.value })}
+                  placeholder="Directeur, Manager, etc."
                 />
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="telephone">Téléphone</Label>
+                  <Input
+                    id="telephone"
+                    type="tel"
+                    value={formData.telephone}
+                    onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
+                    placeholder="+33 6 12 34 56 78"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="site_web">Site web</Label>
+                  <Input
+                    id="site_web"
+                    type="url"
+                    value={formData.site_web}
+                    onChange={(e) => setFormData({ ...formData, site_web: e.target.value })}
+                    placeholder="https://www.example.com"
+                  />
+                </div>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="jean.dupont@example.com"
-              />
+
+            {/* Section 3: Localisation */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-foreground border-b pb-2">
+                Localisation
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="pays">Pays</Label>
+                  <Select value={formData.pays} onValueChange={(value) => setFormData({ ...formData, pays: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un pays" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="FR">France</SelectItem>
+                      <SelectItem value="TN">Tunisie</SelectItem>
+                      <SelectItem value="BE">Belgique</SelectItem>
+                      <SelectItem value="CH">Suisse</SelectItem>
+                      <SelectItem value="CA">Canada</SelectItem>
+                      <SelectItem value="US">États-Unis</SelectItem>
+                      <SelectItem value="GB">Royaume-Uni</SelectItem>
+                      <SelectItem value="DE">Allemagne</SelectItem>
+                      <SelectItem value="ES">Espagne</SelectItem>
+                      <SelectItem value="IT">Italie</SelectItem>
+                      <SelectItem value="NL">Pays-Bas</SelectItem>
+                      <SelectItem value="PT">Portugal</SelectItem>
+                      <SelectItem value="MA">Maroc</SelectItem>
+                      <SelectItem value="DZ">Algérie</SelectItem>
+                      <SelectItem value="SN">Sénégal</SelectItem>
+                      <SelectItem value="CI">Côte d'Ivoire</SelectItem>
+                      <SelectItem value="CM">Cameroun</SelectItem>
+                      <SelectItem value="OTHER">Autre</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ville">Ville</Label>
+                  <Input
+                    id="ville"
+                    value={formData.ville}
+                    onChange={(e) => setFormData({ ...formData, ville: e.target.value })}
+                    placeholder="Paris, Tunis, etc."
+                  />
+                </div>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="segment">Segment</Label>
-              <Input
-                id="segment"
-                value={formData.segment}
-                onChange={(e) => setFormData({ ...formData, segment: e.target.value })}
-                placeholder="Clients VIP, Newsletter, etc."
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="statut">Statut</Label>
-              <Select value={formData.statut} onValueChange={(value) => setFormData({ ...formData, statut: value })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="actif">Actif</SelectItem>
-                  <SelectItem value="desabonne">Désabonné</SelectItem>
-                  <SelectItem value="erreur">Erreur</SelectItem>
-                </SelectContent>
-              </Select>
+
+            {/* Section 4: Autres informations */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-foreground border-b pb-2">
+                Autres informations
+              </h3>
+              <div className="space-y-2">
+                <Label htmlFor="segment">Segment</Label>
+                <Input
+                  id="segment"
+                  value={formData.segment}
+                  onChange={(e) => setFormData({ ...formData, segment: e.target.value })}
+                  placeholder="Clients VIP, Newsletter, etc."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="statut">Statut</Label>
+                <Select value={formData.statut} onValueChange={(value) => setFormData({ ...formData, statut: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="actif">Actif</SelectItem>
+                    <SelectItem value="desabonne">Désabonné</SelectItem>
+                    <SelectItem value="erreur">Erreur</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
           <DialogFooter>
