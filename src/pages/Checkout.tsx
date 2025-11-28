@@ -113,16 +113,41 @@ const Checkout = () => {
     }
   }, [profile, user]);
 
-  // Mutation pour créer une commande (TODO: Implémenter la table orders)
+  // Mutation pour créer une commande
   const createOrderMutation = useMutation({
-    mutationFn: async (paymentData: any) => {
-      if (!user) throw new Error("Non authentifié");
+    mutationFn: async (orderData: any) => {
+      if (!user) throw new Error("User not authenticated");
       
-      // TODO: Implémenter la création de commande quand la table orders sera créée
-      throw new Error("La fonctionnalité de paiement n'est pas encore implémentée");
+      // Get user's organization
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("organization_id")
+        .eq("id", user.id)
+        .single();
+
+      const { data, error } = await supabase
+        .from("orders")
+        .insert({
+          user_id: user.id,
+          organization_id: profile?.organization_id,
+          plan_type: planParam,
+          amount: selectedPlan.price,
+          currency: selectedPlan.currency,
+          payment_method: paymentMethod,
+          payment_status: paymentMethod === "card" ? "pending" : "pending",
+          billing_info: orderData.billing_info || null,
+          notes: orderData.notes || null,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      setOrderId(data.id);
+      setIsSuccess(true);
     },
     onError: (error: any) => {
       toast.error(error.message || t('checkout.orderError'));
@@ -132,8 +157,14 @@ const Checkout = () => {
   const handleCardPayment = async () => {
     setIsProcessing(true);
     try {
-      // TODO: Implémenter le système de paiement complet avec table orders
-      toast.error('Le système de paiement n\'est pas encore implémenté');
+      // Create order first
+      const order = await createOrderMutation.mutateAsync({
+        billing_info: null,
+        notes: "Card payment via Konnect",
+      });
+
+      // TODO: Initiate Konnect payment flow
+      toast.info('Card payment integration coming soon');
       setIsProcessing(false);
     } catch (error: any) {
       toast.error(error.message || t('checkout.paymentError'));
@@ -149,12 +180,19 @@ const Checkout = () => {
 
     setIsProcessing(true);
     try {
-      const order = await createOrderMutation.mutateAsync({});
+      const order = await createOrderMutation.mutateAsync({
+        billing_info: {
+          companyName: paymentInfo.companyName,
+          address: paymentInfo.address,
+          city: paymentInfo.city,
+          postalCode: paymentInfo.postalCode,
+          phone: paymentInfo.phone,
+          email: paymentInfo.email,
+        },
+        notes: paymentInfo.notes,
+      });
 
-      // Envoyer un email de confirmation (via Edge Function)
-      // TODO: Implémenter l'envoi d'email
-
-      setIsSuccess(true);
+      // TODO: Send confirmation email via Edge Function
       toast.success(t('checkout.orderCreated'));
     } catch (error: any) {
       toast.error(error.message || t('checkout.orderError'));

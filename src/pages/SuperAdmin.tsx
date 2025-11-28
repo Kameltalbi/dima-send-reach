@@ -66,6 +66,7 @@ import {
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { OrdersTable } from "@/components/superadmin/OrdersTable";
 
 type View = "organizations" | "subscriptions" | "orders" | "users";
 
@@ -78,7 +79,6 @@ export default function SuperAdmin() {
   const [isExtendDialogOpen, setIsExtendDialogOpen] = useState(false);
   const [selectedOrg, setSelectedOrg] = useState<any>(null);
   const [selectedSub, setSelectedSub] = useState<any>(null);
-  const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [orgFormData, setOrgFormData] = useState({
     nom: "",
     email_contact: "",
@@ -129,15 +129,6 @@ export default function SuperAdmin() {
     },
   });
 
-  // Charger les commandes avec les profils (TODO: Implémenter la table orders)
-  const { data: orders, isLoading: ordersLoading } = useQuery({
-    queryKey: ["superadmin-orders"],
-    queryFn: async () => {
-      // TODO: Implémenter quand la table orders sera créée
-      return [];
-    },
-  });
-
   // Charger les utilisateurs avec leurs organisations
   const { data: users, isLoading: usersLoading } = useQuery({
     queryKey: ["superadmin-users"],
@@ -173,10 +164,6 @@ export default function SuperAdmin() {
   const filteredSubs = subscriptions?.filter((sub) =>
     sub.organizations?.nom?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     sub.plan_type.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
-
-  const filteredOrders = orders?.filter((order: any) =>
-    false // Désactivé jusqu'à implémentation de la table orders
   ) || [];
 
   const filteredUsers = users?.filter((user) =>
@@ -287,21 +274,6 @@ export default function SuperAdmin() {
     },
     onError: (error: any) => {
       toast.error(error.message || "Erreur lors de la prolongation");
-    },
-  });
-
-  // Mutation pour mettre à jour le statut d'une commande (TODO: Implémenter table orders)
-  const updateOrderMutation = useMutation({
-    mutationFn: async ({ id, payment_status }: { id: string; payment_status: string }) => {
-      // TODO: Implémenter quand la table orders sera créée
-      throw new Error("La table orders n'existe pas encore");
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["superadmin-orders"] });
-      toast.success("Statut de paiement mis à jour");
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Erreur lors de la mise à jour");
     },
   });
 
@@ -634,98 +606,7 @@ export default function SuperAdmin() {
           )}
 
           {/* Orders Table */}
-          {activeView === "orders" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Liste des paiements</CardTitle>
-                <CardDescription>
-                  {filteredOrders.length} paiement{filteredOrders.length > 1 ? "s" : ""}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {ordersLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-12"></TableHead>
-                          <TableHead>Utilisateur</TableHead>
-                          <TableHead>Plan</TableHead>
-                          <TableHead className="hidden md:table-cell">Montant</TableHead>
-                          <TableHead className="hidden lg:table-cell">Méthode</TableHead>
-                          <TableHead>Statut</TableHead>
-                          <TableHead className="hidden lg:table-cell">Date</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredOrders.map((order) => (
-                          <TableRow key={order.id}>
-                            <TableCell>
-                              <FileText className="h-4 w-4 text-muted-foreground" />
-                            </TableCell>
-                            <TableCell className="font-medium">
-                              {order.profiles?.prenom} {order.profiles?.nom}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{order.plan_type}</Badge>
-                            </TableCell>
-                            <TableCell className="hidden md:table-cell">
-                              {order.amount} {order.currency}
-                            </TableCell>
-                            <TableCell className="hidden lg:table-cell">{order.payment_method}</TableCell>
-                            <TableCell>{getStatusBadge(order.payment_status)}</TableCell>
-                            <TableCell className="hidden lg:table-cell">
-                              {new Date(order.created_at).toLocaleDateString("fr-FR")}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon">
-                                    <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  {order.payment_status === "pending" && (
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        updateOrderMutation.mutate({
-                                          id: order.id,
-                                          payment_status: "completed",
-                                        })
-                                      }
-                                    >
-                                      Marquer comme payé
-                                    </DropdownMenuItem>
-                                  )}
-                                  {order.payment_status === "completed" && (
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        updateOrderMutation.mutate({
-                                          id: order.id,
-                                          payment_status: "refunded",
-                                        })
-                                      }
-                                    >
-                                      Rembourser
-                                    </DropdownMenuItem>
-                                  )}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+          {activeView === "orders" && <OrdersTable />}
 
           {/* Users Table */}
           {activeView === "users" && (
