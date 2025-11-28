@@ -17,7 +17,7 @@ const Landing = () => {
           <nav className="hidden md:flex items-center gap-8">
             <a href="#home" className="text-foreground hover:text-accent transition-colors">Home</a>
             <a href="#features" className="text-foreground hover:text-accent transition-colors">Features</a>
-            <a href="#pricing" className="text-foreground hover:text-accent transition-colors">Pricing</a>
+            <Link to="/pricing" className="text-foreground hover:text-accent transition-colors">Pricing</Link>
             <a href="#about" className="text-foreground hover:text-accent transition-colors">About</a>
             <a href="#contact" className="text-foreground hover:text-accent transition-colors">Contact</a>
           </nav>
@@ -46,7 +46,7 @@ const Landing = () => {
                   </Button>
                 </Link>
                 <Button size="lg" variant="outline">
-                  Discover Features
+                  <Link to="/pricing">Discover Pricing</Link>
                 </Button>
               </div>
             </div>

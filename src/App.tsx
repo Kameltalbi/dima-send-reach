@@ -21,6 +21,7 @@ import ConfigurationSES from "./pages/ConfigurationSES";
 import SuperAdmin from "./pages/SuperAdmin";
 import Support from "./pages/Support";
 import Unsubscribe from "./pages/Unsubscribe";
+import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/pricing" element={<Pricing />} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
             
             {/* Routes protégées */}
