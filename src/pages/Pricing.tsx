@@ -30,7 +30,7 @@ const plans = [
   },
   {
     name: "Starter",
-    price: "49€",
+    price: "160 DT",
     period: "/mois",
     description: "Pour les petites entreprises",
     emails: "10,000 e-mails / mois",
@@ -53,7 +53,7 @@ const plans = [
   },
   {
     name: "Essential",
-    price: "149€",
+    price: "490 DT",
     period: "/mois",
     description: "Pour les PME et équipes marketing",
     emails: "50,000 e-mails / mois",
@@ -76,7 +76,7 @@ const plans = [
   },
   {
     name: "Pro",
-    price: "399€",
+    price: "1,320 DT",
     period: "/mois",
     description: "Pour les grandes entreprises et SaaS",
     emails: "200,000 e-mails / mois",
