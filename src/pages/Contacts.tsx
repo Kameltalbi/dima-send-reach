@@ -61,12 +61,6 @@ const Contacts = () => {
     email: "",
     prenom: "",
     nom: "",
-    societe: "",
-    fonction: "",
-    telephone: "",
-    site_web: "",
-    pays: "",
-    ville: "",
     segment: "",
     statut: "actif",
   });
@@ -180,12 +174,6 @@ const Contacts = () => {
       email: "",
       prenom: "",
       nom: "",
-      societe: "",
-      fonction: "",
-      telephone: "",
-      site_web: "",
-      pays: "",
-      ville: "",
       segment: "",
       statut: "actif",
     });
@@ -202,12 +190,6 @@ const Contacts = () => {
       email: contact.email || "",
       prenom: contact.prenom || "",
       nom: contact.nom || "",
-      societe: contact.societe || "",
-      fonction: contact.fonction || "",
-      telephone: contact.telephone || "",
-      site_web: contact.site_web || "",
-      pays: contact.pays || "",
-      ville: contact.ville || "",
       segment: contact.segment || "",
       statut: contact.statut || "actif",
     });
@@ -240,33 +222,11 @@ const Contacts = () => {
       return;
     }
 
-    // Valider le format de l'URL si fournie
-    let siteWeb = formData.site_web;
-    if (siteWeb && siteWeb.trim() !== "") {
-      try {
-        // Ajouter https:// si absent
-        const url = siteWeb.startsWith('http') 
-          ? siteWeb 
-          : `https://${siteWeb}`;
-        new URL(url);
-        siteWeb = url;
-      } catch {
-        toast.error("Format d'URL invalide pour le site web");
-        return;
-      }
-    }
-
-    // Préparer les données en convertissant les chaînes vides en null pour les champs optionnels
+    // Préparer les données
     const dataToSubmit = {
       email: formData.email.trim(),
       prenom: formData.prenom.trim(),
       nom: formData.nom.trim(),
-      societe: formData.societe?.trim() || null,
-      fonction: formData.fonction?.trim() || null,
-      telephone: formData.telephone?.trim() || null,
-      site_web: siteWeb?.trim() || null,
-      pays: formData.pays?.trim() || null,
-      ville: formData.ville?.trim() || null,
       segment: formData.segment?.trim() || null,
       statut: formData.statut,
     };
@@ -539,11 +499,8 @@ const Contacts = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-6 py-4 max-h-[70vh] overflow-y-auto">
-            {/* Section 1: Informations essentielles (en haut) */}
+            {/* Section 1: Informations essentielles */}
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-foreground border-b pb-2">
-                Informations essentielles
-              </h3>
               <div className="space-y-2">
                 <Label htmlFor="email">Email *</Label>
                 <Input
@@ -577,106 +534,7 @@ const Contacts = () => {
                   />
                 </div>
               </div>
-            </div>
 
-            {/* Section 2: Informations professionnelles */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-foreground border-b pb-2">
-                Informations professionnelles
-              </h3>
-              <div className="space-y-2">
-                <Label htmlFor="societe">Société</Label>
-                <Input
-                  id="societe"
-                  value={formData.societe}
-                  onChange={(e) => setFormData({ ...formData, societe: e.target.value })}
-                  placeholder="Nom de l'entreprise"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="fonction">Fonction / Poste</Label>
-                <Input
-                  id="fonction"
-                  value={formData.fonction}
-                  onChange={(e) => setFormData({ ...formData, fonction: e.target.value })}
-                  placeholder="Directeur, Manager, etc."
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="telephone">Téléphone</Label>
-                  <Input
-                    id="telephone"
-                    type="tel"
-                    value={formData.telephone}
-                    onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
-                    placeholder="+33 6 12 34 56 78"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="site_web">Site web</Label>
-                  <Input
-                    id="site_web"
-                    type="url"
-                    value={formData.site_web}
-                    onChange={(e) => setFormData({ ...formData, site_web: e.target.value })}
-                    placeholder="https://www.example.com"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Section 3: Localisation */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-foreground border-b pb-2">
-                Localisation
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="pays">Pays</Label>
-                  <Select value={formData.pays} onValueChange={(value) => setFormData({ ...formData, pays: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner un pays" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="FR">France</SelectItem>
-                      <SelectItem value="TN">Tunisie</SelectItem>
-                      <SelectItem value="BE">Belgique</SelectItem>
-                      <SelectItem value="CH">Suisse</SelectItem>
-                      <SelectItem value="CA">Canada</SelectItem>
-                      <SelectItem value="US">États-Unis</SelectItem>
-                      <SelectItem value="GB">Royaume-Uni</SelectItem>
-                      <SelectItem value="DE">Allemagne</SelectItem>
-                      <SelectItem value="ES">Espagne</SelectItem>
-                      <SelectItem value="IT">Italie</SelectItem>
-                      <SelectItem value="NL">Pays-Bas</SelectItem>
-                      <SelectItem value="PT">Portugal</SelectItem>
-                      <SelectItem value="MA">Maroc</SelectItem>
-                      <SelectItem value="DZ">Algérie</SelectItem>
-                      <SelectItem value="SN">Sénégal</SelectItem>
-                      <SelectItem value="CI">Côte d'Ivoire</SelectItem>
-                      <SelectItem value="CM">Cameroun</SelectItem>
-                      <SelectItem value="OTHER">Autre</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ville">Ville</Label>
-                  <Input
-                    id="ville"
-                    value={formData.ville}
-                    onChange={(e) => setFormData({ ...formData, ville: e.target.value })}
-                    placeholder="Paris, Tunis, etc."
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Section 4: Autres informations */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-foreground border-b pb-2">
-                Autres informations
-              </h3>
               <div className="space-y-2">
                 <Label htmlFor="segment">Segment</Label>
                 <Input
