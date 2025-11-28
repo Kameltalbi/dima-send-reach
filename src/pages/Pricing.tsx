@@ -8,11 +8,12 @@ import { Logo } from "@/components/Logo";
 const plans = [
   {
     name: "Free",
-    price: "Gratuit",
+    price: "0 DT",
+    period: "/an",
     description: "Pour tester la plateforme",
     emails: "3,000 e-mails / mois",
     dailyLimit: "100 e-mails / jour",
-    domains: "1 domaine vérifié",
+    domains: "1 domaine",
     users: "1 utilisateur",
     popular: false,
     features: [
@@ -21,7 +22,7 @@ const plans = [
       { text: "Envoi via API (clé API unique)", included: true },
       { text: "Tracking ouvertures (basique)", included: true },
       { text: "Historique 7 jours", included: true },
-      { text: "5 templates e-mail gratuits", included: true },
+      { text: "3 templates e-mail gratuits", included: true },
       { text: "Import CSV limité (200 contacts)", included: true },
       { text: "Webhooks", included: false },
       { text: "Automatisation", included: false },
@@ -30,17 +31,17 @@ const plans = [
   },
   {
     name: "Starter",
-    price: "160 DT",
-    period: "/mois",
+    price: "340 DT",
+    period: "/an",
     description: "Pour les petites entreprises",
     emails: "10,000 e-mails / mois",
-    domains: "Jusqu'à 3 domaines",
+    domains: "3 domaines",
     users: "3 utilisateurs",
-    popular: true,
+    popular: false,
     features: [
       { text: "Toutes les fonctionnalités Free", included: true },
       { text: "Tracking ouvertures + clics", included: true },
-      { text: "15 templates premium", included: true },
+      { text: "5 templates premium", included: true },
       { text: "Import CSV illimité", included: true },
       { text: "Segmentation simple (tags)", included: true },
       { text: "Automatisations simples", included: true },
@@ -53,15 +54,16 @@ const plans = [
   },
   {
     name: "Essential",
-    price: "490 DT",
-    period: "/mois",
+    price: "590 DT",
+    period: "/an",
     description: "Pour les PME et équipes marketing",
     emails: "50,000 e-mails / mois",
     domains: "10 domaines",
     users: "10 utilisateurs",
-    popular: false,
+    popular: true,
     features: [
       { text: "Toutes les fonctionnalités Starter", included: true },
+      { text: "10 templates premium", included: true },
       { text: "Segmentation avancée (filtres logiques)", included: true },
       { text: "Automatisation avancée (workflows multi-étapes)", included: true },
       { text: "A/B testing", included: true },
@@ -76,8 +78,8 @@ const plans = [
   },
   {
     name: "Pro",
-    price: "1,320 DT",
-    period: "/mois",
+    price: "990 DT",
+    period: "/an",
     description: "Pour les grandes entreprises et SaaS",
     emails: "200,000 e-mails / mois",
     domains: "Domaines illimités",
@@ -85,6 +87,7 @@ const plans = [
     popular: false,
     features: [
       { text: "Toutes les fonctionnalités Essential", included: true },
+      { text: "15 templates premium", included: true },
       { text: "Serveurs dédiés d'envoi (IP dedicated)", included: true },
       { text: "Limite de débit personnalisée", included: true },
       { text: "SLA 99.9%", included: true },
@@ -163,15 +166,15 @@ const Pricing = () => {
               </CardHeader>
 
               <CardContent className="flex-1 space-y-6">
-                {/* Envois */}
+                {/* Capacités */}
                 <div className="space-y-2 pb-6 border-b border-border">
-                  <p className="font-semibold text-sm text-muted-foreground">Envois</p>
+                  <p className="font-semibold text-sm text-muted-foreground">Capacités</p>
                   <p className="text-sm font-medium">{plan.emails}</p>
                   {plan.dailyLimit && (
                     <p className="text-xs text-muted-foreground">{plan.dailyLimit}</p>
                   )}
-                  <p className="text-sm">{plan.domains}</p>
                   <p className="text-sm">{plan.users}</p>
+                  <p className="text-sm">{plan.domains}</p>
                 </div>
 
                 {/* Features */}
@@ -199,15 +202,27 @@ const Pricing = () => {
               </CardContent>
 
               <CardFooter className="pt-6">
-                <Link to="/auth" className="w-full">
-                  <Button
-                    variant={plan.popular ? "default" : "outline"}
-                    className="w-full"
-                    size="lg"
-                  >
-                    {plan.name === "Free" ? "Commencer gratuitement" : "Choisir ce plan"}
-                  </Button>
-                </Link>
+                {plan.name === "Free" ? (
+                  <Link to="/auth" className="w-full">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      size="lg"
+                    >
+                      Commencer gratuitement
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link to={`/checkout?plan=${plan.name.toLowerCase()}`} className="w-full">
+                    <Button
+                      variant={plan.popular ? "default" : "outline"}
+                      className="w-full"
+                      size="lg"
+                    >
+                      Choisir ce plan
+                    </Button>
+                  </Link>
+                )}
               </CardFooter>
             </Card>
           ))}
@@ -229,8 +244,7 @@ const Pricing = () => {
             <div className="space-y-2">
               <h3 className="font-semibold text-lg">Comment fonctionne la facturation ?</h3>
               <p className="text-muted-foreground">
-                Tous les plans sont facturés mensuellement. Vous ne payez que pour ce que
-                vous utilisez, sans engagement.
+                Tous les plans payants sont facturés annuellement. Le plan Free est gratuit sans limitation de temps. Vous pouvez annuler à tout moment.
               </p>
             </div>
             <div className="space-y-2">

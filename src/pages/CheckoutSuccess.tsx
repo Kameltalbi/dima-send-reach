@@ -1,0 +1,140 @@
+import { useEffect, useState } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { AppLayout } from "@/components/layouts/AppLayout";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+const CheckoutSuccess = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const orderId = searchParams.get("orderId");
+  const [paymentStatus, setPaymentStatus] = useState<"success" | "failed" | "pending">("pending");
+
+  // Vérifier le statut du paiement
+  const { data: order, isLoading } = useQuery({
+    queryKey: ["order", orderId],
+    queryFn: async () => {
+      if (!orderId) return null;
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("id", orderId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!orderId,
+    refetchInterval: 2000, // Vérifier toutes les 2 secondes
+  });
+
+  useEffect(() => {
+    if (order) {
+      if (order.payment_status === "completed") {
+        setPaymentStatus("success");
+      } else if (order.payment_status === "failed") {
+        setPaymentStatus("failed");
+      }
+    }
+  }, [order]);
+
+  if (isLoading || paymentStatus === "pending") {
+    return (
+      <AppLayout>
+        <div className="max-w-2xl mx-auto py-12">
+          <Card>
+            <CardContent className="py-12">
+              <div className="text-center space-y-4">
+                <Loader2 className="h-12 w-12 mx-auto animate-spin text-primary" />
+                <p className="text-muted-foreground">
+                  Vérification du paiement en cours...
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (paymentStatus === "failed" || !order) {
+    return (
+      <AppLayout>
+        <div className="max-w-2xl mx-auto py-12">
+          <Card className="border-red-500">
+            <CardHeader className="text-center">
+              <div className="mx-auto mb-4 w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                <XCircle className="h-8 w-8 text-red-600" />
+              </div>
+              <CardTitle className="text-2xl">Paiement échoué</CardTitle>
+              <CardDescription>
+                Votre paiement n'a pas pu être traité
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <Alert variant="destructive">
+                <AlertDescription>
+                  Le paiement n'a pas pu être complété. Veuillez réessayer ou choisir une autre méthode de paiement.
+                </AlertDescription>
+              </Alert>
+              <div className="flex gap-4">
+                <Button variant="outline" onClick={() => navigate("/pricing")} className="flex-1">
+                  Retour aux tarifs
+                </Button>
+                <Button onClick={() => navigate("/support")} className="flex-1">
+                  Contacter le support
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  return (
+    <AppLayout>
+      <div className="max-w-2xl mx-auto py-12">
+        <Card className="border-green-500">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+              <CheckCircle2 className="h-8 w-8 text-green-600" />
+            </div>
+            <CardTitle className="text-2xl">Paiement réussi !</CardTitle>
+            <CardDescription>
+              Votre abonnement est maintenant actif
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Numéro de commande</p>
+              <p className="text-lg font-mono font-semibold">{order.id}</p>
+            </div>
+
+            <Alert>
+              <CheckCircle2 className="h-4 w-4" />
+              <AlertDescription>
+                Votre abonnement {order.plan_type} est maintenant actif. Vous pouvez commencer à utiliser toutes les fonctionnalités.
+              </AlertDescription>
+            </Alert>
+
+            <div className="flex gap-4">
+              <Button variant="outline" onClick={() => navigate("/dashboard")} className="flex-1">
+                Retour au tableau de bord
+              </Button>
+              <Button onClick={() => navigate("/parametres")} className="flex-1">
+                Voir mon abonnement
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </AppLayout>
+  );
+};
+
+export default CheckoutSuccess;
+

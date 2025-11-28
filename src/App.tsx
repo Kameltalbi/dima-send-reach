@@ -22,6 +22,8 @@ import SuperAdmin from "./pages/SuperAdmin";
 import Support from "./pages/Support";
 import Unsubscribe from "./pages/Unsubscribe";
 import Pricing from "./pages/Pricing";
+import Checkout from "./pages/Checkout";
+import CheckoutSuccess from "./pages/CheckoutSuccess";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +39,8 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/checkout" element={<AppLayout><Checkout /></AppLayout>} />
+            <Route path="/checkout/success" element={<AppLayout><CheckoutSuccess /></AppLayout>} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
             
             {/* Routes protégées */}
