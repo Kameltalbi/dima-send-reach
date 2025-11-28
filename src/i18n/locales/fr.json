@@ -154,6 +154,24 @@
     "deliverability": "Délivrabilité",
     "recentCampaigns": "Campagnes récentes"
   },
+  "quota": {
+    "title": "Quota d'emails",
+    "monthlyLimit": "Limite mensuelle",
+    "emails": "emails",
+    "remaining": "Restant",
+    "resetDate": "Réinitialisation: {{date}}",
+    "blocked": "Bloqué",
+    "nearLimit": "Limite proche",
+    "ok": "OK",
+    "blockedTitle": "Quota dépassé",
+    "blockedDesc": "Vous avez atteint votre limite mensuelle. L'envoi d'emails est bloqué jusqu'au {{date}}.",
+    "warningTitle": "Attention",
+    "warningDesc": "Vous avez utilisé {{percentage}}% de votre quota mensuel. Il reste {{remaining}} emails disponibles.",
+    "noSubscription": "Aucun abonnement actif",
+    "noSubscriptionDesc": "Veuillez souscrire à un plan pour envoyer des emails.",
+    "viewPlans": "Voir les plans",
+    "upgrade": "Mettre à niveau mon plan"
+  },
   "campaigns": {
     "title": "Campagnes",
     "newCampaign": "Nouvelle campagne",

@@ -22,6 +22,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { useTranslation } from "react-i18next";
+import { EmailQuotaWidget } from "@/components/dashboard/EmailQuotaWidget";
 
 interface CampaignStat {
   campaign_id: string;
@@ -319,6 +320,9 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Widget de quota d'emails */}
+      <EmailQuotaWidget />
 
       {/* Graphique de progression et Score de réputation */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

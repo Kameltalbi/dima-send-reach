@@ -13,6 +13,7 @@ import { ArrowLeft, Send, Save, Eye, Loader2, Calendar, Clock } from "lucide-rea
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { TemplateEditor } from "@/components/templates/TemplateEditor";
+import { useEmailQuota } from "@/hooks/useEmailQuota";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +27,7 @@ const NouvelleCampagne = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { quota, canSendEmails } = useEmailQuota();
   const [activeTab, setActiveTab] = useState("info");
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -343,7 +345,7 @@ const NouvelleCampagne = () => {
     saveMutation.mutate(true);
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!formData.list_id) {
       toast.error("Veuillez sélectionner une liste de contacts");
       setActiveTab("info");
@@ -353,6 +355,61 @@ const NouvelleCampagne = () => {
     if (!htmlContent.trim()) {
       toast.error("Veuillez créer ou sélectionner un contenu pour votre email");
       setActiveTab("design");
+      return;
+    }
+
+    // Vérifier le quota avant d'envoyer
+    if (quota?.isBlocked) {
+      toast.error(
+        `Quota dépassé ! Vous avez utilisé ${quota.used.toLocaleString()} / ${quota.limit.toLocaleString()} emails ce mois-ci. L'envoi est bloqué jusqu'au ${quota.resetDate?.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}.`,
+        { duration: 6000 }
+      );
+      navigate("/dashboard");
+      return;
+    }
+
+    // Compter le nombre de destinataires
+    let recipientCount = 0;
+    try {
+      if (formData.list_id === "all") {
+        const { data: contacts } = await supabase
+          .from("contacts")
+          .select("id", { count: "exact" })
+          .eq("user_id", user?.id)
+          .eq("statut", "actif");
+        recipientCount = contacts?.length || 0;
+      } else {
+        const { data: listContacts } = await supabase
+          .from("list_contacts")
+          .select("contact_id", { count: "exact" })
+          .eq("list_id", formData.list_id);
+        recipientCount = listContacts?.length || 0;
+      }
+
+      // Vérifier si on peut envoyer à ce nombre de destinataires
+      if (!canSendEmails(recipientCount)) {
+        if (quota) {
+          toast.error(
+            `Quota insuffisant ! Vous avez ${quota.remaining.toLocaleString()} emails restants mais vous essayez d'envoyer à ${recipientCount.toLocaleString()} destinataires.`,
+            { duration: 6000 }
+          );
+        } else {
+          toast.error("Impossible de vérifier votre quota. Veuillez réessayer.");
+        }
+        navigate("/dashboard");
+        return;
+      }
+
+      // Avertir si proche de la limite
+      if (quota?.isNearLimit && !quota.isBlocked) {
+        toast.warning(
+          `Attention : Vous avez utilisé ${quota.percentage.toFixed(0)}% de votre quota mensuel. Il reste ${quota.remaining.toLocaleString()} emails disponibles.`,
+          { duration: 5000 }
+        );
+      }
+    } catch (error) {
+      console.error("Erreur lors de la vérification du quota:", error);
+      toast.error("Erreur lors de la vérification du quota. Veuillez réessayer.");
       return;
     }
 

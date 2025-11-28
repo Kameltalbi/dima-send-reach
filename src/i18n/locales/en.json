@@ -152,6 +152,24 @@
     "deliverability": "Deliverability",
     "recentCampaigns": "Recent Campaigns"
   },
+  "quota": {
+    "title": "Email quota",
+    "monthlyLimit": "Monthly limit",
+    "emails": "emails",
+    "remaining": "Remaining",
+    "resetDate": "Reset date: {{date}}",
+    "blocked": "Blocked",
+    "nearLimit": "Near limit",
+    "ok": "OK",
+    "blockedTitle": "Quota exceeded",
+    "blockedDesc": "You have reached your monthly limit. Email sending is blocked until {{date}}.",
+    "warningTitle": "Warning",
+    "warningDesc": "You have used {{percentage}}% of your monthly quota. {{remaining}} emails remaining.",
+    "noSubscription": "No active subscription",
+    "noSubscriptionDesc": "Please subscribe to a plan to send emails.",
+    "viewPlans": "View plans",
+    "upgrade": "Upgrade my plan"
+  },
   "campaigns": {
     "title": "Campaigns",
     "newCampaign": "New Campaign",
