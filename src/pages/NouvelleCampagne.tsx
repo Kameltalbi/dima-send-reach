@@ -259,11 +259,27 @@ const NouvelleCampagne = () => {
         throw new Error("Veuillez créer ou sélectionner un contenu pour votre email");
       }
 
-      // TODO: Implémenter l'envoi réel via Edge Function
-      // Pour l'instant, on simule
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (!formData.sujet_email || !formData.expediteur_nom || !formData.expediteur_email) {
+        throw new Error("Veuillez remplir les informations de l'expéditeur et le sujet");
+      }
+
+      // Appeler l'Edge Function pour envoyer l'email de test
+      const { data, error } = await supabase.functions.invoke("send-email", {
+        body: {
+          testEmail: {
+            to: formData.testEmail,
+            subject: formData.sujet_email,
+            html: htmlContent,
+            fromName: formData.expediteur_nom,
+            fromEmail: formData.expediteur_email,
+          },
+        },
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.message || "Erreur lors de l'envoi");
       
-      return { success: true };
+      return data;
     },
     onSuccess: () => {
       toast.success(`Email de test envoyé à ${formData.testEmail}`);
