@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { setUser as setSentryUser, clearUser as clearSentryUser } from "@/lib/sentry";
 
 interface AuthContextType {
   user: User | null;
@@ -36,7 +37,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
-        setUser(session?.user ?? null);
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+        
+        // Mettre à jour Sentry avec l'utilisateur
+        if (currentUser) {
+          setSentryUser({
+            id: currentUser.id,
+            email: currentUser.email,
+          });
+        } else {
+          clearSentryUser();
+        }
+        
         setLoading(false);
       }
     );
@@ -44,7 +57,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Vérifier la session existante
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setUser(session?.user ?? null);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      
+      // Mettre à jour Sentry avec l'utilisateur
+      if (currentUser) {
+        setSentryUser({
+          id: currentUser.id,
+          email: currentUser.email,
+        });
+      } else {
+        clearSentryUser();
+      }
+      
       setLoading(false);
     });
 

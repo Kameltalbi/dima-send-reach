@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { checkEmailQuota } from "./utils/quota-check.ts";
+import { validateEmailList, detectPotentialBounces } from "./utils/email-validation.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -63,6 +65,21 @@ serve(async (req) => {
     if (testEmail) {
       const { to, subject, html, fromName, fromEmail } = testEmail;
       
+      // Valider l'email de test
+      const emailValidation = validateEmailList([to]);
+      if (emailValidation.invalid.length > 0) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            message: `Email invalide: ${emailValidation.invalid[0].reason}`,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 400,
+          }
+        );
+      }
+      
       console.log("Envoi d'un email de test à:", to);
       
       const data = await sendWithResend({
@@ -86,6 +103,16 @@ serve(async (req) => {
     // Envoi de campagne
     console.log("Démarrage de l'envoi de campagne:", campaignId);
 
+    // Récupérer l'utilisateur depuis le token
+    const {
+      data: { user },
+      error: userError,
+    } = await supabaseClient.auth.getUser();
+
+    if (userError || !user) {
+      throw new Error("Utilisateur non authentifié");
+    }
+
     const { data: campaign, error: campaignError } = await supabaseClient
       .from("campaigns")
       .select("*")
@@ -94,6 +121,11 @@ serve(async (req) => {
 
     if (campaignError || !campaign) {
       throw new Error("Campagne non trouvée");
+    }
+
+    // Vérifier que la campagne appartient à l'utilisateur
+    if (campaign.user_id !== user.id) {
+      throw new Error("Vous n'avez pas l'autorisation d'envoyer cette campagne");
     }
 
     // Récupérer les destinataires
@@ -111,14 +143,135 @@ serve(async (req) => {
       throw new Error("Aucun destinataire en attente");
     }
 
-    console.log(`Envoi à ${recipients.length} destinataires`);
+    // Vérifier le quota côté serveur AVANT l'envoi
+    const quotaCheck = await checkEmailQuota(
+      supabaseClient,
+      user.id,
+      recipients.length
+    );
+
+    if (!quotaCheck.allowed) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: quotaCheck.reason || "Quota insuffisant",
+          quota: {
+            limit: quotaCheck.limit,
+            used: quotaCheck.used,
+            remaining: quotaCheck.remaining,
+          },
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 403,
+        }
+      );
+    }
+
+    // Récupérer les emails des contacts pour validation
+    const contactIds = recipients.map((r: any) => r.contact_id);
+    const { data: contacts, error: contactsError } = await supabaseClient
+      .from("contacts")
+      .select("id, email, statut")
+      .in("id", contactIds);
+
+    if (contactsError) {
+      console.error("Error fetching contacts:", contactsError);
+    }
+
+    // Valider les emails et filtrer les invalides
+    const emailMap = new Map(
+      (contacts || []).map((c: any) => [c.id, c.email])
+    );
+    const emailsToValidate = recipients
+      .map((r: any) => emailMap.get(r.contact_id))
+      .filter(Boolean) as string[];
+
+    const { valid: validEmails, invalid: invalidEmails } =
+      validateEmailList(emailsToValidate);
+
+    // Filtrer les destinataires avec emails invalides
+    const validRecipients = recipients.filter((r: any) => {
+      const email = emailMap.get(r.contact_id);
+      return email && validEmails.includes(email.toLowerCase().trim());
+    });
+
+    if (invalidEmails.length > 0) {
+      console.warn(
+        `${invalidEmails.length} emails invalides détectés:`,
+        invalidEmails
+      );
+    }
+
+    if (validRecipients.length === 0) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: "Aucun email valide trouvé dans les destinataires",
+          invalidEmails,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        }
+      );
+    }
+
+    // Détecter les emails à risque de rebond
+    const bounceWarnings: Array<{ email: string; reason: string }> = [];
+    for (const recipient of validRecipients) {
+      const email = emailMap.get(recipient.contact_id);
+      if (email) {
+        const bounceCheck = detectPotentialBounces(email);
+        if (bounceCheck.likelyToBounce) {
+          bounceWarnings.push({
+            email,
+            reason: bounceCheck.reason || "Risque de rebond",
+          });
+        }
+      }
+    }
+
+    if (bounceWarnings.length > 0) {
+      console.warn("Emails à risque de rebond:", bounceWarnings);
+    }
+
+    console.log(`Envoi à ${validRecipients.length} destinataires valides`);
 
     let successCount = 0;
     let errorCount = 0;
+    const bounceErrors: Array<{ email: string; reason: string }> = [];
 
-    // Envoyer les emails un par un
-    for (const recipient of recipients) {
+    // Envoyer les emails un par un (seulement les valides)
+    for (const recipient of validRecipients) {
       try {
+        const email = emailMap.get(recipient.contact_id);
+        if (!email) {
+          console.warn(`Email manquant pour le contact ${recipient.contact_id}`);
+          errorCount++;
+          continue;
+        }
+
+        // Vérifier si l'email risque de rebondir avant l'envoi
+        const bounceCheck = detectPotentialBounces(email);
+        if (bounceCheck.likelyToBounce) {
+          // Marquer comme erreur si risque élevé de rebond
+          await supabaseClient
+            .from("campaign_recipients")
+            .update({
+              statut_envoi: "erreur",
+              date_envoi: new Date().toISOString(),
+            })
+            .eq("id", recipient.id);
+
+          bounceErrors.push({
+            email,
+            reason: bounceCheck.reason || "Email à risque de rebond",
+          });
+          errorCount++;
+          continue;
+        }
+
         // Préparer le HTML avec tracking
         let trackedHtml = campaign.html_contenu || "";
         
@@ -164,31 +317,33 @@ serve(async (req) => {
 
         const data = await sendWithResend({
           from: `${campaign.expediteur_nom} <${campaign.expediteur_email}>`,
-          to: recipient.contacts.email,
+          to: email,
           subject: campaign.sujet_email,
           html: trackedHtml,
         });
 
-        console.log(`Envoyé à ${recipient.contacts.email}:`, data);
-        successCount++;
+        console.log(`Envoyé à ${email}:`, data);
         
-        // Mettre à jour le statut en envoyé
+        // Mettre à jour le statut du destinataire
         await supabaseClient
           .from("campaign_recipients")
-          .update({ 
-            statut_envoi: "envoye", 
-            date_envoi: new Date().toISOString() 
+          .update({
+            statut_envoi: "envoye",
+            date_envoi: new Date().toISOString(),
           })
           .eq("id", recipient.id);
+
+        successCount++;
       } catch (err) {
-        console.error(`Erreur pour ${recipient.contacts.email}:`, err);
+        const email = emailMap.get(recipient.contact_id);
+        console.error(`Erreur pour ${email}:`, err);
         errorCount++;
         
         await supabaseClient
           .from("campaign_recipients")
-          .update({ 
+          .update({
             statut_envoi: "erreur",
-            date_envoi: new Date().toISOString() 
+            date_envoi: new Date().toISOString(),
           })
           .eq("id", recipient.id);
       }
@@ -198,9 +353,9 @@ serve(async (req) => {
     const newStatus = errorCount === 0 ? "envoye" : (successCount > 0 ? "partiellement_envoye" : "erreur");
     await supabaseClient
       .from("campaigns")
-      .update({ 
+      .update({
         statut: newStatus,
-        date_envoi: new Date().toISOString()
+        date_envoi: new Date().toISOString(),
       })
       .eq("id", campaignId);
 
@@ -209,9 +364,21 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: `${successCount} email(s) envoyé(s), ${errorCount} erreur(s)`,
-        successCount,
-        errorCount,
+        message: `Campagne envoyée: ${successCount} succès, ${errorCount} erreurs`,
+        stats: {
+          sent: successCount,
+          failed: errorCount,
+          total: validRecipients.length,
+          invalidEmails: invalidEmails.length,
+          bounceWarnings: bounceWarnings.length,
+        },
+        warnings: bounceWarnings.length > 0 ? bounceWarnings : undefined,
+        invalidEmails: invalidEmails.length > 0 ? invalidEmails : undefined,
+        quota: {
+          limit: quotaCheck.limit,
+          used: quotaCheck.used,
+          remaining: quotaCheck.remaining ? quotaCheck.remaining - successCount : undefined,
+        },
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
