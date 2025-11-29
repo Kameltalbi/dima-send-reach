@@ -46,11 +46,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useTranslation } from "react-i18next";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
+import { usePermissions } from "@/hooks/usePermissions";
+import { Download } from "lucide-react";
 
 const Contacts = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { canDeleteContacts, canExportContacts } = usePermissions();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [segmentFilter, setSegmentFilter] = useState<string>("all");
@@ -541,11 +544,65 @@ const Contacts = () => {
   };
 
   const handleBulkDelete = () => {
+    if (!canDeleteContacts) {
+      toast.error("Vous n'avez pas la permission de supprimer des contacts");
+      return;
+    }
     if (!selectedContacts.length) {
       toast.error("Aucun contact sélectionné");
       return;
     }
     bulkDeleteMutation.mutate(selectedContacts);
+  };
+
+  const handleExportCSV = () => {
+    if (!canExportContacts) {
+      toast.error("Vous n'avez pas la permission d'exporter des contacts");
+      return;
+    }
+
+    // Préparer les données pour l'export
+    const csvData = filteredContacts.map(contact => ({
+      email: contact.email,
+      prenom: contact.prenom,
+      nom: contact.nom,
+      telephone: contact.telephone || "",
+      fonction: contact.fonction || "",
+      societe: contact.societe || "",
+      site_web: contact.site_web || "",
+      pays: contact.pays || "",
+      ville: contact.ville || "",
+      segment: contact.segment || "",
+      statut: contact.statut,
+    }));
+
+    // Créer les headers CSV
+    const headers = ["email", "prenom", "nom", "telephone", "fonction", "societe", "site_web", "pays", "ville", "segment", "statut"];
+    const csvContent = [
+      headers.join(","),
+      ...csvData.map(row => 
+        headers.map(header => {
+          const value = row[header as keyof typeof row];
+          // Échapper les virgules et guillemets
+          return typeof value === 'string' && (value.includes(',') || value.includes('"'))
+            ? `"${value.replace(/"/g, '""')}"`
+            : value;
+        }).join(",")
+      )
+    ].join("\n");
+
+    // Télécharger le fichier
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `contacts_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast.success(`${csvData.length} contact(s) exporté(s)`);
   };
 
   const getStatusBadge = (statut: string) => {
@@ -572,6 +629,13 @@ const Contacts = () => {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          {canExportContacts && filteredContacts.length > 0 && (
+            <Button variant="outline" onClick={handleExportCSV} className="gap-2 w-full sm:w-auto">
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Exporter CSV</span>
+              <span className="sm:hidden">Export</span>
+            </Button>
+          )}
           <Button variant="outline" onClick={() => setIsImportOpen(true)} className="gap-2 w-full sm:w-auto">
             <Upload className="h-4 w-4" />
             <span className="hidden sm:inline">{t('contacts.importCSV')}</span>
@@ -637,7 +701,7 @@ const Contacts = () => {
                 {selectedContacts.length > 0 && ` • ${selectedContacts.length} sélectionné(s)`}
               </CardDescription>
             </div>
-            {selectedContacts.length > 0 && (
+            {selectedContacts.length > 0 && canDeleteContacts && (
               <Button
                 variant="destructive"
                 size="sm"
@@ -733,14 +797,18 @@ const Contacts = () => {
                               <Edit className="h-4 w-4 mr-2" />
                               Modifier
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => handleDelete(contact)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Supprimer
-                            </DropdownMenuItem>
+                            {canDeleteContacts && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => handleDelete(contact)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Supprimer
+                                </DropdownMenuItem>
+                              </>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>

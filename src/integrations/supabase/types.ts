@@ -376,6 +376,7 @@ export type Database = {
           nom: string
           nom_entreprise: string
           organization_id: string | null
+          organization_role: Database["public"]["Enums"]["organization_role"]
           prenom: string
           updated_at: string
         }
@@ -386,6 +387,7 @@ export type Database = {
           nom: string
           nom_entreprise: string
           organization_id?: string | null
+          organization_role?: Database["public"]["Enums"]["organization_role"]
           prenom: string
           updated_at?: string
         }
@@ -396,6 +398,7 @@ export type Database = {
           nom?: string
           nom_entreprise?: string
           organization_id?: string | null
+          organization_role?: Database["public"]["Enums"]["organization_role"]
           prenom?: string
           updated_at?: string
         }
@@ -569,6 +572,41 @@ export type Database = {
           },
         ]
       }
+      user_permissions: {
+        Row: {
+          created_at: string
+          granted_by: string | null
+          id: string
+          organization_id: string
+          permission: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          organization_id: string
+          permission: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          organization_id?: string
+          permission?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_permissions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_preferences: {
         Row: {
           created_at: string
@@ -634,6 +672,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_permission: {
+        Args: { _permission: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -641,10 +683,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_org_admin: { Args: { _user_id: string }; Returns: boolean }
       is_superadmin: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "superadmin" | "user"
+      organization_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -773,6 +817,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["superadmin", "user"],
+      organization_role: ["admin", "user"],
     },
   },
 } as const

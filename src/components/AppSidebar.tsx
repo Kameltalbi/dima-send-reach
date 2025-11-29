@@ -9,7 +9,8 @@ import {
   FileText,
   HelpCircle,
   Shield,
-  Crown
+  Crown,
+  UsersRound
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -41,6 +42,7 @@ const menuItems = [
 
 const settingsItems = [
   { title: "Paramètres", url: "/parametres", icon: Settings },
+  { title: "Équipe", url: "/team", icon: UsersRound },
   { title: "Support", url: "/support", icon: HelpCircle },
 ];
 
