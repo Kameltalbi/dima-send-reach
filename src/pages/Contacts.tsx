@@ -184,21 +184,38 @@ const Contacts = () => {
   // Mutation pour supprimer plusieurs contacts par lots
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids: string[]) => {
+      if (!ids || ids.length === 0) {
+        return;
+      }
+
       setDeleteProgress(0);
-      // Diviser en lots de 50 pour éviter les URLs trop longues
+
+      // Cas spécial : vue sans filtre ni recherche et tous les contacts sélectionnés
+      const isDeleteAllView =
+        searchQuery === "" &&
+        statusFilter === "all" &&
+        segmentFilter === "all" &&
+        ids.length === filteredContacts.length;
+
+      if (isDeleteAllView) {
+        const { error } = await supabase.from("contacts").delete().eq("user_id", user?.id);
+        if (error) throw error;
+        setDeleteProgress(100);
+        return;
+      }
+
+      // Sinon, on supprime par lots avec liste d'IDs
       const batchSize = 50;
-      const batches = [];
+      const batches: string[][] = [];
       for (let i = 0; i < ids.length; i += batchSize) {
         batches.push(ids.slice(i, i + batchSize));
       }
 
-      // Supprimer chaque lot séquentiellement avec mise à jour de la progression
       for (let i = 0; i < batches.length; i++) {
         const batch = batches[i];
         const { error } = await supabase.from("contacts").delete().in("id", batch);
         if (error) throw error;
-        
-        // Mettre à jour la progression
+
         const progress = Math.round(((i + 1) / batches.length) * 100);
         setDeleteProgress(progress);
       }
@@ -405,6 +422,10 @@ const Contacts = () => {
   };
 
   const handleBulkDelete = () => {
+    if (!selectedContacts.length) {
+      toast.error("Aucun contact sélectionné");
+      return;
+    }
     bulkDeleteMutation.mutate(selectedContacts);
   };
 
