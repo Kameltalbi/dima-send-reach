@@ -938,7 +938,7 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
 
       {/* Dialog import HTML */}
       <Dialog open={importOpen} onOpenChange={setImportOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Importer un template HTML</DialogTitle>
             <DialogDescription>
