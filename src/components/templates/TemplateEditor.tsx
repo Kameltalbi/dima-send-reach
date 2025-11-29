@@ -45,8 +45,17 @@ import {
   PanelLeftClose,
   PanelRightClose,
   PanelLeftOpen,
-  PanelRightOpen
+  PanelRightOpen,
+  Menu
 } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import grapesjs from "grapesjs";
 import "grapesjs/dist/css/grapes.min.css";
@@ -72,6 +81,8 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
   const [showCode, setShowCode] = useState(false);
   const [blocksPanelOpen, setBlocksPanelOpen] = useState(false);
   const [stylesPanelOpen, setStylesPanelOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const { data: template } = useQuery({
     queryKey: ["template", templateId],
@@ -728,136 +739,282 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
       {/* Header moderne et épuré */}
-      <div className="border-b bg-white px-6 py-3 flex items-center justify-between shadow-sm z-10">
-        <div className="flex items-center gap-3">
+      <div className="border-b bg-white px-3 md:px-6 py-2 md:py-3 flex items-center justify-between shadow-sm z-10">
+        <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={onClose} 
-            className="h-8 w-8 hover:bg-muted"
+            className="h-8 w-8 hover:bg-muted flex-shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <Separator orientation="vertical" className="h-6" />
-          <div>
-            <h2 className="font-semibold text-sm text-foreground">
+          {!isMobile && <Separator orientation="vertical" className="h-6" />}
+          <div className="min-w-0 flex-1">
+            <h2 className="font-semibold text-xs md:text-sm text-foreground truncate">
               {templateName || "Nouveau template"}
             </h2>
-            <p className="text-xs text-muted-foreground">Éditeur de template</p>
+            {!isMobile && <p className="text-xs text-muted-foreground">Éditeur de template</p>}
           </div>
         </div>
 
-        {/* Device switcher centré */}
-        <div className="flex items-center gap-1 bg-muted/50 rounded-md p-1">
-          <Button
-            variant={deviceMode === "desktop" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => changeDevice("desktop")}
-            className={`h-7 px-3 text-xs ${deviceMode === "desktop" ? "bg-white shadow-sm" : ""}`}
-          >
-            <Monitor className="h-3.5 w-3.5 mr-1.5" />
-            Desktop
-          </Button>
-          <Button
-            variant={deviceMode === "tablet" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => changeDevice("tablet")}
-            className={`h-7 px-3 text-xs ${deviceMode === "tablet" ? "bg-white shadow-sm" : ""}`}
-          >
-            <Tablet className="h-3.5 w-3.5 mr-1.5" />
-            Tablet
-          </Button>
-          <Button
-            variant={deviceMode === "mobile" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => changeDevice("mobile")}
-            className={`h-7 px-3 text-xs ${deviceMode === "mobile" ? "bg-white shadow-sm" : ""}`}
-          >
-            <Smartphone className="h-3.5 w-3.5 mr-1.5" />
-            Mobile
-          </Button>
-        </div>
+        {/* Desktop: Device switcher centré + Actions */}
+        {!isMobile ? (
+          <>
+            <div className="flex items-center gap-1 bg-muted/50 rounded-md p-1">
+              <Button
+                variant={deviceMode === "desktop" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => changeDevice("desktop")}
+                className={`h-7 px-3 text-xs ${deviceMode === "desktop" ? "bg-white shadow-sm" : ""}`}
+              >
+                <Monitor className="h-3.5 w-3.5 mr-1.5" />
+                Desktop
+              </Button>
+              <Button
+                variant={deviceMode === "tablet" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => changeDevice("tablet")}
+                className={`h-7 px-3 text-xs ${deviceMode === "tablet" ? "bg-white shadow-sm" : ""}`}
+              >
+                <Tablet className="h-3.5 w-3.5 mr-1.5" />
+                Tablet
+              </Button>
+              <Button
+                variant={deviceMode === "mobile" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => changeDevice("mobile")}
+                className={`h-7 px-3 text-xs ${deviceMode === "mobile" ? "bg-white shadow-sm" : ""}`}
+              >
+                <Smartphone className="h-3.5 w-3.5 mr-1.5" />
+                Mobile
+              </Button>
+            </div>
 
-        {/* Actions groupées */}
-        <div className="flex items-center gap-1">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleUndo}
-            className="h-8 w-8 p-0"
-            title="Annuler (Ctrl+Z)"
-          >
-            <Undo2 className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleRedo}
-            className="h-8 w-8 p-0"
-            title="Refaire (Ctrl+Y)"
-          >
-            <Redo2 className="h-4 w-4" />
-          </Button>
-          <Separator orientation="vertical" className="h-6 mx-1" />
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={toggleCodeView}
-            className="h-8 px-2 text-xs"
-            title="Code"
-          >
-            <FileCode className="h-3.5 w-3.5 mr-1.5" />
-            Code
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handlePreview}
-            className="h-8 px-2 text-xs"
-            title="Aperçu"
-          >
-            <Eye className="h-3.5 w-3.5 mr-1.5" />
-            Aperçu
-          </Button>
-          <Separator orientation="vertical" className="h-6 mx-1" />
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleImport}
-            className="h-8 px-2 text-xs"
-            title="Importer un template HTML"
-          >
-            <FileCode className="h-3.5 w-3.5 mr-1.5" />
-            Importer HTML
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setSettingsOpen(true)}
-            className="h-8 px-2 text-xs"
-          >
-            <Settings className="h-3.5 w-3.5 mr-1.5" />
-            Paramètres
-          </Button>
-          <Button 
-            size="sm" 
-            onClick={() => saveMutation.mutate()}
-            className="h-8 px-3 text-xs"
-            disabled={saveMutation.isPending}
-          >
-            {saveMutation.isPending ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                Enregistrement...
-              </>
-            ) : (
-              <>
-                <Save className="h-3.5 w-3.5 mr-1.5" />
-                Enregistrer
-              </>
-            )}
-          </Button>
-        </div>
+            <div className="flex items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleUndo}
+                className="h-8 w-8 p-0"
+                title="Annuler (Ctrl+Z)"
+              >
+                <Undo2 className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleRedo}
+                className="h-8 w-8 p-0"
+                title="Refaire (Ctrl+Y)"
+              >
+                <Redo2 className="h-4 w-4" />
+              </Button>
+              <Separator orientation="vertical" className="h-6 mx-1" />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={toggleCodeView}
+                className="h-8 px-2 text-xs"
+                title="Code"
+              >
+                <FileCode className="h-3.5 w-3.5 mr-1.5" />
+                Code
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handlePreview}
+                className="h-8 px-2 text-xs"
+                title="Aperçu"
+              >
+                <Eye className="h-3.5 w-3.5 mr-1.5" />
+                Aperçu
+              </Button>
+              <Separator orientation="vertical" className="h-6 mx-1" />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleImport}
+                className="h-8 px-2 text-xs"
+                title="Importer un template HTML"
+              >
+                <FileCode className="h-3.5 w-3.5 mr-1.5" />
+                Importer HTML
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setSettingsOpen(true)}
+                className="h-8 px-2 text-xs"
+              >
+                <Settings className="h-3.5 w-3.5 mr-1.5" />
+                Paramètres
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={() => saveMutation.mutate()}
+                className="h-8 px-3 text-xs"
+                disabled={saveMutation.isPending}
+              >
+                {saveMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    Enregistrement...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-3.5 w-3.5 mr-1.5" />
+                    Enregistrer
+                  </>
+                )}
+              </Button>
+            </div>
+          </>
+        ) : (
+          /* Mobile: Save + Menu hamburger */
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button 
+              size="sm" 
+              onClick={() => saveMutation.mutate()}
+              className="h-8 px-2 text-xs"
+              disabled={saveMutation.isPending}
+            >
+              {saveMutation.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Save className="h-3.5 w-3.5" />
+              )}
+            </Button>
+
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="h-8 w-8">
+                  <Menu className="h-4 w-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Outils</SheetTitle>
+                </SheetHeader>
+                <div className="flex flex-col gap-4 mt-6">
+                  {/* Device Mode */}
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Mode d'affichage</p>
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        variant={deviceMode === "desktop" ? "secondary" : "outline"}
+                        onClick={() => {
+                          changeDevice("desktop");
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full justify-start gap-2"
+                      >
+                        <Monitor className="h-4 w-4" />
+                        Desktop
+                      </Button>
+                      <Button
+                        variant={deviceMode === "tablet" ? "secondary" : "outline"}
+                        onClick={() => {
+                          changeDevice("tablet");
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full justify-start gap-2"
+                      >
+                        <Tablet className="h-4 w-4" />
+                        Tablet
+                      </Button>
+                      <Button
+                        variant={deviceMode === "mobile" ? "secondary" : "outline"}
+                        onClick={() => {
+                          changeDevice("mobile");
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full justify-start gap-2"
+                      >
+                        <Smartphone className="h-4 w-4" />
+                        Mobile
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Actions</p>
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          handleUndo();
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full justify-start gap-2"
+                      >
+                        <Undo2 className="h-4 w-4" />
+                        Annuler
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          handleRedo();
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full justify-start gap-2"
+                      >
+                        <Redo2 className="h-4 w-4" />
+                        Refaire
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          toggleCodeView();
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full justify-start gap-2"
+                      >
+                        <FileCode className="h-4 w-4" />
+                        Code
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          handlePreview();
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full justify-start gap-2"
+                      >
+                        <Eye className="h-4 w-4" />
+                        Aperçu
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          handleImport();
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full justify-start gap-2"
+                      >
+                        <FileCode className="h-4 w-4" />
+                        Importer HTML
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setSettingsOpen(true);
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full justify-start gap-2"
+                      >
+                        <Settings className="h-4 w-4" />
+                        Paramètres
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+        )}
       </div>
 
       {/* Zone d'édition - Layout moderne */}
