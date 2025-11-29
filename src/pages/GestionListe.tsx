@@ -32,7 +32,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Plus, Search, Trash2, Mail, Users, X } from "lucide-react";
+import { ArrowLeft, Plus, Search, Trash2, Mail, Users, X, TestTube } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -279,6 +279,7 @@ const GestionListe = () => {
                     <TableHead>Nom</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Segment</TableHead>
+                    <TableHead>Type</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -299,6 +300,14 @@ const GestionListe = () => {
                           <Badge variant="outline">{contact.segment}</Badge>
                         ) : (
                           <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {contact.is_test_contact && (
+                          <Badge variant="secondary" className="gap-1">
+                            <TestTube className="h-3 w-3" />
+                            Test
+                          </Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
