@@ -195,25 +195,27 @@ const NouvelleCampagne = () => {
 
       if (error) throw error;
 
-      // Si ce n'est pas un brouillon et qu'on envoie maintenant, créer les destinataires et lancer l'envoi
-      if (!isDraft && formData.whenToSend === "now" && data) {
+      // Si ce n'est pas un brouillon, créer les destinataires
+      if (!isDraft && data) {
         await createRecipients(data.id);
         
-        // Lancer l'envoi via l'Edge Function
-        toast.info("Envoi de la campagne en cours...");
-        const { data: sendResult, error: sendError } = await supabase.functions.invoke("send-email", {
-          body: {
-            campaignId: data.id,
-          },
-        });
+        // Si envoi immédiat, lancer l'Edge Function
+        if (formData.whenToSend === "now") {
+          toast.info("Envoi de la campagne en cours...");
+          const { data: sendResult, error: sendError } = await supabase.functions.invoke("send-email", {
+            body: {
+              campaignId: data.id,
+            },
+          });
 
-        if (sendError) {
-          console.error("Erreur lors de l'envoi:", sendError);
-          throw new Error("La campagne a été créée mais l'envoi a échoué. Veuillez réessayer depuis la liste des campagnes.");
-        }
+          if (sendError) {
+            console.error("Erreur lors de l'envoi:", sendError);
+            throw new Error("La campagne a été créée mais l'envoi a échoué. Veuillez réessayer depuis la liste des campagnes.");
+          }
 
-        if (!sendResult?.success) {
-          throw new Error(sendResult?.message || "Erreur lors de l'envoi de la campagne");
+          if (!sendResult?.success) {
+            throw new Error(sendResult?.message || "Erreur lors de l'envoi de la campagne");
+          }
         }
       }
 
@@ -761,10 +763,12 @@ const NouvelleCampagne = () => {
               >
                 {saveMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
+                ) : formData.whenToSend === "schedule" ? (
+                  <Calendar className="h-4 w-4" />
                 ) : (
                   <Send className="h-4 w-4" />
                 )}
-                Envoyer maintenant
+                {formData.whenToSend === "schedule" ? "Programmer l'envoi" : "Envoyer maintenant"}
               </Button>
             </div>
           </div>
