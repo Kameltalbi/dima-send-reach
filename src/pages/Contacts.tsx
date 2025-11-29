@@ -45,6 +45,7 @@ import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTranslation } from "react-i18next";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
 
 const Contacts = () => {
   const { t } = useTranslation();
@@ -60,6 +61,7 @@ const Contacts = () => {
   const [selectedContact, setSelectedContact] = useState<any>(null);
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
+  const [deleteProgress, setDeleteProgress] = useState(0);
   const [formData, setFormData] = useState({
     email: "",
     prenom: "",
@@ -182,6 +184,7 @@ const Contacts = () => {
   // Mutation pour supprimer plusieurs contacts par lots
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids: string[]) => {
+      setDeleteProgress(0);
       // Diviser en lots de 50 pour éviter les URLs trop longues
       const batchSize = 50;
       const batches = [];
@@ -189,20 +192,27 @@ const Contacts = () => {
         batches.push(ids.slice(i, i + batchSize));
       }
 
-      // Supprimer chaque lot séquentiellement
-      for (const batch of batches) {
+      // Supprimer chaque lot séquentiellement avec mise à jour de la progression
+      for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i];
         const { error } = await supabase.from("contacts").delete().in("id", batch);
         if (error) throw error;
+        
+        // Mettre à jour la progression
+        const progress = Math.round(((i + 1) / batches.length) * 100);
+        setDeleteProgress(progress);
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
       toast.success(`${selectedContacts.length} contact(s) supprimé(s)`);
+      setDeleteProgress(0);
       setIsBulkDeleteOpen(false);
       setSelectedContacts([]);
     },
     onError: () => {
       toast.error("Erreur lors de la suppression des contacts");
+      setDeleteProgress(0);
     },
   });
 
@@ -827,18 +837,38 @@ const Contacts = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmer la suppression en masse</AlertDialogTitle>
-            <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer {selectedContacts.length} contact{selectedContacts.length > 1 ? "s" : ""} ?
-              Cette action est irréversible.
+            <AlertDialogDescription className="space-y-4">
+              <p>
+                Êtes-vous sûr de vouloir supprimer {selectedContacts.length} contact{selectedContacts.length > 1 ? "s" : ""} ?
+                Cette action est irréversible.
+              </p>
+              {bulkDeleteMutation.isPending && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Suppression en cours...</span>
+                    <span className="font-medium">{deleteProgress}%</span>
+                  </div>
+                  <Progress value={deleteProgress} className="h-2" />
+                </div>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setSelectedContacts([])}>Annuler</AlertDialogCancel>
+            <AlertDialogCancel 
+              onClick={() => setSelectedContacts([])}
+              disabled={bulkDeleteMutation.isPending}
+            >
+              Annuler
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBulkDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={bulkDeleteMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
             >
-              Supprimer {selectedContacts.length} contact{selectedContacts.length > 1 ? "s" : ""}
+              {bulkDeleteMutation.isPending 
+                ? "Suppression..." 
+                : `Supprimer ${selectedContacts.length} contact${selectedContacts.length > 1 ? "s" : ""}`
+              }
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
