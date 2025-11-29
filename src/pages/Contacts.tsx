@@ -833,26 +833,34 @@ const Contacts = () => {
       </AlertDialog>
 
       {/* Dialog suppression en masse */}
-      <AlertDialog open={isBulkDeleteOpen} onOpenChange={setIsBulkDeleteOpen}>
+      <AlertDialog 
+        open={isBulkDeleteOpen} 
+        onOpenChange={(open) => {
+          if (!bulkDeleteMutation.isPending) {
+            setIsBulkDeleteOpen(open);
+            if (!open) {
+              setSelectedContacts([]);
+            }
+          }
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmer la suppression en masse</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-4">
-              <p>
-                Êtes-vous sûr de vouloir supprimer {selectedContacts.length} contact{selectedContacts.length > 1 ? "s" : ""} ?
-                Cette action est irréversible.
-              </p>
-              {bulkDeleteMutation.isPending && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Suppression en cours...</span>
-                    <span className="font-medium">{deleteProgress}%</span>
-                  </div>
-                  <Progress value={deleteProgress} className="h-2" />
-                </div>
-              )}
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer {selectedContacts.length} contact{selectedContacts.length > 1 ? "s" : ""} ?
+              Cette action est irréversible.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {bulkDeleteMutation.isPending && (
+            <div className="px-6 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Suppression en cours...</span>
+                <span className="font-medium">{deleteProgress}%</span>
+              </div>
+              <Progress value={deleteProgress} className="h-2" />
+            </div>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel 
               onClick={() => setSelectedContacts([])}
