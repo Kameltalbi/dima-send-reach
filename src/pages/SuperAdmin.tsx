@@ -89,7 +89,7 @@ export default function SuperAdmin() {
      organization_id: "",
      plan_type: "free",
      statut: "active",
-     email_limit: 1000,
+     email_limit: 3000,
      date_fin: "",
      notes: "",
    });
@@ -312,7 +312,7 @@ export default function SuperAdmin() {
        organization_id: "",
        plan_type: "free",
        statut: "active",
-       email_limit: 1000,
+       email_limit: 3000,
        date_fin: "",
        notes: "",
      });

@@ -104,9 +104,11 @@ export const OrdersTable = () => {
 
   const createSubscription = async (order: any) => {
     const emailLimits: Record<string, number> = {
+      free: 3000,
       starter: 10000,
-      essential: 50000,
-      pro: 200000,
+      essential: 20000,
+      pro: 50000,
+      business: 100000,
     };
 
     const { error } = await supabase.from("subscriptions").insert({
