@@ -39,7 +39,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, MoreVertical, Edit, Trash2, Users, Mail, ArrowRight } from "lucide-react";
+import { Plus, Search, MoreVertical, Edit, Trash2, Users, Mail, ArrowRight, TestTube, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -54,6 +54,7 @@ const Listes = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedList, setSelectedList] = useState<any>(null);
+  const [isTestContactsOpen, setIsTestContactsOpen] = useState(false);
   const [formData, setFormData] = useState({
     nom: "",
     description: "",
@@ -77,6 +78,22 @@ const Listes = () => {
         ...list,
         contactCount: list.list_contacts?.[0]?.count || 0,
       }));
+    },
+    enabled: !!user,
+  });
+
+  // Charger les contacts de test
+  const { data: testContacts } = useQuery({
+    queryKey: ["test-contacts-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contacts")
+        .select("*")
+        .eq("user_id", user?.id)
+        .eq("is_test_contact", true)
+        .order("prenom", { ascending: true });
+      if (error) throw error;
+      return data;
     },
     enabled: !!user,
   });
@@ -192,6 +209,24 @@ const Listes = () => {
     navigate(`/listes/${listId}`);
   };
 
+  // Mutation pour retirer le statut de test
+  const removeTestStatusMutation = useMutation({
+    mutationFn: async (contactId: string) => {
+      const { error } = await supabase
+        .from("contacts")
+        .update({ is_test_contact: false })
+        .eq("id", contactId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["test-contacts-list"] });
+      toast.success("Contact retiré de la liste de test");
+    },
+    onError: () => {
+      toast.error("Erreur lors du retrait du statut de test");
+    },
+  });
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -207,6 +242,61 @@ const Listes = () => {
           Nouvelle liste
         </Button>
       </div>
+
+      {/* Contacts de test */}
+      {testContacts && testContacts.length > 0 && (
+        <Card className="border-secondary bg-secondary/5">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <TestTube className="h-5 w-5 text-secondary-foreground" />
+                <CardTitle>Contacts de test</CardTitle>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsTestContactsOpen(!isTestContactsOpen)}
+              >
+                {isTestContactsOpen ? "Masquer" : "Gérer"}
+              </Button>
+            </div>
+            <CardDescription>
+              {testContacts.length} contact{testContacts.length > 1 ? "s" : ""} marqué{testContacts.length > 1 ? "s" : ""} pour les tests d'envoi
+            </CardDescription>
+          </CardHeader>
+          {isTestContactsOpen && (
+            <CardContent>
+              <div className="space-y-2">
+                {testContacts.map((contact) => (
+                  <div
+                    key={contact.id}
+                    className="flex items-center justify-between p-3 rounded-lg border bg-background"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium">
+                          {contact.prenom} {contact.nom}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {contact.email}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeTestStatusMutation.mutate(contact.id)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      )}
 
       {/* Recherche */}
       <Card>
