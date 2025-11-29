@@ -65,6 +65,8 @@ const Contacts = () => {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [importProgress, setImportProgress] = useState(0);
   const [isImporting, setIsImporting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(100);
   const [formData, setFormData] = useState({
     email: "",
     prenom: "",
@@ -80,15 +82,43 @@ const Contacts = () => {
     is_test_contact: false,
   });
 
-  // Charger les contacts
-  const { data: contacts, isLoading } = useQuery({
-    queryKey: ["contacts", statusFilter, segmentFilter],
+  // Compter le total de contacts
+  const { data: totalCount } = useQuery({
+    queryKey: ["contacts-count", statusFilter, segmentFilter],
     queryFn: async () => {
+      let query = supabase
+        .from("contacts")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user?.id);
+
+      if (statusFilter !== "all") {
+        query = query.eq("statut", statusFilter);
+      }
+
+      if (segmentFilter !== "all") {
+        query = query.eq("segment", segmentFilter);
+      }
+
+      const { count, error } = await query;
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!user,
+  });
+
+  // Charger les contacts avec pagination
+  const { data: contacts, isLoading } = useQuery({
+    queryKey: ["contacts", statusFilter, segmentFilter, currentPage, itemsPerPage],
+    queryFn: async () => {
+      const from = (currentPage - 1) * itemsPerPage;
+      const to = from + itemsPerPage - 1;
+
       let query = supabase
         .from("contacts")
         .select("*")
         .eq("user_id", user?.id)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .range(from, to);
 
       if (statusFilter !== "all") {
         query = query.eq("statut", statusFilter);
@@ -105,7 +135,7 @@ const Contacts = () => {
     enabled: !!user,
   });
 
-  // Filtrer par recherche
+  // Filtrer par recherche (sur la page courante uniquement)
   const filteredContacts = contacts?.filter((contact) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
@@ -116,6 +146,9 @@ const Contacts = () => {
       contact.segment?.toLowerCase().includes(query)
     );
   }) || [];
+
+  // Calculer le nombre total de pages
+  const totalPages = Math.ceil((totalCount || 0) / itemsPerPage);
 
   // Obtenir les segments uniques
   const segments = Array.from(new Set(contacts?.map((c) => c.segment).filter(Boolean) || []));
@@ -599,7 +632,8 @@ const Contacts = () => {
             <div>
               <CardTitle>Liste des contacts</CardTitle>
               <CardDescription>
-                {filteredContacts.length} contact{filteredContacts.length > 1 ? "s" : ""} trouvé{filteredContacts.length > 1 ? "s" : ""}
+                {totalCount || 0} contact{(totalCount || 0) > 1 ? "s" : ""} au total
+                {searchQuery && ` • ${filteredContacts.length} affiché${filteredContacts.length > 1 ? "s" : ""}`}
                 {selectedContacts.length > 0 && ` • ${selectedContacts.length} sélectionné(s)`}
               </CardDescription>
             </div>
@@ -714,6 +748,49 @@ const Contacts = () => {
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          )}
+          
+          {/* Pagination */}
+          {!isLoading && filteredContacts.length > 0 && totalPages > 1 && (
+            <div className="flex items-center justify-between pt-4 border-t">
+              <div className="text-sm text-muted-foreground">
+                Page {currentPage} sur {totalPages}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                >
+                  Première
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Précédent
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Suivant
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  Dernière
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
