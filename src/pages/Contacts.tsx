@@ -62,6 +62,7 @@ const Contacts = () => {
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
   const [deleteProgress, setDeleteProgress] = useState(0);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     email: "",
     prenom: "",
@@ -328,11 +329,17 @@ const Contacts = () => {
     if (!file) return;
 
     if (!file.name.endsWith(".csv")) {
-      toast.error(t('contacts.importError'));
+      toast.error("Le fichier doit être au format CSV");
       return;
     }
 
-    const text = await file.text();
+    setCsvFile(file);
+  };
+
+  const processCSVImport = async () => {
+    if (!csvFile) return;
+
+    const text = await csvFile.text();
     const lines = text.split("\n").filter((line) => line.trim());
     
     if (lines.length === 0) {
@@ -430,6 +437,7 @@ const Contacts = () => {
         }
         queryClient.invalidateQueries({ queryKey: ["contacts"] });
         setIsImportOpen(false);
+        setCsvFile(null);
       }
     } catch (error) {
       toast.error(t('contacts.importError'));
@@ -936,7 +944,12 @@ const Contacts = () => {
       </AlertDialog>
 
       {/* Dialog import CSV */}
-      <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+      <Dialog open={isImportOpen} onOpenChange={(open) => {
+        setIsImportOpen(open);
+        if (!open) {
+          setCsvFile(null);
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Importer des contacts depuis CSV</DialogTitle>
@@ -954,6 +967,11 @@ const Contacts = () => {
                 onChange={handleImportCSV}
                 className="cursor-pointer"
               />
+              {csvFile && (
+                <p className="text-sm text-green-600 font-medium">
+                  ✓ Fichier sélectionné : {csvFile.name}
+                </p>
+              )}
               <div className="text-xs text-muted-foreground space-y-2">
                 <p>
                   <strong>Format accepté :</strong> Le fichier peut utiliser des virgules (,) ou des points-virgules (;) comme séparateurs.
@@ -971,8 +989,17 @@ const Contacts = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsImportOpen(false)}>
-              Fermer
+            <Button variant="outline" onClick={() => {
+              setIsImportOpen(false);
+              setCsvFile(null);
+            }}>
+              Annuler
+            </Button>
+            <Button 
+              onClick={processCSVImport}
+              disabled={!csvFile}
+            >
+              Importer
             </Button>
           </DialogFooter>
         </DialogContent>
