@@ -339,6 +339,25 @@ const Pricing = () => {
           ))}
         </div>
 
+        {/* Emails supplémentaires */}
+        <div className="mt-16 max-w-3xl mx-auto">
+          <Card className="border-2 border-accent/30 bg-gradient-to-br from-accent/5 to-transparent">
+            <CardContent className="p-8 text-center">
+              <h3 className="text-2xl font-heading font-bold text-foreground mb-4">
+                Besoin de plus d'emails ?
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                Dépassez votre quota mensuel en achetant des emails supplémentaires
+              </p>
+              <div className="inline-flex items-center gap-3 bg-background rounded-lg px-8 py-4 border-2 border-accent/30">
+                <span className="text-3xl font-bold text-accent">+10 DT</span>
+                <span className="text-muted-foreground">/</span>
+                <span className="text-xl font-semibold text-foreground">1,000 emails</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* FAQ / Additional Info */}
         <div className="mt-24 text-center space-y-4">
           <h2 className="text-3xl font-heading font-bold text-foreground">
