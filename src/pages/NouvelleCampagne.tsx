@@ -644,24 +644,40 @@ const NouvelleCampagne = () => {
             <CardHeader>
               <CardTitle>Paramètres d'envoi</CardTitle>
               <CardDescription>
-                Configurez quand et comment envoyer votre campagne
+                Choisissez le moment d'envoi de votre campagne
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Quand envoyer ?</Label>
-                <Select 
-                  value={formData.whenToSend} 
-                  onValueChange={(value) => setFormData({ ...formData, whenToSend: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="now">Maintenant</SelectItem>
-                    <SelectItem value="schedule">Programmer</SelectItem>
-                  </SelectContent>
-                </Select>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">Quand envoyer la campagne ?</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, whenToSend: "now" })}
+                    className={`flex flex-col items-center justify-center p-6 rounded-lg border-2 transition-all ${
+                      formData.whenToSend === "now"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <Send className="h-8 w-8 mb-2" />
+                    <span className="font-medium">Envoyer maintenant</span>
+                    <span className="text-sm text-muted-foreground mt-1">Envoi immédiat</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, whenToSend: "schedule" })}
+                    className={`flex flex-col items-center justify-center p-6 rounded-lg border-2 transition-all ${
+                      formData.whenToSend === "schedule"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <Calendar className="h-8 w-8 mb-2" />
+                    <span className="font-medium">Programmer l'envoi</span>
+                    <span className="text-sm text-muted-foreground mt-1">Choisir date et heure</span>
+                  </button>
+                </div>
               </div>
 
               {formData.whenToSend === "schedule" && (
