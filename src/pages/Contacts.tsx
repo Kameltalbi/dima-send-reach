@@ -686,14 +686,20 @@ const Contacts = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedContacts(filteredContacts.map(c => c.id));
-      setSelectAllMode(false);
+      // S'il y a plusieurs pages de contacts, on sélectionne directement tous les contacts
+      if (totalCount && totalCount > filteredContacts.length) {
+        setSelectAllMode(true);
+        setSelectedContacts([]);
+      } else {
+        // Sinon, on sélectionne seulement les contacts de la page courante
+        setSelectedContacts(filteredContacts.map((c) => c.id));
+        setSelectAllMode(false);
+      }
     } else {
       setSelectedContacts([]);
       setSelectAllMode(false);
     }
   };
-
   const handleSelectAllContacts = () => {
     setSelectAllMode(true);
     setSelectedContacts([]);
