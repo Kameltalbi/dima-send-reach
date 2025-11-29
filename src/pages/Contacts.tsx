@@ -278,10 +278,7 @@ const Contacts = () => {
 
     const text = await file.text();
     const lines = text.split("\n").filter((line) => line.trim());
-    
-    // Détecter automatiquement le séparateur (virgule ou point-virgule)
-    const delimiter = lines[0].includes(";") ? ";" : ",";
-    const headers = lines[0].split(delimiter).map((h) => h.trim().toLowerCase());
+    const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
 
     // Trouver les index des colonnes
     const emailIndex = headers.findIndex((h) => h.includes("email"));
@@ -302,7 +299,7 @@ const Contacts = () => {
 
     const contactsToImport = [];
     for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(delimiter).map((v) => v.trim());
+      const values = lines[i].split(",").map((v) => v.trim());
       const email = values[emailIndex];
       
       if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -335,35 +332,18 @@ const Contacts = () => {
     }
 
     try {
-      // Vérifier les emails existants
-      const emailsToCheck = contactsToImport.map(c => c.email);
-      const { data: existingContacts } = await supabase
-        .from("contacts")
-        .select("email")
-        .eq("user_id", user?.id)
-        .in("email", emailsToCheck);
-
-      const existingEmails = new Set(existingContacts?.map(c => c.email) || []);
-      const newContacts = contactsToImport.filter(c => !existingEmails.has(c.email));
-      const duplicatesCount = contactsToImport.length - newContacts.length;
-
-      if (newContacts.length === 0) {
-        toast.error("Tous les contacts existent déjà dans votre liste");
-        return;
-      }
-
-      const { error } = await supabase.from("contacts").insert(newContacts);
+      const { error } = await supabase.from("contacts").insert(contactsToImport);
       if (error) {
-        throw error;
+        if (error.code === "23505") {
+          toast.error(t('contacts.importError'));
+        } else {
+          throw error;
+        }
+      } else {
+        toast.success(t('contacts.importSuccess'));
+        queryClient.invalidateQueries({ queryKey: ["contacts"] });
+        setIsImportOpen(false);
       }
-      
-      const message = duplicatesCount > 0
-        ? `${newContacts.length} contacts importés, ${duplicatesCount} doublon(s) ignoré(s)`
-        : t('contacts.importSuccess');
-      
-      toast.success(message);
-      queryClient.invalidateQueries({ queryKey: ["contacts"] });
-      setIsImportOpen(false);
     } catch (error) {
       toast.error(t('contacts.importError'));
     }
