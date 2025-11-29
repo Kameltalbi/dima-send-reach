@@ -70,8 +70,8 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
   const [templateType, setTemplateType] = useState("newsletter");
   const [deviceMode, setDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const [showCode, setShowCode] = useState(false);
-  const [blocksPanelOpen, setBlocksPanelOpen] = useState(true);
-  const [stylesPanelOpen, setStylesPanelOpen] = useState(true);
+  const [blocksPanelOpen, setBlocksPanelOpen] = useState(false);
+  const [stylesPanelOpen, setStylesPanelOpen] = useState(false);
 
   const { data: template } = useQuery({
     queryKey: ["template", templateId],
