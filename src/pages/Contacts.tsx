@@ -303,11 +303,17 @@ const Contacts = () => {
       const email = values[emailIndex];
       
       if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        // Générer nom/prénom par défaut si manquants
+        const emailParts = email.split("@");
+        const emailUsername = emailParts[0];
+        const defaultPrenom = values[prenomIndex] || emailUsername;
+        const defaultNom = values[nomIndex] || "Contact";
+        
         contactsToImport.push({
           user_id: user?.id,
           email,
-          nom: values[nomIndex] || "",
-          prenom: values[prenomIndex] || "",
+          nom: defaultNom,
+          prenom: defaultPrenom,
           telephone: values[telephoneIndex] || null,
           fonction: values[fonctionIndex] || null,
           societe: values[societeIndex] || null,
