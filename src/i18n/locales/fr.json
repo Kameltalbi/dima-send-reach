@@ -82,52 +82,60 @@
           "name": "Free",
           "description": "Pour tester la plateforme",
           "price": "0 DT",
-          "period": "/an",
+          "period": "/mois",
           "features": {
-            "emails": "3,000 e-mails / mois",
+            "emails": "3,000 e-mails / mois (100/jour)",
             "users": "1 utilisateur",
-            "domains": "1 domaine",
-            "templates": "3 templates"
+            "domains": "1 domaine"
           },
           "cta": "Commencer gratuitement"
         },
         "starter": {
           "name": "Starter",
           "description": "Pour les petites entreprises",
-          "price": "340 DT",
-          "period": "/an",
+          "price": "35 DT",
+          "period": "/mois",
           "features": {
             "emails": "10,000 e-mails / mois",
             "users": "3 utilisateurs",
-            "domains": "3 domaines",
-            "templates": "5 templates"
+            "domains": "2 domaines"
           },
           "cta": "Choisir ce plan"
         },
         "essential": {
           "name": "Essential",
-          "description": "Pour les PME et équipes marketing",
-          "price": "590 DT",
-          "period": "/an",
+          "description": "Pour les PME et agences",
+          "price": "70 DT",
+          "period": "/mois",
           "popular": "PLUS POPULAIRE",
           "features": {
-            "emails": "50,000 e-mails / mois",
+            "emails": "20,000 e-mails / mois",
             "users": "10 utilisateurs",
-            "domains": "10 domaines",
-            "templates": "10 templates"
+            "domains": "5 domaines"
           },
           "cta": "Choisir ce plan"
         },
         "pro": {
           "name": "Pro",
-          "description": "Pour les grandes entreprises",
-          "price": "990 DT",
-          "period": "/an",
+          "description": "Pour l'e-commerce et entreprises actives",
+          "price": "170 DT",
+          "period": "/mois",
           "features": {
-            "emails": "200,000 e-mails / mois",
+            "emails": "50,000 e-mails / mois",
             "users": "Utilisateurs illimités",
-            "domains": "Domaines illimités",
-            "templates": "15 templates"
+            "domains": "10 domaines"
+          },
+          "cta": "Choisir ce plan"
+        },
+        "business": {
+          "name": "Business",
+          "description": "Pour les grandes PME et institutions",
+          "price": "700 DT",
+          "period": "/mois",
+          "features": {
+            "emails": "100,000 e-mails / mois",
+            "users": "Multi-équipes (3 utilisateurs)",
+            "domains": "20 domaines"
           },
           "cta": "Choisir ce plan"
         }
