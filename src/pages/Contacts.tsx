@@ -63,6 +63,8 @@ const Contacts = () => {
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
   const [deleteProgress, setDeleteProgress] = useState(0);
   const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [importProgress, setImportProgress] = useState(0);
+  const [isImporting, setIsImporting] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     prenom: "",
@@ -339,109 +341,153 @@ const Contacts = () => {
   const processCSVImport = async () => {
     if (!csvFile) return;
 
-    const text = await csvFile.text();
-    const lines = text.split("\n").filter((line) => line.trim());
-    
-    if (lines.length === 0) {
-      toast.error("Le fichier CSV est vide");
-      return;
-    }
-
-    // Détecter le séparateur (virgule ou point-virgule)
-    const firstLine = lines[0];
-    const commaCount = (firstLine.match(/,/g) || []).length;
-    const semicolonCount = (firstLine.match(/;/g) || []).length;
-    const delimiter = semicolonCount > commaCount ? ";" : ",";
-
-    console.log(`Délimiteur détecté: ${delimiter === ";" ? "point-virgule" : "virgule"}`);
-
-    const headers = lines[0].split(delimiter).map((h) => h.trim().toLowerCase());
-
-    // Trouver les index des colonnes
-    const emailIndex = headers.findIndex((h) => h.includes("email") || h === "e-mail");
-    const nomIndex = headers.findIndex((h) => (h.includes("nom") || h === "last name") && !h.includes("prenom"));
-    const prenomIndex = headers.findIndex((h) => h.includes("prenom") || h === "first name" || h === "prénom");
-    const telephoneIndex = headers.findIndex((h) => h.includes("telephone") || h.includes("tel") || h.includes("phone"));
-    const fonctionIndex = headers.findIndex((h) => h.includes("fonction") || h.includes("poste") || h === "role");
-    const societeIndex = headers.findIndex((h) => h.includes("societe") || h.includes("entreprise") || h.includes("company"));
-    const siteWebIndex = headers.findIndex((h) => h.includes("site") || h.includes("web") || h.includes("url"));
-    const paysIndex = headers.findIndex((h) => h.includes("pays") || h.includes("country"));
-    const villeIndex = headers.findIndex((h) => h.includes("ville") || h.includes("city"));
-    const segmentIndex = headers.findIndex((h) => h.includes("segment"));
-
-    if (emailIndex === -1) {
-      toast.error("Aucune colonne 'email' trouvée dans le CSV");
-      return;
-    }
-
-    const contactsToImport = [];
-    const errors: string[] = [];
-    
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(delimiter).map((v) => v.trim());
-      const email = values[emailIndex]?.trim();
-      
-      // Validation stricte de l'email
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        errors.push(`Ligne ${i + 1}: Email invalide ou manquant`);
-        continue;
-      }
-
-      // Récupérer les valeurs ou laisser vide si invalide
-      const nom = values[nomIndex]?.trim() || "";
-      const prenom = values[prenomIndex]?.trim() || "";
-      const telephone = values[telephoneIndex]?.trim() || null;
-      const fonction = values[fonctionIndex]?.trim() || null;
-      const societe = values[societeIndex]?.trim() || null;
-      const siteWeb = values[siteWebIndex]?.trim() || null;
-      const pays = values[paysIndex]?.trim() || null;
-      const ville = values[villeIndex]?.trim() || null;
-      const segment = values[segmentIndex]?.trim() || null;
-
-      contactsToImport.push({
-        user_id: user?.id,
-        email,
-        nom: nom || "Contact",
-        prenom: prenom || email.split("@")[0],
-        telephone,
-        fonction,
-        societe,
-        site_web: siteWeb,
-        pays,
-        ville,
-        segment,
-        statut: "actif",
-      });
-    }
-
-    if (contactsToImport.length === 0) {
-      toast.error("Aucun contact valide trouvé dans le fichier");
-      if (errors.length > 0) {
-        console.error("Erreurs d'import:", errors);
-      }
-      return;
-    }
+    setIsImporting(true);
+    setImportProgress(0);
 
     try {
-      const { error } = await supabase.from("contacts").insert(contactsToImport);
-      if (error) {
-        if (error.code === "23505") {
-          toast.error("Certains emails existent déjà dans vos contacts");
-        } else {
-          throw error;
-        }
-      } else {
-        toast.success(`${contactsToImport.length} contact(s) importé(s) avec succès`);
-        if (errors.length > 0) {
-          toast.warning(`${errors.length} ligne(s) ignorée(s) (emails invalides)`);
-        }
-        queryClient.invalidateQueries({ queryKey: ["contacts"] });
-        setIsImportOpen(false);
-        setCsvFile(null);
+      const text = await csvFile.text();
+      const lines = text.split("\n").filter((line) => line.trim());
+      
+      if (lines.length === 0) {
+        toast.error("Le fichier CSV est vide");
+        setIsImporting(false);
+        return;
       }
+
+      // Détecter le séparateur (virgule ou point-virgule)
+      const firstLine = lines[0];
+      const commaCount = (firstLine.match(/,/g) || []).length;
+      const semicolonCount = (firstLine.match(/;/g) || []).length;
+      const delimiter = semicolonCount > commaCount ? ";" : ",";
+
+      console.log(`Délimiteur détecté: ${delimiter === ";" ? "point-virgule" : "virgule"}`);
+
+      const headers = lines[0].split(delimiter).map((h) => h.trim().toLowerCase());
+
+      // Trouver les index des colonnes
+      const emailIndex = headers.findIndex((h) => h.includes("email") || h === "e-mail");
+      const nomIndex = headers.findIndex((h) => (h.includes("nom") || h === "last name") && !h.includes("prenom"));
+      const prenomIndex = headers.findIndex((h) => h.includes("prenom") || h === "first name" || h === "prénom");
+      const telephoneIndex = headers.findIndex((h) => h.includes("telephone") || h.includes("tel") || h.includes("phone"));
+      const fonctionIndex = headers.findIndex((h) => h.includes("fonction") || h.includes("poste") || h === "role");
+      const societeIndex = headers.findIndex((h) => h.includes("societe") || h.includes("entreprise") || h.includes("company"));
+      const siteWebIndex = headers.findIndex((h) => h.includes("site") || h.includes("web") || h.includes("url"));
+      const paysIndex = headers.findIndex((h) => h.includes("pays") || h.includes("country"));
+      const villeIndex = headers.findIndex((h) => h.includes("ville") || h.includes("city"));
+      const segmentIndex = headers.findIndex((h) => h.includes("segment"));
+
+      if (emailIndex === -1) {
+        toast.error("Aucune colonne 'email' trouvée dans le CSV");
+        setIsImporting(false);
+        return;
+      }
+
+      const contactsToImport = [];
+      const errors: string[] = [];
+      
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(delimiter).map((v) => v.trim());
+        const email = values[emailIndex]?.trim();
+        
+        // Validation stricte de l'email
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          errors.push(`Ligne ${i + 1}: Email invalide ou manquant`);
+          continue;
+        }
+
+        // Récupérer les valeurs ou laisser vide si invalide
+        const nom = values[nomIndex]?.trim() || "";
+        const prenom = values[prenomIndex]?.trim() || "";
+        const telephone = values[telephoneIndex]?.trim() || null;
+        const fonction = values[fonctionIndex]?.trim() || null;
+        const societe = values[societeIndex]?.trim() || null;
+        const siteWeb = values[siteWebIndex]?.trim() || null;
+        const pays = values[paysIndex]?.trim() || null;
+        const ville = values[villeIndex]?.trim() || null;
+        const segment = values[segmentIndex]?.trim() || null;
+
+        contactsToImport.push({
+          user_id: user?.id,
+          email,
+          nom: nom || "Contact",
+          prenom: prenom || email.split("@")[0],
+          telephone,
+          fonction,
+          societe,
+          site_web: siteWeb,
+          pays,
+          ville,
+          segment,
+          statut: "actif",
+        });
+      }
+
+      if (contactsToImport.length === 0) {
+        toast.error("Aucun contact valide trouvé dans le fichier");
+        if (errors.length > 0) {
+          console.error("Erreurs d'import:", errors);
+        }
+        setIsImporting(false);
+        return;
+      }
+
+      // Importer par lots de 500 contacts pour éviter les timeouts et limites de taille
+      const batchSize = 500;
+      const batches: any[][] = [];
+      for (let i = 0; i < contactsToImport.length; i += batchSize) {
+        batches.push(contactsToImport.slice(i, i + batchSize));
+      }
+
+      let totalImported = 0;
+      let duplicateCount = 0;
+
+      for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i];
+        
+        try {
+          const { error } = await supabase.from("contacts").insert(batch);
+          
+          if (error) {
+            if (error.code === "23505") {
+              // Certains contacts en doublon dans ce lot
+              duplicateCount += batch.length;
+            } else {
+              throw error;
+            }
+          } else {
+            totalImported += batch.length;
+          }
+        } catch (error) {
+          console.error(`Erreur lors de l'import du lot ${i + 1}:`, error);
+        }
+
+        // Mettre à jour la progression
+        const progress = Math.round(((i + 1) / batches.length) * 100);
+        setImportProgress(progress);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      
+      if (totalImported > 0) {
+        toast.success(`${totalImported} contact(s) importé(s) avec succès`);
+      }
+      
+      if (duplicateCount > 0) {
+        toast.warning(`${duplicateCount} contact(s) ignoré(s) (emails déjà existants)`);
+      }
+      
+      if (errors.length > 0) {
+        toast.warning(`${errors.length} ligne(s) ignorée(s) (emails invalides)`);
+      }
+
+      setIsImportOpen(false);
+      setCsvFile(null);
+      setImportProgress(0);
     } catch (error) {
-      toast.error(t('contacts.importError'));
+      toast.error("Erreur lors de l'import");
       console.error("Erreur import:", error);
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -945,9 +991,12 @@ const Contacts = () => {
 
       {/* Dialog import CSV */}
       <Dialog open={isImportOpen} onOpenChange={(open) => {
-        setIsImportOpen(open);
-        if (!open) {
-          setCsvFile(null);
+        if (!isImporting) {
+          setIsImportOpen(open);
+          if (!open) {
+            setCsvFile(null);
+            setImportProgress(0);
+          }
         }
       }}>
         <DialogContent>
@@ -966,40 +1015,60 @@ const Contacts = () => {
                 accept=".csv"
                 onChange={handleImportCSV}
                 className="cursor-pointer"
+                disabled={isImporting}
               />
-              {csvFile && (
+              {csvFile && !isImporting && (
                 <p className="text-sm text-green-600 font-medium">
                   ✓ Fichier sélectionné : {csvFile.name}
                 </p>
               )}
-              <div className="text-xs text-muted-foreground space-y-2">
-                <p>
-                  <strong>Format accepté :</strong> Le fichier peut utiliser des virgules (,) ou des points-virgules (;) comme séparateurs.
-                </p>
-                <p>
-                  <strong>Colonnes requises :</strong> email (obligatoire)
-                </p>
-                <p>
-                  <strong>Colonnes optionnelles :</strong> nom, prenom, telephone, fonction, societe, site_web, pays, ville, segment
-                </p>
-                <p className="text-amber-600">
-                  Les lignes avec des emails invalides seront ignorées. Les champs manquants seront laissés vides.
-                </p>
-              </div>
+              {isImporting && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Import en cours...</span>
+                    <span className="font-medium">{importProgress}%</span>
+                  </div>
+                  <Progress value={importProgress} className="h-2" />
+                  <p className="text-xs text-muted-foreground">
+                    Veuillez patienter, l'import peut prendre plusieurs minutes pour des fichiers volumineux.
+                  </p>
+                </div>
+              )}
+              {!isImporting && (
+                <div className="text-xs text-muted-foreground space-y-2">
+                  <p>
+                    <strong>Format accepté :</strong> Le fichier peut utiliser des virgules (,) ou des points-virgules (;) comme séparateurs.
+                  </p>
+                  <p>
+                    <strong>Colonnes requises :</strong> email (obligatoire)
+                  </p>
+                  <p>
+                    <strong>Colonnes optionnelles :</strong> nom, prenom, telephone, fonction, societe, site_web, pays, ville, segment
+                  </p>
+                  <p className="text-amber-600">
+                    Les lignes avec des emails invalides seront ignorées. Les champs manquants seront laissés vides.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setIsImportOpen(false);
-              setCsvFile(null);
-            }}>
-              Annuler
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsImportOpen(false);
+                setCsvFile(null);
+                setImportProgress(0);
+              }}
+              disabled={isImporting}
+            >
+              {isImporting ? "Fermer" : "Annuler"}
             </Button>
             <Button 
               onClick={processCSVImport}
-              disabled={!csvFile}
+              disabled={!csvFile || isImporting}
             >
-              Importer
+              {isImporting ? "Import en cours..." : "Importer"}
             </Button>
           </DialogFooter>
         </DialogContent>
