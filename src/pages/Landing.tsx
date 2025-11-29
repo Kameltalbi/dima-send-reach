@@ -260,7 +260,7 @@ const Landing = () => {
             </p>
             <div className="w-24 h-1 bg-gradient-to-r from-transparent via-accent to-transparent mx-auto mt-4"></div>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 max-w-[1600px] mx-auto">
             {/* Free Plan */}
             <Card className={`hover-lift transition-all duration-300 animate-on-scroll-scale ${pricingRef.isVisible ? 'visible animate-delay-100' : ''}`}>
               <CardContent className="pt-8 pb-8">
@@ -281,10 +281,6 @@ const Landing = () => {
                   <li className="flex items-start gap-2">
                     <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
                     <span className="text-sm">{t('landing.pricing.plans.free.features.domains')}</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{t('landing.pricing.plans.free.features.templates')}</span>
                   </li>
                 </ul>
                 <Link to="/auth" className="block">
@@ -313,10 +309,6 @@ const Landing = () => {
                   <li className="flex items-start gap-2">
                     <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
                     <span className="text-sm">{t('landing.pricing.plans.starter.features.domains')}</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{t('landing.pricing.plans.starter.features.templates')}</span>
                   </li>
                 </ul>
                 <Link to="/checkout?plan=starter" className="block">
@@ -351,10 +343,6 @@ const Landing = () => {
                     <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
                     <span className="text-sm">{t('landing.pricing.plans.essential.features.domains')}</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{t('landing.pricing.plans.essential.features.templates')}</span>
-                  </li>
                 </ul>
                 <Link to="/checkout?plan=essential" className="block">
                   <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 hover:scale-105 hover:shadow-xl">
@@ -385,18 +373,42 @@ const Landing = () => {
                     <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
                     <span className="text-sm">{t('landing.pricing.plans.pro.features.domains')}</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{t('landing.pricing.plans.pro.features.templates')}</span>
-                  </li>
                 </ul>
                 <Link to="/checkout?plan=pro" className="block">
                   <Button variant="outline" className="w-full transition-all duration-300 hover:scale-105">{t('landing.pricing.plans.pro.cta')}</Button>
                 </Link>
               </CardContent>
             </Card>
+
+            {/* Business Plan */}
+            <Card className={`hover-lift transition-all duration-300 animate-on-scroll-scale ${pricingRef.isVisible ? 'visible animate-delay-500' : ''}`}>
+              <CardContent className="pt-8 pb-8">
+                <h3 className="text-2xl font-heading font-bold text-foreground mb-2">{t('landing.pricing.plans.business.name')}</h3>
+                <p className="text-muted-foreground mb-6 text-sm">{t('landing.pricing.plans.business.description')}</p>
+                <p className="text-3xl font-bold text-foreground mb-6">
+                  {t('landing.pricing.plans.business.price')}<span className="text-lg font-normal text-muted-foreground">{t('landing.pricing.plans.business.period')}</span>
+                </p>
+                <ul className="space-y-3 mb-8">
+                  <li className="flex items-start gap-2">
+                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+                    <span className="text-sm">{t('landing.pricing.plans.business.features.emails')}</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+                    <span className="text-sm">{t('landing.pricing.plans.business.features.users')}</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+                    <span className="text-sm">{t('landing.pricing.plans.business.features.domains')}</span>
+                  </li>
+                </ul>
+                <Link to="/checkout?plan=business" className="block">
+                  <Button variant="outline" className="w-full transition-all duration-300 hover:scale-105">{t('landing.pricing.plans.business.cta')}</Button>
+                </Link>
+              </CardContent>
+            </Card>
           </div>
-          <div className={`text-center mt-12 animate-on-scroll ${pricingRef.isVisible ? 'visible animate-delay-500' : ''}`}>
+          <div className={`text-center mt-12 animate-on-scroll ${pricingRef.isVisible ? 'visible animate-delay-600' : ''}`}>
             <Link to="/pricing">
               <Button variant="ghost" className="transition-all duration-300 hover:scale-110">
                 {t('landing.pricing.seeDetails')}
