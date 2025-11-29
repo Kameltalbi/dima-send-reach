@@ -39,7 +39,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Upload, Search, MoreVertical, Edit, Trash2, Mail, User, Filter } from "lucide-react";
+import { Plus, Upload, Search, MoreVertical, Edit, Trash2, Mail, User, Filter, ListPlus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -61,6 +61,7 @@ const Contacts = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<any>(null);
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
@@ -155,6 +156,22 @@ const Contacts = () => {
 
   // Obtenir les segments uniques
   const segments = Array.from(new Set(contacts?.map((c) => c.segment).filter(Boolean) || []));
+
+  // Charger les listes disponibles
+  const { data: lists } = useQuery({
+    queryKey: ["lists"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lists")
+        .select("id, nom")
+        .eq("user_id", user?.id)
+        .order("nom", { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
 
   // Mutation pour créer un contact
   const createMutation = useMutation({
@@ -317,6 +334,50 @@ const Contacts = () => {
     setSelectedContact(contact);
     setIsDeleteOpen(true);
   };
+
+  const handleAssign = (contact: any) => {
+    setSelectedContact(contact);
+    setIsAssignOpen(true);
+  };
+
+  // Mutation pour assigner un contact à une liste
+  const assignToListMutation = useMutation({
+    mutationFn: async ({ contactId, listId }: { contactId: string; listId: string }) => {
+      // Vérifier si le contact est déjà dans la liste
+      const { data: existing } = await supabase
+        .from("list_contacts")
+        .select("id")
+        .eq("list_id", listId)
+        .eq("contact_id", contactId)
+        .single();
+
+      if (existing) {
+        throw new Error("Le contact est déjà dans cette liste");
+      }
+
+      const { error } = await supabase
+        .from("list_contacts")
+        .insert({
+          list_id: listId,
+          contact_id: contactId,
+        });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Contact assigné à la liste");
+      setIsAssignOpen(false);
+      setSelectedContact(null);
+    },
+    onError: (error: any) => {
+      console.error("Erreur assignation:", error);
+      if (error.message === "Le contact est déjà dans cette liste") {
+        toast.error(error.message);
+      } else {
+        toast.error("Erreur lors de l'assignation");
+      }
+    },
+  });
 
   const handleSubmit = () => {
     // Vérifier les champs obligatoires dans l'ordre : Email, Prénom, Nom
@@ -797,6 +858,10 @@ const Contacts = () => {
                               <Edit className="h-4 w-4 mr-2" />
                               Modifier
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleAssign(contact)}>
+                              <ListPlus className="h-4 w-4 mr-2" />
+                              Assigner à une liste
+                            </DropdownMenuItem>
                             {canDeleteContacts && (
                               <>
                                 <DropdownMenuSeparator />
@@ -1057,6 +1122,57 @@ const Contacts = () => {
                 : selectedContact
                 ? "Modifier"
                 : "Créer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog assignation à une liste */}
+      <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assigner à une liste</DialogTitle>
+            <DialogDescription>
+              Sélectionnez une liste pour y ajouter le contact {selectedContact?.prenom} {selectedContact?.nom}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {!lists || lists.length === 0 ? (
+              <div className="text-center py-8">
+                <ListPlus className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground text-sm">
+                  Aucune liste disponible. Créez d'abord une liste.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {lists.map((list) => (
+                  <Button
+                    key={list.id}
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => assignToListMutation.mutate({
+                      contactId: selectedContact?.id,
+                      listId: list.id
+                    })}
+                    disabled={assignToListMutation.isPending}
+                  >
+                    <ListPlus className="h-4 w-4 mr-2" />
+                    {list.nom}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsAssignOpen(false);
+                setSelectedContact(null);
+              }}
+            >
+              Annuler
             </Button>
           </DialogFooter>
         </DialogContent>
