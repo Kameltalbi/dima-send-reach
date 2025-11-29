@@ -58,6 +58,8 @@ const Contacts = () => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<any>(null);
+  const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     prenom: "",
@@ -174,6 +176,23 @@ const Contacts = () => {
     },
     onError: () => {
       toast.error(t('contacts.deleteError'));
+    },
+  });
+
+  // Mutation pour supprimer plusieurs contacts
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.from("contacts").delete().in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      toast.success(`${selectedContacts.length} contact(s) supprimé(s)`);
+      setIsBulkDeleteOpen(false);
+      setSelectedContacts([]);
+    },
+    onError: () => {
+      toast.error("Erreur lors de la suppression des contacts");
     },
   });
 
@@ -349,6 +368,26 @@ const Contacts = () => {
     }
   };
 
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedContacts(filteredContacts.map(c => c.id));
+    } else {
+      setSelectedContacts([]);
+    }
+  };
+
+  const handleSelectContact = (contactId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedContacts([...selectedContacts, contactId]);
+    } else {
+      setSelectedContacts(selectedContacts.filter(id => id !== contactId));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    bulkDeleteMutation.mutate(selectedContacts);
+  };
+
   const getStatusBadge = (statut: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive"> = {
       actif: "default",
@@ -429,10 +468,26 @@ const Contacts = () => {
       {/* Liste des contacts */}
       <Card>
         <CardHeader>
-          <CardTitle>Liste des contacts</CardTitle>
-          <CardDescription>
-            {filteredContacts.length} contact{filteredContacts.length > 1 ? "s" : ""} trouvé{filteredContacts.length > 1 ? "s" : ""}
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Liste des contacts</CardTitle>
+              <CardDescription>
+                {filteredContacts.length} contact{filteredContacts.length > 1 ? "s" : ""} trouvé{filteredContacts.length > 1 ? "s" : ""}
+                {selectedContacts.length > 0 && ` • ${selectedContacts.length} sélectionné(s)`}
+              </CardDescription>
+            </div>
+            {selectedContacts.length > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setIsBulkDeleteOpen(true)}
+                className="gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Supprimer ({selectedContacts.length})
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -462,6 +517,12 @@ const Contacts = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectedContacts.length === filteredContacts.length && filteredContacts.length > 0}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead>Nom</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Segment</TableHead>
@@ -473,6 +534,12 @@ const Contacts = () => {
                 <TableBody>
                   {filteredContacts.map((contact) => (
                     <TableRow key={contact.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedContacts.includes(contact.id)}
+                          onCheckedChange={(checked) => handleSelectContact(contact.id, checked as boolean)}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">
                         {contact.prenom} {contact.nom}
                       </TableCell>
@@ -740,6 +807,28 @@ const Contacts = () => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog suppression en masse */}
+      <AlertDialog open={isBulkDeleteOpen} onOpenChange={setIsBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression en masse</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer {selectedContacts.length} contact{selectedContacts.length > 1 ? "s" : ""} ?
+              Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSelectedContacts([])}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Supprimer {selectedContacts.length} contact{selectedContacts.length > 1 ? "s" : ""}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
