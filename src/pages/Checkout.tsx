@@ -2,14 +2,10 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   CreditCard,
   Building2,
@@ -18,17 +14,13 @@ import {
   CheckCircle2,
   Loader2,
   ArrowLeft,
-  Info,
-  FileText,
-  Building,
-  Mail,
-  Phone,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { AppLayout } from "@/components/layouts/AppLayout";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils";
 
 type PaymentMethod = "card" | "check" | "transfer" | "cash";
 
@@ -71,13 +63,15 @@ const Checkout = () => {
   const planParam = searchParams.get("plan") as keyof typeof plans;
   const selectedPlan = plans[planParam] || plans.starter;
 
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Informations pour paiement par chèque/virement
+  // Informations pour paiement
   const [paymentInfo, setPaymentInfo] = useState({
+    fullName: "",
     companyName: "",
     address: "",
     city: "",
@@ -85,6 +79,14 @@ const Checkout = () => {
     phone: "",
     email: user?.email || "",
     notes: "",
+  });
+
+  // Informations carte bancaire
+  const [cardInfo, setCardInfo] = useState({
+    cardNumber: "",
+    cardName: "",
+    expiryDate: "",
+    cvv: "",
   });
 
   // Charger le profil utilisateur
@@ -107,6 +109,7 @@ const Checkout = () => {
     if (profile) {
       setPaymentInfo((prev) => ({
         ...prev,
+        fullName: `${profile.prenom} ${profile.nom}`,
         companyName: profile.nom_entreprise || "",
         email: user?.email || "",
       }));
@@ -118,7 +121,6 @@ const Checkout = () => {
     mutationFn: async (orderData: any) => {
       if (!user) throw new Error("User not authenticated");
       
-      // Get user's organization
       const { data: profile } = await supabase
         .from("profiles")
         .select("organization_id")
@@ -154,16 +156,68 @@ const Checkout = () => {
     },
   });
 
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    // Validation des champs communs
+    if (!paymentInfo.fullName.trim()) {
+      newErrors.fullName = t('checkout.validation.fullNameRequired');
+    }
+    if (!paymentInfo.email.trim()) {
+      newErrors.email = t('checkout.validation.emailRequired');
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paymentInfo.email)) {
+      newErrors.email = t('checkout.validation.emailInvalid');
+    }
+    if (!paymentInfo.phone.trim()) {
+      newErrors.phone = t('checkout.validation.phoneRequired');
+    }
+
+    // Validation pour paiements manuels
+    if (paymentMethod !== "card") {
+      if (!paymentInfo.companyName.trim()) {
+        newErrors.companyName = t('checkout.validation.companyRequired');
+      }
+      if (!paymentInfo.address.trim()) {
+        newErrors.address = t('checkout.validation.addressRequired');
+      }
+    }
+
+    // Validation pour carte bancaire
+    if (paymentMethod === "card") {
+      if (!cardInfo.cardNumber.trim()) {
+        newErrors.cardNumber = t('checkout.validation.cardNumberRequired');
+      } else if (!/^\d{4}\s\d{4}\s\d{4}\s\d{4}$/.test(cardInfo.cardNumber)) {
+        newErrors.cardNumber = t('checkout.validation.cardNumberInvalid');
+      }
+      if (!cardInfo.cardName.trim()) {
+        newErrors.cardName = t('checkout.validation.cardNameRequired');
+      }
+      if (!cardInfo.expiryDate) {
+        newErrors.expiryDate = t('checkout.validation.expiryRequired');
+      }
+      if (!cardInfo.cvv.trim()) {
+        newErrors.cvv = t('checkout.validation.cvvRequired');
+      } else if (!/^\d{3,4}$/.test(cardInfo.cvv)) {
+        newErrors.cvv = t('checkout.validation.cvvInvalid');
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleCardPayment = async () => {
     setIsProcessing(true);
     try {
-      // Create order first
       const order = await createOrderMutation.mutateAsync({
-        billing_info: null,
+        billing_info: {
+          fullName: paymentInfo.fullName,
+          email: paymentInfo.email,
+          phone: paymentInfo.phone,
+        },
         notes: "Card payment via Konnect",
       });
 
-      // TODO: Initiate Konnect payment flow
       toast.info('Card payment integration coming soon');
       setIsProcessing(false);
     } catch (error: any) {
@@ -173,15 +227,11 @@ const Checkout = () => {
   };
 
   const handleManualPayment = async () => {
-    if (!paymentInfo.companyName || !paymentInfo.address || !paymentInfo.email) {
-      toast.error(t('checkout.fillRequired'));
-      return;
-    }
-
     setIsProcessing(true);
     try {
       const order = await createOrderMutation.mutateAsync({
         billing_info: {
+          fullName: paymentInfo.fullName,
           companyName: paymentInfo.companyName,
           address: paymentInfo.address,
           city: paymentInfo.city,
@@ -192,7 +242,6 @@ const Checkout = () => {
         notes: paymentInfo.notes,
       });
 
-      // TODO: Send confirmation email via Edge Function
       toast.success(t('checkout.orderCreated'));
     } catch (error: any) {
       toast.error(error.message || t('checkout.orderError'));
@@ -201,7 +250,18 @@ const Checkout = () => {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!paymentMethod) {
+      toast.error(t('checkout.validation.paymentMethodRequired'));
+      return;
+    }
+
+    if (!validateForm()) {
+      return;
+    }
+
     if (paymentMethod === "card") {
       await handleCardPayment();
     } else {
@@ -209,73 +269,56 @@ const Checkout = () => {
     }
   };
 
+  // Format card number with spaces
+  const formatCardNumber = (value: string) => {
+    const cleaned = value.replace(/\s+/g, '');
+    const match = cleaned.match(/.{1,4}/g);
+    return match ? match.join(' ') : cleaned;
+  };
+
+  // Success state
   if (isSuccess && orderId) {
     return (
       <AppLayout>
-        <div className="max-w-2xl mx-auto py-12">
-          <Card className="border-green-500">
-            <CardHeader className="text-center">
-              <div className="mx-auto mb-4 w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle2 className="h-8 w-8 text-green-600" />
+        <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-background flex items-center justify-center p-4">
+          <div className="max-w-2xl w-full bg-background rounded-2xl shadow-2xl p-8 border-2 border-primary/20">
+            <div className="text-center space-y-6">
+              <div className="mx-auto w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center animate-in zoom-in duration-500">
+                <CheckCircle2 className="h-12 w-12 text-primary" />
               </div>
-              <CardTitle className="text-2xl">{t('checkout.orderConfirmed')}</CardTitle>
-              <CardDescription>
-                {t('checkout.orderConfirmedDesc')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+              
               <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">{t('checkout.orderNumber')}</p>
-                <p className="text-lg font-mono font-semibold">{orderId}</p>
+                <h2 className="text-3xl font-bold text-foreground">
+                  {t('checkout.orderConfirmed')}
+                </h2>
+                <p className="text-muted-foreground">
+                  {t('checkout.orderConfirmedDesc')}
+                </p>
               </div>
 
-              {paymentMethod === "card" ? (
-                <Alert>
-                  <Info className="h-4 w-4" />
-                  <AlertDescription>
-                    {t('checkout.orderActive', { plan: selectedPlan.name })}
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <Alert>
-                  <Info className="h-4 w-4" />
-                  <AlertDescription>
-                    <strong>{t('checkout.nextSteps')}</strong>
-                    <ul className="list-disc list-inside mt-2 space-y-1">
-                      {paymentMethod === "check" && (
-                        <li>{t('checkout.checkInstructions.send')}</li>
-                      )}
-                      {paymentMethod === "transfer" && (
-                        <li>{t('checkout.transferInstructions.email')}</li>
-                      )}
-                      {paymentMethod === "cash" && (
-                        <li>{t('checkout.cashInstructions.contact')}</li>
-                      )}
-                      <li>{t('checkout.transferInstructions.email')}</li>
-                      {paymentMethod === "check" && (
-                        <li>{t('checkout.checkInstructions.activate')}</li>
-                      )}
-                      {paymentMethod === "transfer" && (
-                        <li>{t('checkout.checkInstructions.activate')}</li>
-                      )}
-                      {paymentMethod === "cash" && (
-                        <li>{t('checkout.cashInstructions.activate')}</li>
-                      )}
-                    </ul>
-                  </AlertDescription>
-                </Alert>
-              )}
+              <div className="bg-muted/30 rounded-lg p-6 space-y-2">
+                <p className="text-sm text-muted-foreground font-medium">
+                  {t('checkout.orderNumber')}
+                </p>
+                <p className="text-2xl font-mono font-bold text-primary">
+                  {orderId}
+                </p>
+              </div>
 
-              <div className="flex gap-4">
-                <Button variant="outline" onClick={() => navigate("/dashboard")} className="flex-1">
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/dashboard")}
+                  className="flex-1"
+                >
                   {t('checkout.backToDashboard')}
                 </Button>
                 <Button onClick={() => navigate("/parametres")} className="flex-1">
                   {t('checkout.viewSubscription')}
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </AppLayout>
     );
@@ -283,434 +326,445 @@ const Checkout = () => {
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-background">
+        <div className="max-w-4xl mx-auto px-4 py-8">
           {/* Header */}
-          <div className="mb-8">
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/pricing")}
-              className="mb-6 hover:bg-muted"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              {t('checkout.backToPricing')}
-            </Button>
-            
-            <div className="space-y-2">
-              <h1 className="text-3xl sm:text-4xl font-bold text-foreground">
-                {t('checkout.title')}
-              </h1>
-              <p className="text-lg text-muted-foreground">
-                {t('checkout.subtitle')} {selectedPlan.name}
-              </p>
-            </div>
-          </div>
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/pricing")}
+            className="mb-8 hover:bg-muted"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            {t('checkout.backToPricing')}
+          </Button>
 
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Payment Methods */}
-              <Card className="border-2 shadow-lg">
-                <CardHeader className="border-b bg-muted/30">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <CreditCard className="h-5 w-5 text-primary" />
+          {/* Main Container */}
+          <div className="bg-background rounded-2xl shadow-2xl p-8 border">
+            <form onSubmit={handleSubmit} className="space-y-10">
+              {/* Registration Section */}
+              <div className="space-y-6">
+                <div className="relative pl-4 border-l-4 border-primary">
+                  <h2 className="text-3xl font-bold text-foreground">
+                    {t('checkout.registrationForm')}
+                  </h2>
+                </div>
+
+                <div className="grid gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName" className="text-sm font-semibold">
+                      {t('checkout.fullName')} <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="fullName"
+                      value={paymentInfo.fullName}
+                      onChange={(e) => {
+                        setPaymentInfo({ ...paymentInfo, fullName: e.target.value });
+                        setErrors({ ...errors, fullName: "" });
+                      }}
+                      className={cn(
+                        "h-12 transition-all",
+                        errors.fullName && "border-destructive focus-visible:ring-destructive"
+                      )}
+                      placeholder={t('checkout.fullNamePlaceholder')}
+                    />
+                    {errors.fullName && (
+                      <p className="text-sm text-destructive">{errors.fullName}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-sm font-semibold">
+                      {t('checkout.email')} <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={paymentInfo.email}
+                      onChange={(e) => {
+                        setPaymentInfo({ ...paymentInfo, email: e.target.value });
+                        setErrors({ ...errors, email: "" });
+                      }}
+                      className={cn(
+                        "h-12 transition-all",
+                        errors.email && "border-destructive focus-visible:ring-destructive"
+                      )}
+                      placeholder="email@example.com"
+                    />
+                    {errors.email && (
+                      <p className="text-sm text-destructive">{errors.email}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="phone" className="text-sm font-semibold">
+                      {t('checkout.phone')} <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={paymentInfo.phone}
+                      onChange={(e) => {
+                        setPaymentInfo({ ...paymentInfo, phone: e.target.value });
+                        setErrors({ ...errors, phone: "" });
+                      }}
+                      className={cn(
+                        "h-12 transition-all",
+                        errors.phone && "border-destructive focus-visible:ring-destructive"
+                      )}
+                      placeholder="+216 XX XXX XXX"
+                    />
+                    {errors.phone && (
+                      <p className="text-sm text-destructive">{errors.phone}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="company" className="text-sm font-semibold">
+                      {t('checkout.company')} {paymentMethod !== "card" && <span className="text-destructive">*</span>}
+                    </Label>
+                    <Input
+                      id="company"
+                      value={paymentInfo.companyName}
+                      onChange={(e) => {
+                        setPaymentInfo({ ...paymentInfo, companyName: e.target.value });
+                        setErrors({ ...errors, companyName: "" });
+                      }}
+                      className={cn(
+                        "h-12 transition-all",
+                        errors.companyName && "border-destructive focus-visible:ring-destructive"
+                      )}
+                      placeholder={t('checkout.companyPlaceholder')}
+                    />
+                    {errors.companyName && (
+                      <p className="text-sm text-destructive">{errors.companyName}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <Separator className="my-8" />
+
+              {/* Payment Method Section */}
+              <div className="space-y-6">
+                <div className="relative pl-4 border-l-4 border-primary">
+                  <h2 className="text-3xl font-bold text-foreground">
+                    {t('checkout.paymentMethod')}
+                  </h2>
+                </div>
+
+                <div className="grid gap-4">
+                  {/* Bank Transfer */}
+                  <label
+                    className={cn(
+                      "flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer transition-all hover:bg-muted/50",
+                      paymentMethod === "transfer"
+                        ? "border-primary bg-primary/5"
+                        : "border-border"
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="transfer"
+                      checked={paymentMethod === "transfer"}
+                      onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                      className="w-5 h-5 text-primary"
+                    />
+                    <Building2 className="h-6 w-6 text-primary" />
+                    <span className="font-semibold text-foreground">
+                      {t('checkout.transfer')}
+                    </span>
+                  </label>
+
+                  {/* Cash */}
+                  <label
+                    className={cn(
+                      "flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer transition-all hover:bg-muted/50",
+                      paymentMethod === "cash"
+                        ? "border-primary bg-primary/5"
+                        : "border-border"
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="cash"
+                      checked={paymentMethod === "cash"}
+                      onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                      className="w-5 h-5 text-primary"
+                    />
+                    <Banknote className="h-6 w-6 text-primary" />
+                    <span className="font-semibold text-foreground">
+                      {t('checkout.cash')}
+                    </span>
+                  </label>
+
+                  {/* Check */}
+                  <label
+                    className={cn(
+                      "flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer transition-all hover:bg-muted/50",
+                      paymentMethod === "check"
+                        ? "border-primary bg-primary/5"
+                        : "border-border"
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="check"
+                      checked={paymentMethod === "check"}
+                      onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                      className="w-5 h-5 text-primary"
+                    />
+                    <Receipt className="h-6 w-6 text-primary" />
+                    <span className="font-semibold text-foreground">
+                      {t('checkout.check')}
+                    </span>
+                  </label>
+
+                  {/* Card */}
+                  <label
+                    className={cn(
+                      "flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer transition-all hover:bg-muted/50",
+                      paymentMethod === "card"
+                        ? "border-primary bg-primary/5"
+                        : "border-border"
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="card"
+                      checked={paymentMethod === "card"}
+                      onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                      className="w-5 h-5 text-primary"
+                    />
+                    <CreditCard className="h-6 w-6 text-primary" />
+                    <span className="font-semibold text-foreground">
+                      {t('checkout.card')}
+                    </span>
+                  </label>
+                </div>
+
+                {/* Card Details */}
+                {paymentMethod === "card" && (
+                  <div className="mt-6 p-6 bg-primary/5 rounded-xl border-l-4 border-primary space-y-4 animate-in slide-in-from-top duration-300">
+                    <div className="space-y-2">
+                      <Label htmlFor="cardNumber" className="text-sm font-semibold">
+                        {t('checkout.cardNumber')} <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="cardNumber"
+                        value={cardInfo.cardNumber}
+                        onChange={(e) => {
+                          const formatted = formatCardNumber(e.target.value);
+                          if (formatted.replace(/\s/g, '').length <= 16) {
+                            setCardInfo({ ...cardInfo, cardNumber: formatted });
+                            setErrors({ ...errors, cardNumber: "" });
+                          }
+                        }}
+                        className={cn(
+                          "h-12 transition-all",
+                          errors.cardNumber && "border-destructive focus-visible:ring-destructive"
+                        )}
+                        placeholder="XXXX XXXX XXXX XXXX"
+                        maxLength={19}
+                      />
+                      {errors.cardNumber && (
+                        <p className="text-sm text-destructive">{errors.cardNumber}</p>
+                      )}
                     </div>
-                    <div>
-                      <CardTitle className="text-xl">{t('checkout.paymentMethod')}</CardTitle>
-                      <CardDescription>
-                        {t('checkout.paymentMethodDesc')}
-                      </CardDescription>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="cardName" className="text-sm font-semibold">
+                        {t('checkout.cardName')} <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="cardName"
+                        value={cardInfo.cardName}
+                        onChange={(e) => {
+                          setCardInfo({ ...cardInfo, cardName: e.target.value });
+                          setErrors({ ...errors, cardName: "" });
+                        }}
+                        className={cn(
+                          "h-12 transition-all",
+                          errors.cardName && "border-destructive focus-visible:ring-destructive"
+                        )}
+                        placeholder={t('checkout.cardNamePlaceholder')}
+                      />
+                      {errors.cardName && (
+                        <p className="text-sm text-destructive">{errors.cardName}</p>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="expiryDate" className="text-sm font-semibold">
+                          {t('checkout.expiryDate')} <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id="expiryDate"
+                          type="month"
+                          value={cardInfo.expiryDate}
+                          onChange={(e) => {
+                            setCardInfo({ ...cardInfo, expiryDate: e.target.value });
+                            setErrors({ ...errors, expiryDate: "" });
+                          }}
+                          className={cn(
+                            "h-12 transition-all",
+                            errors.expiryDate && "border-destructive focus-visible:ring-destructive"
+                          )}
+                          min={new Date().toISOString().slice(0, 7)}
+                        />
+                        {errors.expiryDate && (
+                          <p className="text-sm text-destructive">{errors.expiryDate}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="cvv" className="text-sm font-semibold">
+                          CVV <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id="cvv"
+                          type="text"
+                          value={cardInfo.cvv}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '');
+                            if (value.length <= 4) {
+                              setCardInfo({ ...cardInfo, cvv: value });
+                              setErrors({ ...errors, cvv: "" });
+                            }
+                          }}
+                          className={cn(
+                            "h-12 transition-all",
+                            errors.cvv && "border-destructive focus-visible:ring-destructive"
+                          )}
+                          placeholder="123"
+                          maxLength={4}
+                        />
+                        {errors.cvv && (
+                          <p className="text-sm text-destructive">{errors.cvv}</p>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <RadioGroup 
-                    value={paymentMethod} 
-                    onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-4"
-                  >
-                    {/* Card Payment */}
-                    <div className={`relative cursor-pointer rounded-xl border-2 p-5 transition-all hover:shadow-md ${
-                      paymentMethod === "card" 
-                        ? "border-primary bg-primary/5 shadow-md" 
-                        : "border-border hover:border-primary/50"
-                    }`}>
-                      <RadioGroupItem value="card" id="card" className="sr-only" />
-                      <Label htmlFor="card" className="cursor-pointer flex flex-col gap-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                              <CreditCard className="h-6 w-6 text-primary" />
-                            </div>
-                            <div>
-                              <p className="font-semibold text-foreground">{t('checkout.card')}</p>
-                              <p className="text-sm text-muted-foreground">{t('checkout.cardSecure')}</p>
-                            </div>
-                          </div>
-                          <Badge variant={paymentMethod === "card" ? "default" : "outline"}>
-                            {t('checkout.cardRecommended')}
-                          </Badge>
-                        </div>
-                      </Label>
-                    </div>
+                )}
 
-                    {/* Bank Transfer */}
-                    <div className={`relative cursor-pointer rounded-xl border-2 p-5 transition-all hover:shadow-md ${
-                      paymentMethod === "transfer" 
-                        ? "border-primary bg-primary/5 shadow-md" 
-                        : "border-border hover:border-primary/50"
-                    }`}>
-                      <RadioGroupItem value="transfer" id="transfer" className="sr-only" />
-                      <Label htmlFor="transfer" className="cursor-pointer flex flex-col gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-lg bg-secondary/20 flex items-center justify-center">
-                            <Building2 className="h-6 w-6 text-primary" />
-                          </div>
-                          <div>
-                            <p className="font-semibold text-foreground">{t('checkout.transfer')}</p>
-                            <p className="text-sm text-muted-foreground">{t('checkout.transferDesc')}</p>
-                          </div>
-                        </div>
-                      </Label>
-                    </div>
-
-                    {/* Check */}
-                    <div className={`relative cursor-pointer rounded-xl border-2 p-5 transition-all hover:shadow-md ${
-                      paymentMethod === "check" 
-                        ? "border-primary bg-primary/5 shadow-md" 
-                        : "border-border hover:border-primary/50"
-                    }`}>
-                      <RadioGroupItem value="check" id="check" className="sr-only" />
-                      <Label htmlFor="check" className="cursor-pointer flex flex-col gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-lg bg-secondary/20 flex items-center justify-center">
-                            <Receipt className="h-6 w-6 text-primary" />
-                          </div>
-                          <div>
-                            <p className="font-semibold text-foreground">{t('checkout.check')}</p>
-                            <p className="text-sm text-muted-foreground">{t('checkout.checkDesc')}</p>
-                          </div>
-                        </div>
-                      </Label>
-                    </div>
-
-                    {/* Cash */}
-                    <div className={`relative cursor-pointer rounded-xl border-2 p-5 transition-all hover:shadow-md ${
-                      paymentMethod === "cash" 
-                        ? "border-primary bg-primary/5 shadow-md" 
-                        : "border-border hover:border-primary/50"
-                    }`}>
-                      <RadioGroupItem value="cash" id="cash" className="sr-only" />
-                      <Label htmlFor="cash" className="cursor-pointer flex flex-col gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-lg bg-secondary/20 flex items-center justify-center">
-                            <Banknote className="h-6 w-6 text-primary" />
-                          </div>
-                          <div>
-                            <p className="font-semibold text-foreground">{t('checkout.cash')}</p>
-                            <p className="text-sm text-muted-foreground">{t('checkout.cashDesc')}</p>
-                          </div>
-                        </div>
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                </CardContent>
-              </Card>
-
-              {/* Card Payment Section */}
-              {paymentMethod === "card" && (
-                <Card className="border-2 shadow-lg">
-                  <CardHeader className="border-b bg-muted/30">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <CreditCard className="h-5 w-5 text-primary" />
-                      </div>
-                      <CardTitle className="text-xl">Secure Card Payment</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-6 space-y-6">
-                    <Alert className="border-primary/20 bg-primary/5">
-                      <Info className="h-4 w-4 text-primary" />
-                      <AlertDescription className="text-sm">
-                        {t('checkout.cardRedirect')}
-                      </AlertDescription>
-                    </Alert>
-                    
-                    <div className="bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl p-8 text-center border-2 border-dashed border-border">
-                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-                        <CreditCard className="h-8 w-8 text-primary" />
-                      </div>
-                      <h3 className="font-semibold text-lg mb-2">{t('checkout.cardSecureTitle')}</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        {t('checkout.cardRedirectAfter')}
-                      </p>
-                      <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                        <span>SSL Encrypted</span>
-                        <span>•</span>
-                        <span>Secure Transaction</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Manual Payment Methods */}
-              {(paymentMethod === "check" || paymentMethod === "transfer" || paymentMethod === "cash") && (
-                <Card className="border-2 shadow-lg">
-                  <CardHeader className="border-b bg-muted/30">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Building className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-xl">{t('checkout.billingInfo')}</CardTitle>
-                        <CardDescription>
-                          {t('checkout.billingInfoDesc')}
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-6 space-y-6">
-                    {/* Company & Email Row */}
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="companyName" className="text-sm font-medium flex items-center gap-2">
-                          <Building className="h-4 w-4 text-muted-foreground" />
-                          {t('checkout.companyNameRequired')}
-                        </Label>
-                        <Input
-                          id="companyName"
-                          value={paymentInfo.companyName}
-                          onChange={(e) => setPaymentInfo({ ...paymentInfo, companyName: e.target.value })}
-                          placeholder={t('checkout.companyName')}
-                          className="h-11"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                          {t('checkout.emailRequired')}
-                        </Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={paymentInfo.email}
-                          onChange={(e) => setPaymentInfo({ ...paymentInfo, email: e.target.value })}
-                          placeholder="contact@company.com"
-                          className="h-11"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    {/* Address */}
+                {/* Manual Payment Fields */}
+                {paymentMethod && paymentMethod !== "card" && (
+                  <div className="mt-6 space-y-4 animate-in slide-in-from-top duration-300">
                     <div className="space-y-2">
-                      <Label htmlFor="address" className="text-sm font-medium">
-                        {t('checkout.addressRequired')}
+                      <Label htmlFor="address" className="text-sm font-semibold">
+                        {t('checkout.address')} <span className="text-destructive">*</span>
                       </Label>
                       <Input
                         id="address"
                         value={paymentInfo.address}
-                        onChange={(e) => setPaymentInfo({ ...paymentInfo, address: e.target.value })}
-                        placeholder={t('checkout.address')}
-                        className="h-11"
-                        required
+                        onChange={(e) => {
+                          setPaymentInfo({ ...paymentInfo, address: e.target.value });
+                          setErrors({ ...errors, address: "" });
+                        }}
+                        className={cn(
+                          "h-12 transition-all",
+                          errors.address && "border-destructive focus-visible:ring-destructive"
+                        )}
+                        placeholder={t('checkout.addressPlaceholder')}
                       />
+                      {errors.address && (
+                        <p className="text-sm text-destructive">{errors.address}</p>
+                      )}
                     </div>
 
-                    {/* City & Postal */}
-                    <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="city" className="text-sm font-medium">{t('checkout.city')}</Label>
+                        <Label htmlFor="city" className="text-sm font-semibold">
+                          {t('checkout.city')}
+                        </Label>
                         <Input
                           id="city"
                           value={paymentInfo.city}
-                          onChange={(e) => setPaymentInfo({ ...paymentInfo, city: e.target.value })}
-                          placeholder={t('checkout.city')}
-                          className="h-11"
+                          onChange={(e) =>
+                            setPaymentInfo({ ...paymentInfo, city: e.target.value })
+                          }
+                          className="h-12"
+                          placeholder={t('checkout.cityPlaceholder')}
                         />
                       </div>
+
                       <div className="space-y-2">
-                        <Label htmlFor="postalCode" className="text-sm font-medium">{t('checkout.postalCode')}</Label>
+                        <Label htmlFor="postalCode" className="text-sm font-semibold">
+                          {t('checkout.postalCode')}
+                        </Label>
                         <Input
                           id="postalCode"
                           value={paymentInfo.postalCode}
-                          onChange={(e) => setPaymentInfo({ ...paymentInfo, postalCode: e.target.value })}
-                          placeholder={t('checkout.postalCode')}
-                          className="h-11"
+                          onChange={(e) =>
+                            setPaymentInfo({ ...paymentInfo, postalCode: e.target.value })
+                          }
+                          className="h-12"
+                          placeholder="XXXX"
                         />
                       </div>
                     </div>
 
-                    {/* Phone */}
                     <div className="space-y-2">
-                      <Label htmlFor="phone" className="text-sm font-medium flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        {t('checkout.phone')}
+                      <Label htmlFor="notes" className="text-sm font-semibold">
+                        {t('checkout.notes')}
                       </Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        value={paymentInfo.phone}
-                        onChange={(e) => setPaymentInfo({ ...paymentInfo, phone: e.target.value })}
-                        placeholder="+216 XX XXX XXX"
-                        className="h-11"
-                      />
-                    </div>
-
-                    {/* Notes */}
-                    <div className="space-y-2">
-                      <Label htmlFor="notes" className="text-sm font-medium">{t('checkout.notes')}</Label>
                       <Textarea
                         id="notes"
                         value={paymentInfo.notes}
-                        onChange={(e) => setPaymentInfo({ ...paymentInfo, notes: e.target.value })}
-                        placeholder={t('checkout.notes')}
+                        onChange={(e) =>
+                          setPaymentInfo({ ...paymentInfo, notes: e.target.value })
+                        }
+                        placeholder={t('checkout.notesPlaceholder')}
                         rows={3}
-                        className="resize-none"
                       />
                     </div>
-
-                    {/* Payment Instructions */}
-                    {paymentMethod === "check" && (
-                      <Alert className="border-primary/20 bg-primary/5">
-                        <FileText className="h-4 w-4 text-primary" />
-                        <AlertDescription>
-                          <strong className="block mb-2">{t('checkout.checkInstructions.title')}</strong>
-                          <ul className="list-disc list-inside space-y-1 text-sm">
-                            <li>{t('checkout.checkInstructions.libelle')}</li>
-                            <li>{t('checkout.checkInstructions.amount', { amount: selectedPlan.price, currency: selectedPlan.currency })}</li>
-                            <li>{t('checkout.checkInstructions.send')}</li>
-                            <li>{t('checkout.checkInstructions.activate')}</li>
-                          </ul>
-                        </AlertDescription>
-                      </Alert>
-                    )}
-
-                    {paymentMethod === "transfer" && (
-                      <Alert className="border-primary/20 bg-primary/5">
-                        <FileText className="h-4 w-4 text-primary" />
-                        <AlertDescription>
-                          <strong className="block mb-2">{t('checkout.transferInstructions.title')}</strong>
-                          <ul className="list-disc list-inside space-y-1 text-sm">
-                            <li>{t('checkout.transferInstructions.amount', { amount: selectedPlan.price, currency: selectedPlan.currency })}</li>
-                            <li>{t('checkout.transferInstructions.iban')}</li>
-                            <li>{t('checkout.transferInstructions.reference')}</li>
-                            <li>{t('checkout.transferInstructions.email')}</li>
-                          </ul>
-                        </AlertDescription>
-                      </Alert>
-                    )}
-
-                    {paymentMethod === "cash" && (
-                      <Alert className="border-primary/20 bg-primary/5">
-                        <FileText className="h-4 w-4 text-primary" />
-                        <AlertDescription>
-                          <strong className="block mb-2">{t('checkout.cashInstructions.title')}</strong>
-                          <ul className="list-disc list-inside space-y-1 text-sm">
-                            <li>{t('checkout.cashInstructions.amount', { amount: selectedPlan.price, currency: selectedPlan.currency })}</li>
-                            <li>{t('checkout.cashInstructions.contact')}</li>
-                            <li>{t('checkout.cashInstructions.email')}</li>
-                            <li>{t('checkout.cashInstructions.activate')}</li>
-                          </ul>
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-
-            {/* Summary Sidebar */}
-            <div className="lg:col-span-1">
-              <Card className="border-2 shadow-lg lg:sticky lg:top-6">
-                <CardHeader className="border-b bg-muted/30">
-                  <CardTitle className="text-xl">{t('checkout.summary')}</CardTitle>
-                </CardHeader>
-                <CardContent className="p-6 space-y-6">
-                  {/* Plan Details */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between pb-3 border-b">
-                      <span className="text-sm text-muted-foreground">{t('checkout.plan')}</span>
-                      <Badge variant="outline" className="font-semibold">
-                        {selectedPlan.name}
-                      </Badge>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{t('checkout.period')}</span>
-                        <span className="font-medium">{t('checkout.annual')}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{t('checkout.emailsIncluded')}</span>
-                        <span className="font-medium">{selectedPlan.emails}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{t('checkout.users')}</span>
-                        <span className="font-medium">{selectedPlan.users}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{t('checkout.domains')}</span>
-                        <span className="font-medium">{selectedPlan.domains}</span>
-                      </div>
-                    </div>
                   </div>
+                )}
+              </div>
 
-                  <Separator />
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                disabled={isProcessing}
+                className="w-full h-14 text-lg font-semibold uppercase tracking-wider"
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    {t('checkout.processing')}
+                  </>
+                ) : (
+                  t('checkout.validateOrder')
+                )}
+              </Button>
 
-                  {/* Total */}
-                  <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-4 border border-primary/20">
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-sm font-medium text-muted-foreground">{t('checkout.total')}</span>
-                      <div className="text-right">
-                        <span className="text-3xl font-bold text-primary">
-                          {selectedPlan.price}
-                        </span>
-                        <span className="text-lg font-semibold text-primary ml-1">
-                          {selectedPlan.currency}
-                        </span>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {selectedPlan.period}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action Button */}
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={isProcessing}
-                    className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all"
-                    size="lg"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                        {t('checkout.processing')}
-                      </>
-                    ) : paymentMethod === "card" ? (
-                      <>
-                        <CreditCard className="h-5 w-5 mr-2" />
-                        {t('checkout.payNow')}
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="h-5 w-5 mr-2" />
-                        {t('checkout.confirmOrder')}
-                      </>
-                    )}
-                  </Button>
-
-                  <p className="text-xs text-center text-muted-foreground leading-relaxed">
-                    {t('checkout.terms')}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+              {/* Plan Summary */}
+              <div className="mt-6 p-6 bg-muted/30 rounded-xl border-2 border-dashed space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground font-medium">
+                    {t('checkout.plan')}
+                  </span>
+                  <span className="text-foreground font-bold">
+                    {selectedPlan.name}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground font-medium">
+                    {t('checkout.total')}
+                  </span>
+                  <span className="text-2xl font-bold text-primary">
+                    {selectedPlan.price} {selectedPlan.currency}
+                    <span className="text-sm text-muted-foreground">
+                      {selectedPlan.period}
+                    </span>
+                  </span>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
       </div>
@@ -719,4 +773,3 @@ const Checkout = () => {
 };
 
 export default Checkout;
-
