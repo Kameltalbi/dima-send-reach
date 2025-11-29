@@ -305,301 +305,270 @@ export default function Templates() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8 space-y-4 sm:space-y-8">
-        {/* Header élégant */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-              Templates d'emails
+    <div className="min-h-screen bg-background">
+      <div className="max-w-[1600px] mx-auto px-6 py-6 space-y-6">
+        {/* Header moderne et compact */}
+        <div className="flex items-center justify-between pb-4 border-b border-border/40">
+          <div>
+            <h1 className="text-2xl font-semibold text-foreground">
+              Email Templates
             </h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
-              Créez et gérez vos modèles d'emails professionnels
+          <p className="text-sm text-muted-foreground mt-0.5">
+              Design and manage professional email templates
           </p>
         </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-3">
             <Button 
               onClick={handleLoadExamples} 
-              variant="outline" 
-              className="gap-2 border-2 w-full sm:w-auto"
+              variant="ghost" 
+              size="sm"
+              className="gap-2 text-muted-foreground hover:text-foreground"
               disabled={isLoading}
             >
               <Sparkles className="h-4 w-4" />
-              <span className="hidden sm:inline">Charger des exemples</span>
-              <span className="sm:hidden">Exemples</span>
+              Load Examples
             </Button>
             <Button 
               onClick={() => setShowCreateModal(true)} 
-              className="gap-2 shadow-lg hover:shadow-xl transition-shadow w-full sm:w-auto"
-              size="lg"
+              size="sm"
+              className="gap-2 bg-primary hover:bg-primary/90"
             >
               <Plus className="h-4 w-4" />
-              Créer un template
+              New Template
           </Button>
         </div>
       </div>
 
-        {/* Barre de recherche et filtres */}
-        <Card className="border-2 shadow-sm bg-card/50 backdrop-blur-sm">
-          <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Rechercher un template..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-11 h-11 text-base border-2 focus:border-primary"
-                />
-              </div>
-              <div className="flex items-center gap-2 sm:gap-4">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="gap-2 h-11 border-2 flex-1 sm:flex-initial">
-                      <Filter className="h-4 w-4" />
-                      <span className="hidden sm:inline">Trier</span>
-                      <ChevronDown className="h-3 w-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem 
-                      onClick={() => setSortBy("recent")}
-                      className={sortBy === "recent" ? "bg-primary/10" : ""}
-                    >
-                      Plus récent
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => setSortBy("name")}
-                      className={sortBy === "name" ? "bg-primary/10" : ""}
-                    >
-                      Par nom
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => setSortBy("type")}
-                      className={sortBy === "type" ? "bg-primary/10" : ""}
-                    >
-                      Par type
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-              <div className="flex items-center gap-1 border-2 rounded-lg p-1 bg-muted/50">
-                <Button
-                  variant={viewMode === "grid" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("grid")}
-                  className="h-9 w-9 p-0"
-                >
-                  <Grid3x3 className="h-4 w-4" />
+        {/* Barre de recherche moderne et épurée */}
+        <div className="flex items-center gap-4 bg-muted/30 rounded-lg p-2 border border-border/40">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search templates..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-9 bg-background border-0 focus-visible:ring-1 focus-visible:ring-primary"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-2 h-9 text-muted-foreground hover:text-foreground">
+                  <Filter className="h-4 w-4" />
+                  <span className="text-xs">Sort</span>
+                  <ChevronDown className="h-3 w-3" />
                 </Button>
-                <Button
-                  variant={viewMode === "list" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("list")}
-                  className="h-9 w-9 p-0"
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuItem 
+                  onClick={() => setSortBy("recent")}
+                  className={sortBy === "recent" ? "bg-primary/10" : ""}
                 >
-                  <List className="h-4 w-4" />
-                </Button>
-              </div>
+                  Most Recent
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setSortBy("name")}
+                  className={sortBy === "name" ? "bg-primary/10" : ""}
+                >
+                  By Name
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setSortBy("type")}
+                  className={sortBy === "type" ? "bg-primary/10" : ""}
+                >
+                  By Type
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <div className="flex items-center gap-1 bg-background rounded-md p-0.5 border border-border/40">
+              <Button
+                variant={viewMode === "grid" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("grid")}
+                className="h-7 w-7 p-0"
+              >
+                <Grid3x3 className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant={viewMode === "list" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("list")}
+                className="h-7 w-7 p-0"
+              >
+                <List className="h-3.5 w-3.5" />
+              </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Contenu principal */}
         {!showCreateModal ? (
           <div>
-            {isLoading ? (
-              <div className={`grid gap-6 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
-                {[...Array(6)].map((_, i) => (
-                  <Card key={i} className="animate-pulse border-2">
-                    <CardContent className="p-0">
-                      <div className="aspect-[4/3] bg-muted"></div>
-                      <div className="p-6 space-y-3">
-                        <div className="h-5 bg-muted rounded w-3/4"></div>
-                        <div className="h-4 bg-muted rounded w-1/2"></div>
-                      </div>
-                    </CardContent>
+             {isLoading ? (
+              <div className={`grid gap-4 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"}`}>
+                {[...Array(8)].map((_, i) => (
+                  <Card key={i} className="animate-pulse border-border/40 overflow-hidden">
+                    <div className="aspect-[4/3] bg-muted/50"></div>
+                    <div className="p-4 space-y-2">
+                      <div className="h-4 bg-muted/50 rounded w-3/4"></div>
+                      <div className="h-3 bg-muted/50 rounded w-1/2"></div>
+                    </div>
                   </Card>
                 ))}
               </div>
             ) : sortedTemplates.length === 0 ? (
-              <Card className="border-2 border-dashed bg-muted/30">
-                <CardContent className="flex flex-col items-center justify-center py-20">
-                  <div className="p-5 rounded-2xl bg-primary/10 mb-6">
-                    <FileText className="h-12 w-12 text-primary" />
+              <Card className="border-border/40 border-dashed bg-muted/10">
+                <CardContent className="flex flex-col items-center justify-center py-16">
+                  <div className="rounded-full bg-muted/50 p-4 mb-4">
+                    <FileText className="h-8 w-8 text-muted-foreground" />
                   </div>
-                  <h3 className="text-xl font-semibold text-foreground mb-2">
-                    Aucun template
-                  </h3>
-                  <p className="text-muted-foreground mb-8 text-center max-w-md">
-                    {searchQuery 
-                      ? "Aucun template ne correspond à votre recherche"
-                      : "Créez votre premier template pour commencer à envoyer des emails professionnels"}
+                  <p className="text-base font-medium text-foreground mb-1">
+                    No templates yet
+                  </p>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    Create your first template or load examples to get started
                   </p>
                   <div className="flex gap-3">
-                    <Button onClick={handleCreateNew} size="lg" className="gap-2">
+                    <Button onClick={handleCreateNew} size="sm" className="gap-2">
                       <Plus className="h-4 w-4" />
-                      Créer un template
+                      New Template
                     </Button>
-                    <Button onClick={handleLoadExamples} variant="outline" size="lg" className="gap-2">
+                    <Button onClick={handleLoadExamples} variant="outline" size="sm" className="gap-2">
                       <Sparkles className="h-4 w-4" />
-                      Charger des exemples
+                      Load Examples
                     </Button>
                   </div>
                 </CardContent>
               </Card>
             ) : viewMode === "grid" ? (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {sortedTemplates.map((template) => (
                   <Card 
                     key={template.id} 
-                    className="group cursor-pointer hover:shadow-2xl transition-all duration-300 border-2 hover:border-primary/50 overflow-hidden bg-card"
+                    className="group cursor-pointer hover:shadow-md transition-all duration-200 border-border/40 overflow-hidden bg-card"
                     onClick={() => handleUseTemplate(template.id)}
                   >
-                    <CardContent className="p-0">
-                      {/* Preview */}
-                      <div className="relative aspect-[4/3] bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 overflow-hidden">
-                        {template.thumbnail_url ? (
-                          <img
-                            src={template.thumbnail_url}
-                            alt={template.nom}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <div className="text-center space-y-4">
-                              <div className="w-20 h-20 bg-primary/20 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
-                                <Mail className="h-10 w-10 text-primary" />
-                              </div>
-                              <p className="text-sm text-muted-foreground font-medium">
-                                Aperçu non disponible
-                              </p>
-                            </div>
-                          </div>
-                        )}
-                        {/* Overlay au survol */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            className="gap-2 shadow-lg"
-                            onClick={(e) => {
+                    {/* Preview Image */}
+                    <div className="relative aspect-[4/3] bg-muted/30 overflow-hidden">
+                      {template.thumbnail_url ? (
+                        <img
+                          src={template.thumbnail_url}
+                          alt={template.nom}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Mail className="h-12 w-12 text-muted-foreground/30" />
+                        </div>
+                      )}
+                      {/* Hover overlay */}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="gap-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUseTemplate(template.id);
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                          Edit
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {/* Card Content */}
+                    <div className="p-4">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <h4 className="font-medium text-sm line-clamp-1 text-foreground">
+                          {template.nom}
+                        </h4>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 -mr-2">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-40">
+                            <DropdownMenuItem onClick={(e) => {
                               e.stopPropagation();
-                              handleUseTemplate(template.id);
-                            }}
-                          >
-                            <Eye className="h-4 w-4" />
-                            Utiliser ce template
-                            <ArrowRight className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        {/* Badge ID */}
-                        <div className="absolute top-4 left-4">
-                          <Badge variant="secondary" className="text-xs font-mono bg-black/50 text-white border-0">
-                            #{template.id.slice(0, 8)}
-                          </Badge>
-                        </div>
+                              setSelectedTemplateId(template.id);
+                              setIsEditorOpen(true);
+                            }}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => handleDuplicate(template, e)}>
+                              <Copy className="h-4 w-4 mr-2" />
+                              Duplicate
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              className="text-destructive focus:text-destructive"
+                              onClick={(e) => handleDelete(template, e)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
-                      {/* Info */}
-                      <div className="p-6 space-y-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold text-base mb-1.5 line-clamp-1 group-hover:text-primary transition-colors">
-                              {template.nom}
-                            </h4>
-                            <p className="text-sm text-muted-foreground line-clamp-2">
-                              {template.description || "Pas de description"}
-                            </p>
-                          </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
-                              <DropdownMenuItem onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedTemplateId(template.id);
-                                setIsEditorOpen(true);
-                              }}>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Éditer
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={(e) => handleDuplicate(template, e)}>
-                                <Copy className="h-4 w-4 mr-2" />
-                                Dupliquer
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                className="text-destructive focus:text-destructive"
-                                onClick={(e) => handleDelete(template, e)}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Supprimer
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                        <div className="flex items-center justify-between pt-4 border-t">
-                          <Badge variant="outline" className="text-xs font-medium">
-                            <Tag className="h-3 w-3 mr-1" />
-                            {template.type}
-                          </Badge>
-                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <Clock className="h-3 w-3" />
-                            {new Date(template.updated_at).toLocaleDateString("fr-FR", {
-                              day: "numeric",
-                              month: "short"
-                            })}
-                          </div>
-                        </div>
+                      <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
+                        {template.description || "No description"}
+                      </p>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <Badge variant="outline" className="text-xs font-normal border-border/40">
+                          {template.type}
+                        </Badge>
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {new Date(template.updated_at).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric"
+                          })}
+                        </span>
                       </div>
-                    </CardContent>
+                    </div>
                   </Card>
                 ))}
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {sortedTemplates.map((template) => (
                   <Card 
                     key={template.id}
-                    className="hover:shadow-lg transition-all duration-300 cursor-pointer border-2 hover:border-primary/50 bg-card"
+                    className="hover:shadow-md transition-all duration-200 cursor-pointer border-border/40 bg-card"
                     onClick={() => handleUseTemplate(template.id)}
                   >
-                    <CardContent className="p-6">
-                      <div className="flex items-center gap-6">
-                        <div className="w-24 h-24 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 shadow-md">
-                          <Mail className="h-10 w-10 text-primary" />
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 rounded-lg bg-muted/50 flex items-center justify-center flex-shrink-0">
+                          <Mail className="h-8 w-8 text-muted-foreground/50" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between mb-3">
-                            <div>
-                              <h4 className="font-semibold text-lg mb-1.5 group-hover:text-primary transition-colors">
-                                {template.nom}
-                              </h4>
-                              <p className="text-sm text-muted-foreground line-clamp-2">
-                                {template.description || "Pas de description"}
-                              </p>
-                            </div>
+                          <div className="flex items-start justify-between mb-1">
+                            <h4 className="font-medium text-sm">
+                              {template.nom}
+                            </h4>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                <Button variant="ghost" size="icon" className="h-9 w-9">
+                                <Button variant="ghost" size="icon" className="h-7 w-7">
                                   <MoreVertical className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuContent align="end" className="w-40">
                                 <DropdownMenuItem onClick={(e) => {
                                   e.stopPropagation();
                                   setSelectedTemplateId(template.id);
                                   setIsEditorOpen(true);
                                 }}>
                                   <Edit className="h-4 w-4 mr-2" />
-                                  Éditer
+                                  Edit
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={(e) => handleDuplicate(template, e)}>
                                   <Copy className="h-4 w-4 mr-2" />
-                                  Dupliquer
+                                  Duplicate
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem 
@@ -607,20 +576,25 @@ export default function Templates() {
                                   onClick={(e) => handleDelete(template, e)}
                                 >
                                   <Trash2 className="h-4 w-4 mr-2" />
-                                  Supprimer
+                                  Delete
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
-                          <div className="flex items-center gap-4">
-                            <Badge variant="outline" className="text-xs font-medium">
-                              <Tag className="h-3 w-3 mr-1" />
+                          <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
+                            {template.description || "No description"}
+                          </p>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <Badge variant="outline" className="text-xs font-normal border-border/40">
                               {template.type}
                             </Badge>
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
-                              Modifié le {new Date(template.updated_at).toLocaleDateString("fr-FR")}
-                            </div>
+                              {new Date(template.updated_at).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric"
+                              })}
+                            </span>
                           </div>
                         </div>
                       </div>
