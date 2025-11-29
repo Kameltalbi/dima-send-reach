@@ -213,6 +213,75 @@ export type Database = {
         }
         Relationships: []
       }
+      email_queue: {
+        Row: {
+          attempts: number
+          campaign_id: string | null
+          created_at: string
+          error_message: string | null
+          from_email: string
+          from_name: string
+          html: string
+          id: string
+          locked_at: string | null
+          locked_by: string | null
+          recipient_id: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+          to_email: string
+        }
+        Insert: {
+          attempts?: number
+          campaign_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          from_email: string
+          from_name: string
+          html: string
+          id?: string
+          locked_at?: string | null
+          locked_by?: string | null
+          recipient_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject: string
+          to_email: string
+        }
+        Update: {
+          attempts?: number
+          campaign_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          from_email?: string
+          from_name?: string
+          html?: string
+          id?: string
+          locked_at?: string | null
+          locked_by?: string | null
+          recipient_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          to_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_queue_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_queue_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_recipients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       list_contacts: {
         Row: {
           contact_id: string
