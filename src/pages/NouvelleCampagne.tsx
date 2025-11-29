@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Send, Save, Eye, Loader2, Calendar, Clock } from "lucide-react";
+import { ArrowLeft, Send, Save, Eye, Loader2, Calendar, Clock, Mail } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { TemplateEditor } from "@/components/templates/TemplateEditor";
@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { TestEmailDialog } from "@/components/campaigns/TestEmailDialog";
 
 const NouvelleCampagne = () => {
   const { user } = useAuth();
@@ -31,6 +32,7 @@ const NouvelleCampagne = () => {
   const [activeTab, setActiveTab] = useState("info");
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [htmlContent, setHtmlContent] = useState("");
   
@@ -269,17 +271,9 @@ const NouvelleCampagne = () => {
     }
   };
 
-  // Mutation pour envoyer un email de test
+  // Mutation pour envoyer des emails de test
   const testEmailMutation = useMutation({
-    mutationFn: async () => {
-      if (!formData.testEmail) {
-        throw new Error("Veuillez entrer une adresse email");
-      }
-
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.testEmail)) {
-        throw new Error("Veuillez entrer une adresse email valide");
-      }
-
+    mutationFn: async (emails: string[]) => {
       if (!htmlContent.trim()) {
         throw new Error("Veuillez créer ou sélectionner un contenu pour votre email");
       }
@@ -288,31 +282,44 @@ const NouvelleCampagne = () => {
         throw new Error("Veuillez remplir les informations de l'expéditeur et le sujet");
       }
 
-      // Appeler l'Edge Function pour envoyer l'email de test
-      const { data, error } = await supabase.functions.invoke("send-email", {
-        body: {
-          testEmail: {
-            to: formData.testEmail,
-            subject: formData.sujet_email,
-            html: htmlContent,
-            fromName: formData.expediteur_nom,
-            fromEmail: formData.expediteur_email,
+      // Envoyer à chaque email de test
+      const promises = emails.map((email) =>
+        supabase.functions.invoke("send-email", {
+          body: {
+            testEmail: {
+              to: email,
+              subject: `[TEST] ${formData.sujet_email}`,
+              html: htmlContent,
+              fromName: formData.expediteur_nom,
+              fromEmail: formData.expediteur_email,
+            },
           },
-        },
-      });
+        })
+      );
 
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.message || "Erreur lors de l'envoi");
+      const results = await Promise.allSettled(promises);
       
-      return data;
+      const successes = results.filter((r) => r.status === "fulfilled" && r.value.data?.success).length;
+      const failures = results.length - successes;
+
+      if (failures > 0) {
+        throw new Error(`${successes} emails envoyés, ${failures} échecs`);
+      }
+
+      return { successes, total: results.length };
     },
-    onSuccess: () => {
-      toast.success(`Email de test envoyé à ${formData.testEmail}`);
+    onSuccess: (data) => {
+      toast.success(`${data.successes} email${data.successes > 1 ? "s" : ""} de test envoyé${data.successes > 1 ? "s" : ""} avec succès`);
+      setIsTestDialogOpen(false);
     },
     onError: (error: any) => {
-      toast.error(error.message || "Erreur lors de l'envoi de l'email de test");
+      toast.error(error.message || "Erreur lors de l'envoi des emails de test");
     },
   });
+
+  const handleSendTest = (emails: string[]) => {
+    testEmailMutation.mutate(emails);
+  };
 
   const handleOpenEditor = () => {
     setIsEditorOpen(true);
@@ -680,29 +687,18 @@ const NouvelleCampagne = () => {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email-test">Envoyer un e-mail de test</Label>
-                <div className="flex gap-2">
-                  <Input 
-                    id="email-test"
-                    type="email"
-                    value={formData.testEmail}
-                    onChange={(e) => setFormData({ ...formData, testEmail: e.target.value })}
-                    placeholder="votre@email.com"
-                  />
-                  <Button 
-                    variant="outline"
-                    onClick={() => testEmailMutation.mutate()}
-                    disabled={testEmailMutation.isPending}
-                  >
-                    {testEmailMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      "Envoyer le test"
-                    )}
-                  </Button>
-                </div>
+                <Label>Envoyer un test à vos contacts de test</Label>
+                <Button 
+                  variant="outline"
+                  onClick={() => setIsTestDialogOpen(true)}
+                  disabled={!htmlContent || !formData.sujet_email || !formData.expediteur_nom || !formData.expediteur_email}
+                  className="w-full gap-2"
+                >
+                  <Mail className="h-4 w-4" />
+                  Envoyer un test
+                </Button>
                 <p className="text-xs text-muted-foreground">
-                  Vérifiez le rendu avant d'envoyer à tous vos contacts
+                  Vérifiez le rendu avant d'envoyer à tous vos contacts. Configurez vos contacts de test dans la page Contacts.
                 </p>
               </div>
 
@@ -799,6 +795,13 @@ const NouvelleCampagne = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <TestEmailDialog
+        open={isTestDialogOpen}
+        onOpenChange={setIsTestDialogOpen}
+        onSendTest={handleSendTest}
+        isSending={testEmailMutation.isPending}
+      />
     </div>
   );
 };
