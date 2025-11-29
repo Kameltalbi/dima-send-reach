@@ -236,26 +236,28 @@ serve(async (req) => {
       console.warn("Emails à risque de rebond:", bounceWarnings);
     }
 
-    console.log(`Envoi à ${validRecipients.length} destinataires valides`);
+    console.log(`Queueing emails for ${validRecipients.length} valid recipients`);
 
-    let successCount = 0;
+    let queuedCount = 0;
     let errorCount = 0;
-    const bounceErrors: Array<{ email: string; reason: string }> = [];
+    const queueErrors: Array<{ email: string; reason: string }> = [];
 
-    // Envoyer les emails un par un (seulement les valides)
+    // Queue emails in batches for efficient processing
+    const emailsToQueue = [];
+    
     for (const recipient of validRecipients) {
       try {
         const email = emailMap.get(recipient.contact_id);
         if (!email) {
-          console.warn(`Email manquant pour le contact ${recipient.contact_id}`);
+          console.warn(`Email missing for contact ${recipient.contact_id}`);
           errorCount++;
           continue;
         }
 
-        // Vérifier si l'email risque de rebondir avant l'envoi
+        // Check if email is likely to bounce before queueing
         const bounceCheck = detectPotentialBounces(email);
         if (bounceCheck.likelyToBounce) {
-          // Marquer comme erreur si risque élevé de rebond
+          // Mark as error if high bounce risk
           await supabaseClient
             .from("campaign_recipients")
             .update({
@@ -264,33 +266,31 @@ serve(async (req) => {
             })
             .eq("id", recipient.id);
 
-          bounceErrors.push({
+          queueErrors.push({
             email,
-            reason: bounceCheck.reason || "Email à risque de rebond",
+            reason: bounceCheck.reason || "High bounce risk email",
           });
           errorCount++;
           continue;
         }
 
-        // Préparer le HTML avec tracking
+        // Prepare HTML with tracking
         let trackedHtml = campaign.html_contenu || "";
         
-        // 1. Ajouter le pixel de tracking des ouvertures
+        // 1. Add open tracking pixel
         const trackOpenUrl = `${SUPABASE_URL}/functions/v1/track-open?r=${recipient.id}`;
         const trackingPixel = `<img src="${trackOpenUrl}" width="1" height="1" style="display:none;" alt="" />`;
         
-        // Insérer le pixel juste avant la balise </body> ou à la fin
         if (trackedHtml.includes("</body>")) {
           trackedHtml = trackedHtml.replace("</body>", `${trackingPixel}</body>`);
         } else {
           trackedHtml += trackingPixel;
         }
         
-        // 2. Remplacer tous les liens par des liens trackés
+        // 2. Replace all links with tracked links
         trackedHtml = trackedHtml.replace(
           /href="([^"]+)"/gi,
           (match: string, url: string) => {
-            // Ne pas tracker les liens mailto: et tel:
             if (url.startsWith("mailto:") || url.startsWith("tel:") || url.startsWith("#")) {
               return match;
             }
@@ -299,44 +299,38 @@ serve(async (req) => {
           }
         );
         
-        // 3. Ajouter le lien de désinscription
+        // 3. Add unsubscribe link
         const unsubscribeUrl = `${SUPABASE_URL.replace('/functions/v1', '')}/unsubscribe?r=${recipient.id}`;
         const unsubscribeLink = `
           <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 12px; color: #666;">
-            <p>Vous ne souhaitez plus recevoir ces emails ?</p>
-            <a href="${unsubscribeUrl}" style="color: #666; text-decoration: underline;">Se désabonner</a>
+            <p>Don't want to receive these emails anymore?</p>
+            <a href="${unsubscribeUrl}" style="color: #666; text-decoration: underline;">Unsubscribe</a>
           </div>
         `;
         
-        // Insérer le lien de désinscription juste avant la balise </body> ou à la fin
         if (trackedHtml.includes("</body>")) {
           trackedHtml = trackedHtml.replace("</body>", `${unsubscribeLink}</body>`);
         } else {
           trackedHtml += unsubscribeLink;
         }
 
-        const data = await sendWithResend({
-          from: `${campaign.expediteur_nom} <${campaign.expediteur_email}>`,
-          to: email,
+        // Add to queue batch
+        emailsToQueue.push({
+          campaign_id: campaignId,
+          recipient_id: recipient.id,
+          to_email: email,
+          from_name: campaign.expediteur_nom,
+          from_email: campaign.expediteur_email,
           subject: campaign.sujet_email,
           html: trackedHtml,
+          status: 'pending',
+          attempts: 0,
         });
 
-        console.log(`Envoyé à ${email}:`, data);
-        
-        // Mettre à jour le statut du destinataire
-        await supabaseClient
-          .from("campaign_recipients")
-          .update({
-            statut_envoi: "envoye",
-            date_envoi: new Date().toISOString(),
-          })
-          .eq("id", recipient.id);
-
-        successCount++;
+        queuedCount++;
       } catch (err) {
         const email = emailMap.get(recipient.contact_id);
-        console.error(`Erreur pour ${email}:`, err);
+        console.error(`Error queueing email for ${email}:`, err);
         errorCount++;
         
         await supabaseClient
@@ -349,8 +343,22 @@ serve(async (req) => {
       }
     }
 
-    // Mettre à jour le statut de la campagne
-    const newStatus = errorCount === 0 ? "envoye" : (successCount > 0 ? "partiellement_envoye" : "erreur");
+    // Insert all queued emails in batch
+    if (emailsToQueue.length > 0) {
+      const { error: queueError } = await supabaseClient
+        .from("email_queue")
+        .insert(emailsToQueue);
+
+      if (queueError) {
+        console.error("Error inserting emails into queue:", queueError);
+        throw new Error("Failed to queue emails");
+      }
+      
+      console.log(`Successfully queued ${emailsToQueue.length} emails`);
+    }
+
+    // Update campaign status to "en_cours" (in progress) since emails are queued
+    const newStatus = errorCount === 0 && queuedCount > 0 ? "en_cours" : (queuedCount > 0 ? "en_cours" : "erreur");
     await supabaseClient
       .from("campaigns")
       .update({
@@ -359,14 +367,14 @@ serve(async (req) => {
       })
       .eq("id", campaignId);
 
-    console.log(`Campagne terminée: ${successCount} succès, ${errorCount} erreurs`);
+    console.log(`Campaign queued: ${queuedCount} emails queued, ${errorCount} errors`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Campagne envoyée: ${successCount} succès, ${errorCount} erreurs`,
+        message: `Campaign queued: ${queuedCount} emails queued for sending, ${errorCount} errors`,
         stats: {
-          sent: successCount,
+          queued: queuedCount,
           failed: errorCount,
           total: validRecipients.length,
           invalidEmails: invalidEmails.length,
@@ -374,10 +382,11 @@ serve(async (req) => {
         },
         warnings: bounceWarnings.length > 0 ? bounceWarnings : undefined,
         invalidEmails: invalidEmails.length > 0 ? invalidEmails : undefined,
+        queueErrors: queueErrors.length > 0 ? queueErrors : undefined,
         quota: {
           limit: quotaCheck.limit,
           used: quotaCheck.used,
-          remaining: quotaCheck.remaining ? quotaCheck.remaining - successCount : undefined,
+          remaining: quotaCheck.remaining,
         },
       }),
       {
