@@ -278,7 +278,10 @@ const Contacts = () => {
 
     const text = await file.text();
     const lines = text.split("\n").filter((line) => line.trim());
-    const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+    
+    // Détecter automatiquement le séparateur (virgule ou point-virgule)
+    const delimiter = lines[0].includes(";") ? ";" : ",";
+    const headers = lines[0].split(delimiter).map((h) => h.trim().toLowerCase());
 
     // Trouver les index des colonnes
     const emailIndex = headers.findIndex((h) => h.includes("email"));
@@ -299,7 +302,7 @@ const Contacts = () => {
 
     const contactsToImport = [];
     for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(",").map((v) => v.trim());
+      const values = lines[i].split(delimiter).map((v) => v.trim());
       const email = values[emailIndex];
       
       if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
