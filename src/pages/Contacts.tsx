@@ -62,6 +62,7 @@ const Contacts = () => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isAssignOpen, setIsAssignOpen] = useState(false);
+  const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<any>(null);
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
@@ -372,6 +373,59 @@ const Contacts = () => {
     onError: (error: any) => {
       console.error("Erreur assignation:", error);
       if (error.message === "Le contact est déjà dans cette liste") {
+        toast.error(error.message);
+      } else {
+        toast.error("Erreur lors de l'assignation");
+      }
+    },
+  });
+
+  // Mutation pour assigner plusieurs contacts à une liste
+  const bulkAssignToListMutation = useMutation({
+    mutationFn: async ({ contactIds, listId }: { contactIds: string[]; listId: string }) => {
+      // Récupérer les contacts déjà dans la liste
+      const { data: existing } = await supabase
+        .from("list_contacts")
+        .select("contact_id")
+        .eq("list_id", listId)
+        .in("contact_id", contactIds);
+
+      const existingIds = existing?.map(e => e.contact_id) || [];
+      const newContactIds = contactIds.filter(id => !existingIds.includes(id));
+
+      if (newContactIds.length === 0) {
+        throw new Error("Tous les contacts sont déjà dans cette liste");
+      }
+
+      // Insérer les nouveaux contacts
+      const contactsToInsert = newContactIds.map(contactId => ({
+        list_id: listId,
+        contact_id: contactId,
+      }));
+
+      const { error } = await supabase
+        .from("list_contacts")
+        .insert(contactsToInsert);
+
+      if (error) throw error;
+
+      return {
+        assigned: newContactIds.length,
+        skipped: existingIds.length,
+      };
+    },
+    onSuccess: (data) => {
+      if (data.skipped > 0) {
+        toast.success(`${data.assigned} contact(s) assigné(s), ${data.skipped} déjà présent(s)`);
+      } else {
+        toast.success(`${data.assigned} contact(s) assigné(s) à la liste`);
+      }
+      setIsBulkAssignOpen(false);
+      setSelectedContacts([]);
+    },
+    onError: (error: any) => {
+      console.error("Erreur assignation en masse:", error);
+      if (error.message === "Tous les contacts sont déjà dans cette liste") {
         toast.error(error.message);
       } else {
         toast.error("Erreur lors de l'assignation");
@@ -762,16 +816,29 @@ const Contacts = () => {
                 {selectedContacts.length > 0 && ` • ${selectedContacts.length} sélectionné(s)`}
               </CardDescription>
             </div>
-            {selectedContacts.length > 0 && canDeleteContacts && (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setIsBulkDeleteOpen(true)}
-                className="gap-2"
-              >
-                <Trash2 className="h-4 w-4" />
-                Supprimer ({selectedContacts.length})
-              </Button>
+            {selectedContacts.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsBulkAssignOpen(true)}
+                  className="gap-2"
+                >
+                  <ListPlus className="h-4 w-4" />
+                  Assigner ({selectedContacts.length})
+                </Button>
+                {canDeleteContacts && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setIsBulkDeleteOpen(true)}
+                    className="gap-2"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Supprimer ({selectedContacts.length})
+                  </Button>
+                )}
+              </div>
             )}
           </div>
         </CardHeader>
@@ -1170,6 +1237,56 @@ const Contacts = () => {
               onClick={() => {
                 setIsAssignOpen(false);
                 setSelectedContact(null);
+              }}
+            >
+              Annuler
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog assignation en masse à une liste */}
+      <Dialog open={isBulkAssignOpen} onOpenChange={setIsBulkAssignOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assigner {selectedContacts.length} contact(s) à une liste</DialogTitle>
+            <DialogDescription>
+              Sélectionnez une liste pour y ajouter les contacts sélectionnés
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {!lists || lists.length === 0 ? (
+              <div className="text-center py-8">
+                <ListPlus className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground text-sm">
+                  Aucune liste disponible. Créez d'abord une liste.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {lists.map((list) => (
+                  <Button
+                    key={list.id}
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => bulkAssignToListMutation.mutate({
+                      contactIds: selectedContacts,
+                      listId: list.id
+                    })}
+                    disabled={bulkAssignToListMutation.isPending}
+                  >
+                    <ListPlus className="h-4 w-4 mr-2" />
+                    {list.nom}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsBulkAssignOpen(false);
               }}
             >
               Annuler
