@@ -450,8 +450,12 @@ const Contacts = () => {
       const existingIds = existing?.map(e => e.contact_id) || [];
       const newContactIds = contactIds.filter(id => !existingIds.includes(id));
 
+      // Si tous les contacts sont déjà dans la liste, retourner un résultat sans erreur
       if (newContactIds.length === 0) {
-        throw new Error("Tous les contacts sont déjà dans cette liste");
+        return {
+          assigned: 0,
+          skipped: existingIds.length,
+        };
       }
 
       // Insérer par lots de 500
@@ -989,14 +993,14 @@ const Contacts = () => {
                   <TableRow>
                   <TableHead className="w-12">
                     <div className="flex items-center gap-2">
-                      <Checkbox
-                        checked={isAllSelected}
-                        ref={(el) => {
-                          if (el) {
-                            el.indeterminate = isIndeterminate;
-                          }
-                        }}
-                        onCheckedChange={handleSelectAll}
+                    <Checkbox
+                      checked={isAllSelected}
+                      ref={(el) => {
+                        if (el && 'indeterminate' in el) {
+                          (el as any).indeterminate = isIndeterminate;
+                        }
+                      }}
+                      onCheckedChange={handleSelectAll}
                         title={selectAllMode ? "Tous les contacts sélectionnés" : isAllSelectedOnPage ? "Tous les contacts de la page sélectionnés" : "Sélectionner tous"}
                       />
                       {(selectedContacts.length > 0 || selectAllMode) && (

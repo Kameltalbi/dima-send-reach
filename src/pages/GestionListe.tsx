@@ -391,8 +391,8 @@ const GestionListe = () => {
                       <Checkbox
                         checked={isAllSelected}
                         ref={(el) => {
-                          if (el) {
-                            el.indeterminate = isIndeterminate;
+                          if (el && 'indeterminate' in el) {
+                            (el as any).indeterminate = isIndeterminate;
                           }
                         }}
                         onCheckedChange={handleSelectAll}
