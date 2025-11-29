@@ -116,22 +116,22 @@ const Pricing = () => {
       <header className="border-b border-border bg-white dark:bg-gray-900 backdrop-blur supports-[backdrop-filter]:bg-white/95 dark:supports-[backdrop-filter]:bg-gray-900/95 sticky top-0 z-50 shadow-sm">
         <div className="container flex h-16 items-center justify-between px-4 md:px-6">
           <Link to="/" className="flex items-center flex-shrink-0">
-            <LogoWithText className="h-8 md:h-10" />
+            <LogoWithText className="h-12 md:h-14" />
           </Link>
           <nav className="hidden lg:flex items-center gap-4 xl:gap-6">
-            <Link to="/" className="text-sm xl:text-base text-foreground hover:text-accent transition-colors">
+            <Link to="/" className="text-base xl:text-lg font-semibold text-foreground hover:text-accent transition-colors">
               {t('nav.home')}
             </Link>
-            <a href="/#features" className="text-sm xl:text-base text-foreground hover:text-accent transition-colors">
+            <a href="/#features" className="text-base xl:text-lg font-semibold text-foreground hover:text-accent transition-colors">
               {t('nav.features')}
             </a>
-            <Link to="/pricing" className="text-sm xl:text-base text-foreground hover:text-accent transition-colors font-medium">
+            <Link to="/pricing" className="text-base xl:text-lg font-semibold text-foreground hover:text-accent transition-colors">
               {t('nav.pricing')}
             </Link>
-            <a href="/#about" className="text-sm xl:text-base text-foreground hover:text-accent transition-colors">
+            <a href="/#about" className="text-base xl:text-lg font-semibold text-foreground hover:text-accent transition-colors">
               {t('nav.about')}
             </a>
-            <a href="/#contact" className="text-sm xl:text-base text-foreground hover:text-accent transition-colors">
+            <a href="/#contact" className="text-base xl:text-lg font-semibold text-foreground hover:text-accent transition-colors">
               {t('nav.contact')}
             </a>
           </nav>
@@ -153,41 +153,41 @@ const Pricing = () => {
               <SheetContent side="right" className="w-[300px] sm:w-[400px]">
                 <div className="flex flex-col gap-6 mt-8">
                   <div className="flex items-center gap-2 mb-4">
-                    <LogoWithText className="h-8" />
+                    <LogoWithText className="h-12" />
                   </div>
                   <nav className="flex flex-col gap-4">
                     <Link 
                       to="/" 
                       onClick={() => setMobileMenuOpen(false)}
-                      className="text-lg font-medium text-foreground hover:text-accent transition-colors py-2"
+                      className="text-xl font-semibold text-foreground hover:text-accent transition-colors py-2"
                     >
                       {t('nav.home')}
                     </Link>
                     <a 
                       href="/#features" 
                       onClick={() => setMobileMenuOpen(false)}
-                      className="text-lg font-medium text-foreground hover:text-accent transition-colors py-2"
+                      className="text-xl font-semibold text-foreground hover:text-accent transition-colors py-2"
                     >
                       {t('nav.features')}
                     </a>
                     <Link 
                       to="/pricing" 
                       onClick={() => setMobileMenuOpen(false)}
-                      className="text-lg font-medium text-accent transition-colors py-2"
+                      className="text-xl font-semibold text-accent transition-colors py-2"
                     >
                       {t('nav.pricing')}
                     </Link>
                     <a 
                       href="/#about" 
                       onClick={() => setMobileMenuOpen(false)}
-                      className="text-lg font-medium text-foreground hover:text-accent transition-colors py-2"
+                      className="text-xl font-semibold text-foreground hover:text-accent transition-colors py-2"
                     >
                       {t('nav.about')}
                     </a>
                     <a 
                       href="/#contact" 
                       onClick={() => setMobileMenuOpen(false)}
-                      className="text-lg font-medium text-foreground hover:text-accent transition-colors py-2"
+                      className="text-xl font-semibold text-foreground hover:text-accent transition-colors py-2"
                     >
                       {t('nav.contact')}
                     </a>
@@ -379,7 +379,7 @@ const Pricing = () => {
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="mb-4">
-                <LogoWithText className="h-10" />
+                <LogoWithText className="h-14" />
               </div>
               <p className="text-sm opacity-80">
                 Professional email marketing platform.

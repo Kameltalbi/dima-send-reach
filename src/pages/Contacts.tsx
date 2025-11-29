@@ -242,13 +242,35 @@ const Contacts = () => {
   // Mutation pour supprimer plusieurs contacts par lots
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids: string[]) => {
-      if (!ids || ids.length === 0) {
-        return;
-      }
-
       setDeleteProgress(0);
 
-      // Cas spécial : vue sans filtre ni recherche et tous les contacts sélectionnés
+      // Cas spécial : mode "tous sélectionnés" (ids vide ou selectAllMode)
+      if (selectAllMode || (!ids || ids.length === 0)) {
+        // Construire la requête avec les filtres appliqués
+        let query = supabase
+          .from("contacts")
+          .delete()
+          .eq("user_id", user?.id);
+
+        if (statusFilter !== "all") {
+          query = query.eq("statut", statusFilter);
+        }
+
+        if (segmentFilter !== "all") {
+          query = query.eq("segment", segmentFilter);
+        }
+
+        if (searchQuery) {
+          query = query.or(`nom.ilike.%${searchQuery}%,prenom.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
+        }
+
+        const { error } = await query;
+        if (error) throw error;
+        setDeleteProgress(100);
+        return { deletedCount: totalCount || 0 };
+      }
+
+      // Cas spécial : vue sans filtre ni recherche et tous les contacts de la page sélectionnés
       const isDeleteAllView =
         searchQuery === "" &&
         statusFilter === "all" &&
@@ -259,7 +281,7 @@ const Contacts = () => {
         const { error } = await supabase.from("contacts").delete().eq("user_id", user?.id);
         if (error) throw error;
         setDeleteProgress(100);
-        return;
+        return { deletedCount: ids.length };
       }
 
       // Sinon, on supprime par lots avec liste d'IDs
@@ -277,13 +299,17 @@ const Contacts = () => {
         const progress = Math.round(((i + 1) / batches.length) * 100);
         setDeleteProgress(progress);
       }
+
+      return { deletedCount: ids.length };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      const deletedCount = data?.deletedCount || (selectAllMode ? totalCount : selectedContacts.length) || 0;
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
-      toast.success(`${selectedContacts.length} contact(s) supprimé(s)`);
+      toast.success(`${deletedCount} contact(s) supprimé(s)`);
       setDeleteProgress(0);
       setIsBulkDeleteOpen(false);
       setSelectedContacts([]);
+      setSelectAllMode(false);
     },
     onError: () => {
       toast.error("Erreur lors de la suppression des contacts");
@@ -686,43 +712,78 @@ const Contacts = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      // S'il y a plusieurs pages de contacts, on sélectionne directement tous les contacts
-      if (totalCount && totalCount > filteredContacts.length) {
+      // Si on a déjà tous les contacts de la page sélectionnés, passer en mode "tous les contacts"
+      if (isAllSelectedOnPage && totalCount && totalCount > filteredContacts.length) {
         setSelectAllMode(true);
         setSelectedContacts([]);
       } else {
-        // Sinon, on sélectionne seulement les contacts de la page courante
+        // Sinon, sélectionner tous les contacts de la page courante
         setSelectedContacts(filteredContacts.map((c) => c.id));
         setSelectAllMode(false);
       }
     } else {
+      // Désélectionner tous
       setSelectedContacts([]);
       setSelectAllMode(false);
     }
   };
+
   const handleSelectAllContacts = () => {
+    // Sélectionner tous les contacts (toutes les pages)
     setSelectAllMode(true);
     setSelectedContacts([]);
   };
 
+  const handleDeselectAll = () => {
+    setSelectedContacts([]);
+    setSelectAllMode(false);
+  };
+
   const handleSelectContact = (contactId: string, checked: boolean) => {
     if (checked) {
-      setSelectedContacts([...selectedContacts, contactId]);
+      // Si on est en mode "tous sélectionnés", on passe en mode sélection individuelle
+      if (selectAllMode) {
+        setSelectAllMode(false);
+        // Récupérer tous les IDs sauf celui qu'on désélectionne
+        const allIds = filteredContacts.map(c => c.id);
+        setSelectedContacts(allIds.filter(id => id !== contactId));
+      } else {
+        setSelectedContacts([...selectedContacts, contactId]);
+      }
     } else {
-      setSelectedContacts(selectedContacts.filter(id => id !== contactId));
+      // Désélectionner un contact
+      if (selectAllMode) {
+        // Si on était en mode "tous sélectionnés", passer en mode sélection individuelle
+        setSelectAllMode(false);
+        const allIds = filteredContacts.map(c => c.id);
+        setSelectedContacts(allIds.filter(id => id !== contactId));
+      } else {
+        setSelectedContacts(selectedContacts.filter(id => id !== contactId));
+      }
     }
   };
+
+  // Calculer l'état de la checkbox "sélectionner tout"
+  const isAllSelectedOnPage = filteredContacts.length > 0 && 
+    filteredContacts.every(contact => selectedContacts.includes(contact.id));
+  const isIndeterminate = selectedContacts.length > 0 && !isAllSelectedOnPage && !selectAllMode;
+  const isAllSelected = selectAllMode || (isAllSelectedOnPage && (!totalCount || totalCount === filteredContacts.length));
 
   const handleBulkDelete = () => {
     if (!canDeleteContacts) {
       toast.error("Vous n'avez pas la permission de supprimer des contacts");
       return;
     }
-    if (!selectedContacts.length) {
+    if (selectAllMode) {
+      // En mode "tous sélectionnés", on passe un tableau vide pour indiquer qu'on veut tout supprimer
+      // La mutation gérera cela en vérifiant les filtres
+      bulkDeleteMutation.mutate([]);
+    } else if (!selectedContacts.length) {
       toast.error("Aucun contact sélectionné");
       return;
+    } else {
+      bulkDeleteMutation.mutate(selectedContacts);
     }
-    bulkDeleteMutation.mutate(selectedContacts);
   };
 
   const handleExportCSV = () => {
@@ -867,8 +928,9 @@ const Contacts = () => {
               <CardTitle>Liste des contacts</CardTitle>
               <CardDescription>
                 {totalCount || 0} contact{(totalCount || 0) > 1 ? "s" : ""} au total
-                {searchQuery && ` • ${filteredContacts.length} affiché${filteredContacts.length > 1 ? "s" : ""}`}
-                {selectAllMode ? ` • Tous les contacts sélectionnés (${totalCount})` : selectedContacts.length > 0 && ` • ${selectedContacts.length} sélectionné(s)`}
+                {searchQuery && ` • ${filteredContacts.length} affiché${filteredContacts.length > 1 ? "s" : ""} sur cette page`}
+                {selectAllMode && ` • ✓ Tous sélectionnés (${totalCount})`}
+                {!selectAllMode && selectedContacts.length > 0 && ` • ${selectedContacts.length} sélectionné${selectedContacts.length > 1 ? "s" : ""}`}
               </CardDescription>
             </div>
             {(selectedContacts.length > 0 || selectAllMode) && (
@@ -926,10 +988,23 @@ const Contacts = () => {
                 <TableHeader>
                   <TableRow>
                   <TableHead className="w-12">
-                    <Checkbox
-                      checked={selectAllMode || (selectedContacts.length === filteredContacts.length && filteredContacts.length > 0)}
-                      onCheckedChange={handleSelectAll}
-                    />
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={isAllSelected}
+                        ref={(el) => {
+                          if (el) {
+                            el.indeterminate = isIndeterminate;
+                          }
+                        }}
+                        onCheckedChange={handleSelectAll}
+                        title={selectAllMode ? "Tous les contacts sélectionnés" : isAllSelectedOnPage ? "Tous les contacts de la page sélectionnés" : "Sélectionner tous"}
+                      />
+                      {(selectedContacts.length > 0 || selectAllMode) && (
+                        <span className="text-xs text-muted-foreground font-medium">
+                          {selectAllMode ? totalCount : selectedContacts.length}
+                        </span>
+                      )}
+                    </div>
                   </TableHead>
                     <TableHead>Nom</TableHead>
                     <TableHead>Email</TableHead>
@@ -944,7 +1019,7 @@ const Contacts = () => {
                     <TableRow key={contact.id}>
                       <TableCell>
                         <Checkbox
-                          checked={selectedContacts.includes(contact.id)}
+                          checked={selectAllMode || selectedContacts.includes(contact.id)}
                           onCheckedChange={(checked) => handleSelectContact(contact.id, checked as boolean)}
                         />
                       </TableCell>
@@ -1006,35 +1081,61 @@ const Contacts = () => {
             </div>
           )}
           
-          {/* Option pour sélectionner tous les contacts */}
-          {selectedContacts.length === filteredContacts.length && filteredContacts.length > 0 && !selectAllMode && totalCount && totalCount > filteredContacts.length && (
-            <div className="py-3 px-4 bg-muted/50 rounded-md">
-              <p className="text-sm text-muted-foreground">
-                {selectedContacts.length} contacts sélectionnés sur cette page.{" "}
-                <button
-                  onClick={handleSelectAllContacts}
-                  className="text-primary font-medium hover:underline"
-                >
-                  Sélectionner tous les {totalCount} contacts
-                </button>
-              </p>
-            </div>
-          )}
-          
-          {selectAllMode && (
-            <div className="py-3 px-4 bg-primary/10 rounded-md border border-primary/20">
-              <p className="text-sm text-foreground">
-                Tous les {totalCount} contacts sont sélectionnés.{" "}
-                <button
-                  onClick={() => {
-                    setSelectAllMode(false);
-                    setSelectedContacts([]);
-                  }}
-                  className="text-primary font-medium hover:underline"
-                >
-                  Annuler la sélection
-                </button>
-              </p>
+          {/* Barre de sélection - affichée quand des contacts sont sélectionnés */}
+          {(selectedContacts.length > 0 || selectAllMode) && (
+            <div className={`py-3 px-4 rounded-md border ${
+              selectAllMode 
+                ? "bg-primary/10 border-primary/20" 
+                : "bg-muted/50 border-muted"
+            }`}>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Checkbox 
+                    checked={true} 
+                    className="h-4 w-4"
+                    disabled
+                  />
+                  <p className={`text-sm ${
+                    selectAllMode 
+                      ? "font-medium text-foreground" 
+                      : "text-muted-foreground"
+                  }`}>
+                    {selectAllMode ? (
+                      <>✓ Tous les <strong>{totalCount}</strong> contact{totalCount && totalCount > 1 ? "s" : ""} sont sélectionné{totalCount && totalCount > 1 ? "s" : ""}</>
+                    ) : (
+                      <>
+                        <strong>{selectedContacts.length}</strong> contact{selectedContacts.length > 1 ? "s" : ""} sélectionné{selectedContacts.length > 1 ? "s" : ""}
+                        {totalCount && totalCount > filteredContacts.length && (
+                          <span className="ml-2 text-muted-foreground">
+                            sur cette page
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {!selectAllMode && totalCount && totalCount > filteredContacts.length && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSelectAllContacts}
+                      className="gap-2"
+                    >
+                      <Checkbox checked={false} className="h-3 w-3" />
+                      Sélectionner tous les {totalCount} contacts
+                    </Button>
+                  )}
+                  <Button
+                    variant={selectAllMode ? "outline" : "ghost"}
+                    size="sm"
+                    onClick={handleDeselectAll}
+                    className="gap-2"
+                  >
+                    Tout désélectionner
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
           

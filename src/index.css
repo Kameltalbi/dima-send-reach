@@ -8,84 +8,85 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* DimaMail Design System - Couleurs principales */
-    --primary: 207 16% 42%;  /* Bleu-gris profond #5A6D7C */
+    /* DimaMail Design System - Couleurs adaptées au logo */
+    /* Palette moderne et professionnelle harmonisée avec le logo */
+    --primary: 220 30% 25%;  /* Bleu profond moderne #2C3E5A */
     --primary-foreground: 0 0% 100%;  /* Blanc */
     
-    --secondary: 210 22% 72%;  /* Bleu clair fumé #A7B8C7 */
-    --secondary-foreground: 207 20% 20%;  /* Gris foncé */
+    --secondary: 220 15% 65%;  /* Bleu-gris clair #9CA8B8 */
+    --secondary-foreground: 220 30% 15%;  /* Gris foncé */
     
-    --accent: 39 48% 60%;  /* Doré doux #D4A55D */
+    --accent: 39 48% 60%;  /* Doré doux / Moutarde #D4A55D */
     --accent-foreground: 0 0% 18%;  /* Presque noir */
     
-    --background: 210 33% 94%;  /* Gris perle #E8ECEF */
-    --foreground: 0 0% 18%;  /* Gris anthracite #2F2F2F */
+    --background: 220 20% 96%;  /* Gris très clair #F5F6F8 */
+    --foreground: 220 30% 15%;  /* Gris anthracite #1F2937 */
     
     --card: 0 0% 100%;  /* Blanc pur */
-    --card-foreground: 0 0% 18%;
+    --card-foreground: 220 30% 15%;
     
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 18%;
+    --popover-foreground: 220 30% 15%;
     
-    --muted: 210 22% 85%;  /* Gris doux */
-    --muted-foreground: 207 8% 50%;
+    --muted: 220 15% 90%;  /* Gris très doux */
+    --muted-foreground: 220 10% 45%;
     
-    --destructive: 10 70% 55%;  /* Terre cuivrée #B8513B */
+    --destructive: 0 70% 55%;  /* Rouge moderne #E63946 */
     --destructive-foreground: 0 0% 100%;
     
-    --border: 210 25% 88%;
-    --input: 210 25% 90%;
-    --ring: 207 16% 42%;
+    --border: 220 15% 85%;
+    --input: 220 15% 92%;
+    --ring: 220 30% 25%;
     
     --radius: 0.75rem;
     
     /* Sidebar */
-    --sidebar-background: 207 16% 42%;  /* Bleu-gris profond */
+    --sidebar-background: 220 30% 25%;  /* Bleu profond */
     --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 39 48% 60%;  /* Doré */
     --sidebar-primary-foreground: 0 0% 18%;
-    --sidebar-accent: 207 20% 50%;
+    --sidebar-accent: 220 20% 40%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 207 20% 35%;
+    --sidebar-border: 220 20% 30%;
     --sidebar-ring: 39 48% 60%;
   }
 
   .dark {
-    --background: 207 25% 12%;
+    --background: 220 30% 8%;
     --foreground: 0 0% 95%;
     
-    --card: 207 20% 15%;
+    --card: 220 25% 12%;
     --card-foreground: 0 0% 95%;
     
-    --popover: 207 20% 15%;
+    --popover: 220 25% 12%;
     --popover-foreground: 0 0% 95%;
     
-    --primary: 207 16% 42%;
+    --primary: 220 50% 55%;
     --primary-foreground: 0 0% 100%;
     
-    --secondary: 207 15% 25%;
+    --secondary: 220 15% 30%;
     --secondary-foreground: 0 0% 95%;
     
-    --muted: 207 15% 20%;
-    --muted-foreground: 210 10% 65%;
+    --muted: 220 15% 18%;
+    --muted-foreground: 220 10% 70%;
     
     --accent: 39 48% 55%;
     --accent-foreground: 0 0% 95%;
     
-    --destructive: 10 65% 45%;
+    --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 95%;
     
-    --border: 207 15% 25%;
-    --input: 207 15% 25%;
-    --ring: 207 16% 42%;
+    --border: 220 15% 22%;
+    --input: 220 15% 22%;
+    --ring: 220 50% 55%;
     
-    --sidebar-background: 207 25% 10%;
+    --sidebar-background: 220 30% 10%;
     --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 39 48% 55%;
     --sidebar-primary-foreground: 0 0% 95%;
-    --sidebar-accent: 207 20% 20%;
+    --sidebar-accent: 220 20% 25%;
     --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 207 20% 18%;
+    --sidebar-border: 220 20% 18%;
     --sidebar-ring: 39 48% 55%;
   }
 }

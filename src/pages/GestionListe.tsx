@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +36,7 @@ import { ArrowLeft, Plus, Search, Trash2, Mail, Users, X, TestTube } from "lucid
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const GestionListe = () => {
   const { id } = useParams<{ id: string }>();
@@ -45,8 +46,12 @@ const GestionListe = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<any>(null);
   const [selectedContactToAdd, setSelectedContactToAdd] = useState("");
+  const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(100);
 
   // Charger la liste
   const { data: list } = useQuery({
@@ -63,17 +68,36 @@ const GestionListe = () => {
     enabled: !!id,
   });
 
-  // Charger les contacts de la liste
-  const { data: listContacts, isLoading } = useQuery({
-    queryKey: ["listContacts", id],
+  // Compter le total de contacts dans la liste
+  const { data: totalCount } = useQuery({
+    queryKey: ["listContacts-count", id],
     queryFn: async () => {
+      const { count, error } = await supabase
+        .from("list_contacts")
+        .select("*", { count: "exact", head: true })
+        .eq("list_id", id);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!id,
+  });
+
+  // Charger les contacts de la liste avec pagination
+  const { data: listContacts, isLoading } = useQuery({
+    queryKey: ["listContacts", id, currentPage, itemsPerPage],
+    queryFn: async () => {
+      const from = (currentPage - 1) * itemsPerPage;
+      const to = from + itemsPerPage - 1;
+
       const { data, error } = await supabase
         .from("list_contacts")
         .select(`
           *,
           contacts (*)
         `)
-        .eq("list_id", id);
+        .eq("list_id", id)
+        .order("created_at", { ascending: false })
+        .range(from, to);
       if (error) throw error;
       return data?.map((lc: any) => lc.contacts).filter(Boolean) || [];
     },
@@ -101,7 +125,7 @@ const GestionListe = () => {
     (contact) => !listContacts?.some((lc: any) => lc.id === contact.id)
   ) || [];
 
-  // Filtrer par recherche
+  // Filtrer par recherche (sur la page courante uniquement)
   const filteredContacts = listContacts?.filter((contact: any) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
@@ -111,6 +135,14 @@ const GestionListe = () => {
       contact.email?.toLowerCase().includes(query)
     );
   }) || [];
+
+  // Calculer le nombre total de pages
+  const totalPages = Math.ceil((totalCount || 0) / itemsPerPage);
+
+  // Réinitialiser la page à 1 lors d'une recherche
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   // Mutation pour ajouter un contact
   const addMutation = useMutation({
@@ -123,6 +155,7 @@ const GestionListe = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["listContacts", id] });
+      queryClient.invalidateQueries({ queryKey: ["listContacts-count", id] });
       queryClient.invalidateQueries({ queryKey: ["lists"] });
       toast.success("Contact ajouté à la liste");
       setIsAddOpen(false);
@@ -145,6 +178,7 @@ const GestionListe = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["listContacts", id] });
+      queryClient.invalidateQueries({ queryKey: ["listContacts-count", id] });
       queryClient.invalidateQueries({ queryKey: ["lists"] });
       toast.success("Contact retiré de la liste");
       setIsDeleteOpen(false);
@@ -166,6 +200,66 @@ const GestionListe = () => {
   const handleRemove = (contact: any) => {
     setSelectedContact(contact);
     setIsDeleteOpen(true);
+  };
+
+  // Gestion de la sélection multiple
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedContacts(filteredContacts.map((c: any) => c.id));
+    } else {
+      setSelectedContacts([]);
+    }
+  };
+
+  const handleSelectContact = (contactId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedContacts([...selectedContacts, contactId]);
+    } else {
+      setSelectedContacts(selectedContacts.filter(id => id !== contactId));
+    }
+  };
+
+  const isAllSelected = filteredContacts.length > 0 && 
+    filteredContacts.every((contact: any) => selectedContacts.includes(contact.id));
+  const isIndeterminate = selectedContacts.length > 0 && !isAllSelected;
+
+  // Mutation pour supprimer plusieurs contacts
+  const bulkRemoveMutation = useMutation({
+    mutationFn: async (contactIds: string[]) => {
+      const { error } = await supabase
+        .from("list_contacts")
+        .delete()
+        .eq("list_id", id)
+        .in("contact_id", contactIds);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["listContacts", id] });
+      queryClient.invalidateQueries({ queryKey: ["listContacts-count", id] });
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
+      toast.success(`${selectedContacts.length} contact(s) retiré(s) de la liste`);
+      setIsBulkDeleteOpen(false);
+      setSelectedContacts([]);
+      // Réinitialiser à la page 1 si nécessaire
+      if (currentPage > 1) {
+        const newTotal = (totalCount || 0) - selectedContacts.length;
+        const newTotalPages = Math.ceil(newTotal / itemsPerPage);
+        if (currentPage > newTotalPages) {
+          setCurrentPage(Math.max(1, newTotalPages));
+        }
+      }
+    },
+    onError: () => {
+      toast.error("Erreur lors de la suppression des contacts");
+    },
+  });
+
+  const handleBulkRemove = () => {
+    if (selectedContacts.length === 0) {
+      toast.error("Aucun contact sélectionné");
+      return;
+    }
+    setIsBulkDeleteOpen(true);
   };
 
   if (isLoading) {
@@ -247,10 +341,27 @@ const GestionListe = () => {
       {/* Liste des contacts */}
       <Card>
         <CardHeader>
-          <CardTitle>Contacts de la liste</CardTitle>
-          <CardDescription>
-            {filteredContacts.length} contact{filteredContacts.length > 1 ? "s" : ""}
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Contacts de la liste</CardTitle>
+              <CardDescription>
+                {totalCount || 0} contact{(totalCount || 0) > 1 ? "s" : ""} au total
+                {searchQuery && ` • ${filteredContacts.length} affiché${filteredContacts.length > 1 ? "s" : ""} sur cette page`}
+                {selectedContacts.length > 0 && ` • ${selectedContacts.length} sélectionné${selectedContacts.length > 1 ? "s" : ""}`}
+              </CardDescription>
+            </div>
+            {selectedContacts.length > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleBulkRemove}
+                className="gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Retirer {selectedContacts.length} contact{selectedContacts.length > 1 ? "s" : ""}
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {filteredContacts.length === 0 ? (
@@ -276,6 +387,17 @@ const GestionListe = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={isAllSelected}
+                        ref={(el) => {
+                          if (el) {
+                            el.indeterminate = isIndeterminate;
+                          }
+                        }}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead>Nom</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Segment</TableHead>
@@ -286,6 +408,12 @@ const GestionListe = () => {
                 <TableBody>
                   {filteredContacts.map((contact: any) => (
                     <TableRow key={contact.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedContacts.includes(contact.id)}
+                          onCheckedChange={(checked) => handleSelectContact(contact.id, checked as boolean)}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">
                         {contact.prenom} {contact.nom}
                       </TableCell>
@@ -323,6 +451,49 @@ const GestionListe = () => {
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          )}
+          
+          {/* Pagination */}
+          {!isLoading && filteredContacts.length > 0 && totalPages > 1 && (
+            <div className="flex items-center justify-between pt-4 border-t mt-4">
+              <div className="text-sm text-muted-foreground">
+                Page {currentPage} sur {totalPages}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                >
+                  Première
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Précédent
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Suivant
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  Dernière
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
@@ -391,6 +562,28 @@ const GestionListe = () => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Retirer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog suppression en masse */}
+      <AlertDialog open={isBulkDeleteOpen} onOpenChange={setIsBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Retirer les contacts</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir retirer {selectedContacts.length} contact{selectedContacts.length > 1 ? "s" : ""} de cette liste ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => bulkRemoveMutation.mutate(selectedContacts)}
+              disabled={bulkRemoveMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {bulkRemoveMutation.isPending ? "Suppression..." : `Retirer ${selectedContacts.length} contact${selectedContacts.length > 1 ? "s" : ""}`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

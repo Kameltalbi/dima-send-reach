@@ -65,14 +65,12 @@ export function AppSidebar() {
     <Sidebar className="border-r border-sidebar-border">
       <SidebarContent>
         <div className="p-4">
-          <div className="flex items-center gap-2 px-2">
-            <Logo className="h-8 w-8 shrink-0" />
-            {!isCollapsed && (
-              <h2 className="text-xl font-heading font-bold text-sidebar-foreground">
-                Dima<span className="text-sidebar-primary">Mail</span>
-                <span className="text-sidebar-primary">.</span>
-              </h2>
-            )}
+          <div className="flex items-center justify-center px-2">
+            <img 
+              src="/DimaMail blanc.png" 
+              alt="DimaMail Logo" 
+              className={`${isCollapsed ? "h-8 w-8" : "h-12 w-auto"} object-contain`}
+            />
           </div>
         </div>
 

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 const Auth = () => {
@@ -114,13 +114,15 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center gap-2 mb-4">
-            <Mail className="h-10 w-10 text-accent" />
+          <div className="inline-flex items-center justify-center mb-4 relative">
+            {/* Effet de flou d'arrière-plan pour le logo */}
+            <div className="absolute inset-0 backdrop-blur-md rounded-lg -z-10 scale-110"></div>
+            <img 
+              src="/logoDimaMail.png" 
+              alt="DimaMail Logo" 
+              className="h-16 w-auto object-contain relative z-10"
+            />
           </div>
-          <h1 className="text-4xl font-heading font-bold text-primary mb-2">
-            Dima<span className="text-foreground">Mail</span>
-            <span className="text-accent">.</span>
-          </h1>
           <p className="text-muted-foreground">
             {t('auth.subtitle')}
           </p>

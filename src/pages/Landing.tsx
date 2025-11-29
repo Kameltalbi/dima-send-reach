@@ -24,14 +24,14 @@ const Landing = () => {
       <header className="bg-card/95 backdrop-blur-sm shadow-sm sticky top-0 z-50 transition-all duration-300">
         <div className="container mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2 animate-fade-in-left flex-shrink-0">
-            <LogoWithText className="h-8 sm:h-10" />
+            <LogoWithText className="h-12 sm:h-14" />
           </div>
           <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
-            <a href="#home" className="text-sm xl:text-base text-foreground hover:text-accent transition-all duration-300 hover:scale-110">{t('nav.home')}</a>
-            <a href="#features" className="text-sm xl:text-base text-foreground hover:text-accent transition-all duration-300 hover:scale-110">{t('nav.features')}</a>
-            <Link to="/pricing" className="text-sm xl:text-base text-foreground hover:text-accent transition-all duration-300 hover:scale-110">{t('nav.pricing')}</Link>
-            <a href="#about" className="text-sm xl:text-base text-foreground hover:text-accent transition-all duration-300 hover:scale-110">{t('nav.about')}</a>
-            <a href="#contact" className="text-sm xl:text-base text-foreground hover:text-accent transition-all duration-300 hover:scale-110">{t('nav.contact')}</a>
+            <a href="#home" className="text-base xl:text-lg font-semibold text-foreground hover:text-accent transition-all duration-300 hover:scale-110">{t('nav.home')}</a>
+            <a href="#features" className="text-base xl:text-lg font-semibold text-foreground hover:text-accent transition-all duration-300 hover:scale-110">{t('nav.features')}</a>
+            <Link to="/pricing" className="text-base xl:text-lg font-semibold text-foreground hover:text-accent transition-all duration-300 hover:scale-110">{t('nav.pricing')}</Link>
+            <a href="#about" className="text-base xl:text-lg font-semibold text-foreground hover:text-accent transition-all duration-300 hover:scale-110">{t('nav.about')}</a>
+            <a href="#contact" className="text-base xl:text-lg font-semibold text-foreground hover:text-accent transition-all duration-300 hover:scale-110">{t('nav.contact')}</a>
           </nav>
           <div className="flex items-center gap-2 sm:gap-4 animate-fade-in-right">
             <LanguageSwitcher />
@@ -48,41 +48,41 @@ const Landing = () => {
               <SheetContent side="right" className="w-[300px] sm:w-[400px]">
                 <div className="flex flex-col gap-6 mt-8">
                   <div className="flex items-center gap-2 mb-4">
-                    <LogoWithText className="h-8" />
+                    <LogoWithText className="h-12" />
                   </div>
                   <nav className="flex flex-col gap-4">
                     <a 
                       href="#home" 
                       onClick={() => setMobileMenuOpen(false)}
-                      className="text-lg font-medium text-foreground hover:text-accent transition-colors py-2"
+                      className="text-xl font-semibold text-foreground hover:text-accent transition-colors py-2"
                     >
                       {t('nav.home')}
                     </a>
                     <a 
                       href="#features" 
                       onClick={() => setMobileMenuOpen(false)}
-                      className="text-lg font-medium text-foreground hover:text-accent transition-colors py-2"
+                      className="text-xl font-semibold text-foreground hover:text-accent transition-colors py-2"
                     >
                       {t('nav.features')}
                     </a>
                     <Link 
                       to="/pricing" 
                       onClick={() => setMobileMenuOpen(false)}
-                      className="text-lg font-medium text-foreground hover:text-accent transition-colors py-2"
+                      className="text-xl font-semibold text-foreground hover:text-accent transition-colors py-2"
                     >
                       {t('nav.pricing')}
                     </Link>
                     <a 
                       href="#about" 
                       onClick={() => setMobileMenuOpen(false)}
-                      className="text-lg font-medium text-foreground hover:text-accent transition-colors py-2"
+                      className="text-xl font-semibold text-foreground hover:text-accent transition-colors py-2"
                     >
                       {t('nav.about')}
                     </a>
                     <a 
                       href="#contact" 
                       onClick={() => setMobileMenuOpen(false)}
-                      className="text-lg font-medium text-foreground hover:text-accent transition-colors py-2"
+                      className="text-xl font-semibold text-foreground hover:text-accent transition-colors py-2"
                     >
                       {t('nav.contact')}
                     </a>
@@ -449,7 +449,7 @@ const Landing = () => {
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="mb-4">
-                <LogoWithText className="h-10" />
+                <LogoWithText className="h-14" />
               </div>
               <p className="text-sm opacity-80">
                 Professional email marketing platform.
