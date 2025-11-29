@@ -179,11 +179,21 @@ const Contacts = () => {
     },
   });
 
-  // Mutation pour supprimer plusieurs contacts
+  // Mutation pour supprimer plusieurs contacts par lots
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids: string[]) => {
-      const { error } = await supabase.from("contacts").delete().in("id", ids);
-      if (error) throw error;
+      // Diviser en lots de 50 pour éviter les URLs trop longues
+      const batchSize = 50;
+      const batches = [];
+      for (let i = 0; i < ids.length; i += batchSize) {
+        batches.push(ids.slice(i, i + batchSize));
+      }
+
+      // Supprimer chaque lot séquentiellement
+      for (const batch of batches) {
+        const { error } = await supabase.from("contacts").delete().in("id", batch);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
