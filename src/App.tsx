@@ -26,6 +26,7 @@ import Pricing from "./pages/Pricing";
 import Checkout from "./pages/Checkout";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import NotFound from "./pages/NotFound";
+import TestEmail from "./pages/TestEmail";
 import { ErrorBoundary } from "./lib/error-boundary";
 
 const queryClient = new QueryClient();
@@ -57,6 +58,7 @@ const App = () => (
             <Route path="/templates" element={<AppLayout><Templates /></AppLayout>} />
             <Route path="/parametres" element={<AppLayout><Parametres /></AppLayout>} />
             <Route path="/config-ses" element={<AppLayout><ConfigurationSES /></AppLayout>} />
+            <Route path="/test-email" element={<AppLayout><TestEmail /></AppLayout>} />
             <Route path="/superadmin" element={<SuperAdminLayout><ProtectedRoute requiredRole="superadmin"><SuperAdmin /></ProtectedRoute></SuperAdminLayout>} />
             <Route path="/support" element={<AppLayout><Support /></AppLayout>} />
             
