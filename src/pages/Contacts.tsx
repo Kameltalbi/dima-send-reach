@@ -334,14 +334,28 @@ const Contacts = () => {
 
     const text = await file.text();
     const lines = text.split("\n").filter((line) => line.trim());
-    const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+    
+    if (lines.length === 0) {
+      toast.error("Le fichier CSV est vide");
+      return;
+    }
+
+    // Détecter le séparateur (virgule ou point-virgule)
+    const firstLine = lines[0];
+    const commaCount = (firstLine.match(/,/g) || []).length;
+    const semicolonCount = (firstLine.match(/;/g) || []).length;
+    const delimiter = semicolonCount > commaCount ? ";" : ",";
+
+    console.log(`Délimiteur détecté: ${delimiter === ";" ? "point-virgule" : "virgule"}`);
+
+    const headers = lines[0].split(delimiter).map((h) => h.trim().toLowerCase());
 
     // Trouver les index des colonnes
-    const emailIndex = headers.findIndex((h) => h.includes("email"));
-    const nomIndex = headers.findIndex((h) => h.includes("nom") && !h.includes("prenom"));
-    const prenomIndex = headers.findIndex((h) => h.includes("prenom"));
-    const telephoneIndex = headers.findIndex((h) => h.includes("telephone") || h.includes("tel"));
-    const fonctionIndex = headers.findIndex((h) => h.includes("fonction") || h.includes("poste"));
+    const emailIndex = headers.findIndex((h) => h.includes("email") || h === "e-mail");
+    const nomIndex = headers.findIndex((h) => (h.includes("nom") || h === "last name") && !h.includes("prenom"));
+    const prenomIndex = headers.findIndex((h) => h.includes("prenom") || h === "first name" || h === "prénom");
+    const telephoneIndex = headers.findIndex((h) => h.includes("telephone") || h.includes("tel") || h.includes("phone"));
+    const fonctionIndex = headers.findIndex((h) => h.includes("fonction") || h.includes("poste") || h === "role");
     const societeIndex = headers.findIndex((h) => h.includes("societe") || h.includes("entreprise") || h.includes("company"));
     const siteWebIndex = headers.findIndex((h) => h.includes("site") || h.includes("web") || h.includes("url"));
     const paysIndex = headers.findIndex((h) => h.includes("pays") || h.includes("country"));
@@ -349,41 +363,55 @@ const Contacts = () => {
     const segmentIndex = headers.findIndex((h) => h.includes("segment"));
 
     if (emailIndex === -1) {
-      toast.error(t('contacts.importError'));
+      toast.error("Aucune colonne 'email' trouvée dans le CSV");
       return;
     }
 
     const contactsToImport = [];
+    const errors: string[] = [];
+    
     for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(",").map((v) => v.trim());
-      const email = values[emailIndex];
+      const values = lines[i].split(delimiter).map((v) => v.trim());
+      const email = values[emailIndex]?.trim();
       
-      if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        // Générer nom/prénom par défaut si manquants
-        const emailParts = email.split("@");
-        const emailUsername = emailParts[0];
-        const defaultPrenom = values[prenomIndex] || emailUsername;
-        const defaultNom = values[nomIndex] || "Contact";
-        
-        contactsToImport.push({
-          user_id: user?.id,
-          email,
-          nom: defaultNom,
-          prenom: defaultPrenom,
-          telephone: values[telephoneIndex] || null,
-          fonction: values[fonctionIndex] || null,
-          societe: values[societeIndex] || null,
-          site_web: values[siteWebIndex] || null,
-          pays: values[paysIndex] || null,
-          ville: values[villeIndex] || null,
-          segment: values[segmentIndex] || null,
-          statut: "actif",
-        });
+      // Validation stricte de l'email
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        errors.push(`Ligne ${i + 1}: Email invalide ou manquant`);
+        continue;
       }
+
+      // Récupérer les valeurs ou laisser vide si invalide
+      const nom = values[nomIndex]?.trim() || "";
+      const prenom = values[prenomIndex]?.trim() || "";
+      const telephone = values[telephoneIndex]?.trim() || null;
+      const fonction = values[fonctionIndex]?.trim() || null;
+      const societe = values[societeIndex]?.trim() || null;
+      const siteWeb = values[siteWebIndex]?.trim() || null;
+      const pays = values[paysIndex]?.trim() || null;
+      const ville = values[villeIndex]?.trim() || null;
+      const segment = values[segmentIndex]?.trim() || null;
+
+      contactsToImport.push({
+        user_id: user?.id,
+        email,
+        nom: nom || "Contact",
+        prenom: prenom || email.split("@")[0],
+        telephone,
+        fonction,
+        societe,
+        site_web: siteWeb,
+        pays,
+        ville,
+        segment,
+        statut: "actif",
+      });
     }
 
     if (contactsToImport.length === 0) {
-      toast.error(t('contacts.importError'));
+      toast.error("Aucun contact valide trouvé dans le fichier");
+      if (errors.length > 0) {
+        console.error("Erreurs d'import:", errors);
+      }
       return;
     }
 
@@ -391,17 +419,21 @@ const Contacts = () => {
       const { error } = await supabase.from("contacts").insert(contactsToImport);
       if (error) {
         if (error.code === "23505") {
-          toast.error(t('contacts.importError'));
+          toast.error("Certains emails existent déjà dans vos contacts");
         } else {
           throw error;
         }
       } else {
-        toast.success(t('contacts.importSuccess'));
+        toast.success(`${contactsToImport.length} contact(s) importé(s) avec succès`);
+        if (errors.length > 0) {
+          toast.warning(`${errors.length} ligne(s) ignorée(s) (emails invalides)`);
+        }
         queryClient.invalidateQueries({ queryKey: ["contacts"] });
         setIsImportOpen(false);
       }
     } catch (error) {
       toast.error(t('contacts.importError'));
+      console.error("Erreur import:", error);
     }
   };
 
@@ -909,7 +941,7 @@ const Contacts = () => {
           <DialogHeader>
             <DialogTitle>Importer des contacts depuis CSV</DialogTitle>
             <DialogDescription>
-              Sélectionnez un fichier CSV avec les colonnes : email (obligatoire), nom, prenom, telephone, fonction, societe, site_web, pays, ville, segment (tous optionnels)
+              Sélectionnez un fichier CSV avec au minimum une colonne "email". Les autres colonnes sont optionnelles : nom, prenom, telephone, fonction, societe, site_web, pays, ville, segment.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -922,9 +954,20 @@ const Contacts = () => {
                 onChange={handleImportCSV}
                 className="cursor-pointer"
               />
-              <p className="text-xs text-muted-foreground">
-                Le fichier doit contenir au minimum une colonne "email". Les autres colonnes sont optionnelles : nom, prenom, telephone, fonction, societe, site_web, pays, ville, segment.
-              </p>
+              <div className="text-xs text-muted-foreground space-y-2">
+                <p>
+                  <strong>Format accepté :</strong> Le fichier peut utiliser des virgules (,) ou des points-virgules (;) comme séparateurs.
+                </p>
+                <p>
+                  <strong>Colonnes requises :</strong> email (obligatoire)
+                </p>
+                <p>
+                  <strong>Colonnes optionnelles :</strong> nom, prenom, telephone, fonction, societe, site_web, pays, ville, segment
+                </p>
+                <p className="text-amber-600">
+                  Les lignes avec des emails invalides seront ignorées. Les champs manquants seront laissés vides.
+                </p>
+              </div>
             </div>
           </div>
           <DialogFooter>
