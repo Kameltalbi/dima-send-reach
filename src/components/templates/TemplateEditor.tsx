@@ -280,6 +280,106 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
 
     editorRef.current = editor;
 
+    // Configuration de l'upload d'images
+    editor.on('asset:upload:start', () => {
+      console.log('Upload started');
+    });
+
+    editor.on('asset:upload:end', () => {
+      console.log('Upload ended');
+    });
+
+    editor.on('asset:upload:error', (err: any) => {
+      console.error('Upload error:', err);
+      toast.error('Erreur lors du téléchargement de l\'image');
+    });
+
+    editor.on('asset:upload:response', async (response: any) => {
+      console.log('Upload response:', response);
+    });
+
+    // Personnaliser l'upload d'images
+    const assetManager = editor.AssetManager;
+    assetManager.addType('image', {
+      view: {
+        getPreview() {
+          return this.model.get('src');
+        },
+        getInfo() {
+          return this.model.get('name');
+        },
+      },
+    });
+
+    // Gérer l'upload via input file
+    const uploadInput = document.createElement('input');
+    uploadInput.type = 'file';
+    uploadInput.accept = 'image/*';
+    uploadInput.style.display = 'none';
+    uploadInput.multiple = true;
+    
+    uploadInput.addEventListener('change', async (e) => {
+      const target = e.target as HTMLInputElement;
+      const files = target.files;
+      if (!files || files.length === 0) return;
+
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        if (!userData.user) {
+          toast.error('Vous devez être connecté pour uploader des images');
+          return;
+        }
+
+        toast.info('Téléchargement des images en cours...');
+
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Math.random()}.${fileExt}`;
+          const filePath = `${userData.user.id}/${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('template-images')
+            .upload(filePath, file);
+
+          if (uploadError) {
+            console.error('Upload error:', uploadError);
+            toast.error(`Erreur lors du téléchargement de ${file.name}`);
+            continue;
+          }
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('template-images')
+            .getPublicUrl(filePath);
+
+          // Ajouter l'image à l'asset manager
+          assetManager.add({
+            src: publicUrl,
+            name: file.name,
+            type: 'image',
+          });
+        }
+
+        toast.success('Images téléchargées avec succès');
+        uploadInput.value = ''; // Reset input
+      } catch (error) {
+        console.error('Upload error:', error);
+        toast.error('Erreur lors du téléchargement des images');
+      }
+    });
+
+    // Ajouter un bouton d'upload personnalisé
+    const panelsManager = editor.Panels;
+    panelsManager.addButton('options', {
+      id: 'upload-images',
+      className: 'fa fa-upload',
+      command: () => {
+        uploadInput.click();
+      },
+      attributes: { title: 'Télécharger des images' },
+    });
+
+
     // Charger le template existant
     if (template) {
       console.log("Loading template:", template.nom, {
