@@ -332,18 +332,35 @@ const Contacts = () => {
     }
 
     try {
-      const { error } = await supabase.from("contacts").insert(contactsToImport);
-      if (error) {
-        if (error.code === "23505") {
-          toast.error(t('contacts.importError'));
-        } else {
-          throw error;
-        }
-      } else {
-        toast.success(t('contacts.importSuccess'));
-        queryClient.invalidateQueries({ queryKey: ["contacts"] });
-        setIsImportOpen(false);
+      // Vérifier les emails existants
+      const emailsToCheck = contactsToImport.map(c => c.email);
+      const { data: existingContacts } = await supabase
+        .from("contacts")
+        .select("email")
+        .eq("user_id", user?.id)
+        .in("email", emailsToCheck);
+
+      const existingEmails = new Set(existingContacts?.map(c => c.email) || []);
+      const newContacts = contactsToImport.filter(c => !existingEmails.has(c.email));
+      const duplicatesCount = contactsToImport.length - newContacts.length;
+
+      if (newContacts.length === 0) {
+        toast.error("Tous les contacts existent déjà dans votre liste");
+        return;
       }
+
+      const { error } = await supabase.from("contacts").insert(newContacts);
+      if (error) {
+        throw error;
+      }
+      
+      const message = duplicatesCount > 0
+        ? `${newContacts.length} contacts importés, ${duplicatesCount} doublon(s) ignoré(s)`
+        : t('contacts.importSuccess');
+      
+      toast.success(message);
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      setIsImportOpen(false);
     } catch (error) {
       toast.error(t('contacts.importError'));
     }
