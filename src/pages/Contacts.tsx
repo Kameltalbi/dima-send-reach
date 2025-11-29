@@ -72,6 +72,7 @@ const Contacts = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(100);
+  const [selectAllMode, setSelectAllMode] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     prenom: "",
@@ -382,7 +383,37 @@ const Contacts = () => {
 
   // Mutation pour assigner plusieurs contacts à une liste
   const bulkAssignToListMutation = useMutation({
-    mutationFn: async ({ contactIds, listId }: { contactIds: string[]; listId: string }) => {
+    mutationFn: async ({ contactIds, listId, assignAll }: { contactIds: string[]; listId: string; assignAll?: boolean }) => {
+      if (assignAll) {
+        // Mode "tous les contacts" : on récupère tous les IDs qui correspondent aux filtres
+        let query = supabase
+          .from("contacts")
+          .select("id")
+          .eq("user_id", user?.id);
+
+        if (statusFilter !== "all") {
+          query = query.eq("statut", statusFilter);
+        }
+
+        if (segmentFilter !== "all") {
+          query = query.eq("segment", segmentFilter);
+        }
+
+        if (searchQuery) {
+          // Recherche basique sur nom, prenom, email
+          query = query.or(`nom.ilike.%${searchQuery}%,prenom.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
+        }
+
+        const { data: allContacts, error: fetchError } = await query;
+        if (fetchError) throw fetchError;
+
+        contactIds = allContacts?.map(c => c.id) || [];
+      }
+
+      if (contactIds.length === 0) {
+        throw new Error("Aucun contact à assigner");
+      }
+
       // Récupérer les contacts déjà dans la liste
       const { data: existing } = await supabase
         .from("list_contacts")
@@ -397,17 +428,25 @@ const Contacts = () => {
         throw new Error("Tous les contacts sont déjà dans cette liste");
       }
 
-      // Insérer les nouveaux contacts
-      const contactsToInsert = newContactIds.map(contactId => ({
-        list_id: listId,
-        contact_id: contactId,
-      }));
+      // Insérer par lots de 500
+      const batchSize = 500;
+      const batches: string[][] = [];
+      for (let i = 0; i < newContactIds.length; i += batchSize) {
+        batches.push(newContactIds.slice(i, i + batchSize));
+      }
 
-      const { error } = await supabase
-        .from("list_contacts")
-        .insert(contactsToInsert);
+      for (const batch of batches) {
+        const contactsToInsert = batch.map(contactId => ({
+          list_id: listId,
+          contact_id: contactId,
+        }));
 
-      if (error) throw error;
+        const { error } = await supabase
+          .from("list_contacts")
+          .insert(contactsToInsert);
+
+        if (error) throw error;
+      }
 
       return {
         assigned: newContactIds.length,
@@ -422,10 +461,13 @@ const Contacts = () => {
       }
       setIsBulkAssignOpen(false);
       setSelectedContacts([]);
+      setSelectAllMode(false);
     },
     onError: (error: any) => {
       console.error("Erreur assignation en masse:", error);
       if (error.message === "Tous les contacts sont déjà dans cette liste") {
+        toast.error(error.message);
+      } else if (error.message === "Aucun contact à assigner") {
         toast.error(error.message);
       } else {
         toast.error("Erreur lors de l'assignation");
@@ -645,9 +687,16 @@ const Contacts = () => {
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelectedContacts(filteredContacts.map(c => c.id));
+      setSelectAllMode(false);
     } else {
       setSelectedContacts([]);
+      setSelectAllMode(false);
     }
+  };
+
+  const handleSelectAllContacts = () => {
+    setSelectAllMode(true);
+    setSelectedContacts([]);
   };
 
   const handleSelectContact = (contactId: string, checked: boolean) => {
@@ -813,10 +862,10 @@ const Contacts = () => {
               <CardDescription>
                 {totalCount || 0} contact{(totalCount || 0) > 1 ? "s" : ""} au total
                 {searchQuery && ` • ${filteredContacts.length} affiché${filteredContacts.length > 1 ? "s" : ""}`}
-                {selectedContacts.length > 0 && ` • ${selectedContacts.length} sélectionné(s)`}
+                {selectAllMode ? ` • Tous les contacts sélectionnés (${totalCount})` : selectedContacts.length > 0 && ` • ${selectedContacts.length} sélectionné(s)`}
               </CardDescription>
             </div>
-            {selectedContacts.length > 0 && (
+            {(selectedContacts.length > 0 || selectAllMode) && (
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -825,7 +874,7 @@ const Contacts = () => {
                   className="gap-2"
                 >
                   <ListPlus className="h-4 w-4" />
-                  Assigner ({selectedContacts.length})
+                  Assigner {selectAllMode ? `(${totalCount})` : `(${selectedContacts.length})`}
                 </Button>
                 {canDeleteContacts && (
                   <Button
@@ -835,7 +884,7 @@ const Contacts = () => {
                     className="gap-2"
                   >
                     <Trash2 className="h-4 w-4" />
-                    Supprimer ({selectedContacts.length})
+                    Supprimer {selectAllMode ? `(${totalCount})` : `(${selectedContacts.length})`}
                   </Button>
                 )}
               </div>
@@ -870,12 +919,12 @@ const Contacts = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-12">
-                      <Checkbox
-                        checked={selectedContacts.length === filteredContacts.length && filteredContacts.length > 0}
-                        onCheckedChange={handleSelectAll}
-                      />
-                    </TableHead>
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={selectAllMode || (selectedContacts.length === filteredContacts.length && filteredContacts.length > 0)}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </TableHead>
                     <TableHead>Nom</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Segment</TableHead>
@@ -948,6 +997,38 @@ const Contacts = () => {
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          )}
+          
+          {/* Option pour sélectionner tous les contacts */}
+          {selectedContacts.length === filteredContacts.length && filteredContacts.length > 0 && !selectAllMode && totalCount && totalCount > filteredContacts.length && (
+            <div className="py-3 px-4 bg-muted/50 rounded-md">
+              <p className="text-sm text-muted-foreground">
+                {selectedContacts.length} contacts sélectionnés sur cette page.{" "}
+                <button
+                  onClick={handleSelectAllContacts}
+                  className="text-primary font-medium hover:underline"
+                >
+                  Sélectionner tous les {totalCount} contacts
+                </button>
+              </p>
+            </div>
+          )}
+          
+          {selectAllMode && (
+            <div className="py-3 px-4 bg-primary/10 rounded-md border border-primary/20">
+              <p className="text-sm text-foreground">
+                Tous les {totalCount} contacts sont sélectionnés.{" "}
+                <button
+                  onClick={() => {
+                    setSelectAllMode(false);
+                    setSelectedContacts([]);
+                  }}
+                  className="text-primary font-medium hover:underline"
+                >
+                  Annuler la sélection
+                </button>
+              </p>
             </div>
           )}
           
@@ -1249,9 +1330,11 @@ const Contacts = () => {
       <Dialog open={isBulkAssignOpen} onOpenChange={setIsBulkAssignOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Assigner {selectedContacts.length} contact(s) à une liste</DialogTitle>
+            <DialogTitle>
+              Assigner {selectAllMode ? `${totalCount} contacts` : `${selectedContacts.length} contact(s)`} à une liste
+            </DialogTitle>
             <DialogDescription>
-              Sélectionnez une liste pour y ajouter les contacts sélectionnés
+              Sélectionnez une liste pour y ajouter les contacts {selectAllMode ? "filtrés" : "sélectionnés"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -1271,7 +1354,8 @@ const Contacts = () => {
                     className="w-full justify-start"
                     onClick={() => bulkAssignToListMutation.mutate({
                       contactIds: selectedContacts,
-                      listId: list.id
+                      listId: list.id,
+                      assignAll: selectAllMode
                     })}
                     disabled={bulkAssignToListMutation.isPending}
                   >
