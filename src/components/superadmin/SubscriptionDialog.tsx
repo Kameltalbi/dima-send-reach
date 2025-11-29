@@ -184,6 +184,11 @@ export function SubscriptionDialog({
               {...register("email_limit", { valueAsNumber: true })}
               required
             />
+            {subscription?.extra_emails > 0 && (
+              <p className="text-sm text-muted-foreground">
+                + {subscription.extra_emails.toLocaleString()} emails supplémentaires
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">

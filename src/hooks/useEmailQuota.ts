@@ -95,7 +95,7 @@ export const useEmailQuota = () => {
   const quota: EmailQuota | null = useMemo(() => {
     if (!subscription || emailsSentThisMonth === undefined) return null;
 
-    const limit = subscription.email_limit || 0;
+    const limit = (subscription.email_limit || 0) + (subscription.extra_emails || 0);
     const used = emailsSentThisMonth || 0;
     const remaining = Math.max(0, limit - used);
     const percentage = limit > 0 ? (used / limit) * 100 : 0;

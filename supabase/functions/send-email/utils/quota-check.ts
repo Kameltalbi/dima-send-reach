@@ -48,7 +48,8 @@ export async function checkEmailQuota(
       };
     }
 
-    const limit = subscription.email_limit || 0;
+    // Limite totale = limite du plan + emails supplémentaires
+    const limit = (subscription.email_limit || 0) + (subscription.extra_emails || 0);
 
     // Calculer les emails envoyés ce mois-ci
     const now = new Date();

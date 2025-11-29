@@ -77,6 +77,8 @@ export default function SuperAdmin() {
   const [isSubDialogOpen, setIsSubDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isExtendDialogOpen, setIsExtendDialogOpen] = useState(false);
+  const [isAddEmailsDialogOpen, setIsAddEmailsDialogOpen] = useState(false);
+  const [emailsToAdd, setEmailsToAdd] = useState(1000);
   const [selectedOrg, setSelectedOrg] = useState<any>(null);
   const [selectedSub, setSelectedSub] = useState<any>(null);
   const [orgFormData, setOrgFormData] = useState({
@@ -298,6 +300,36 @@ export default function SuperAdmin() {
     },
   });
 
+  // Mutation pour ajouter des emails supplémentaires
+  const addExtraEmailsMutation = useMutation({
+    mutationFn: async ({ id, extraEmails }: { id: string; extraEmails: number }) => {
+      const { data: sub } = await supabase
+        .from("subscriptions")
+        .select("extra_emails")
+        .eq("id", id)
+        .single();
+
+      const currentExtra = sub?.extra_emails || 0;
+      const newExtra = currentExtra + extraEmails;
+
+      const { error } = await supabase
+        .from("subscriptions")
+        .update({ extra_emails: newExtra })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["superadmin-subscriptions"] });
+      toast.success("Emails supplémentaires ajoutés avec succès");
+      setIsAddEmailsDialogOpen(false);
+      setSelectedSub(null);
+      setEmailsToAdd(1000);
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Erreur lors de l'ajout d'emails");
+    },
+  });
+
   const resetOrgForm = () => {
     setOrgFormData({
       nom: "",
@@ -337,6 +369,11 @@ export default function SuperAdmin() {
   const handleExtendSub = (sub: any) => {
     setSelectedSub(sub);
     setIsExtendDialogOpen(true);
+  };
+
+  const handleAddEmails = (sub: any) => {
+    setSelectedSub(sub);
+    setIsAddEmailsDialogOpen(true);
   };
 
   const handleEditSub = (sub: any) => {
@@ -617,7 +654,14 @@ export default function SuperAdmin() {
                               <Badge variant="outline">{sub.plan_type}</Badge>
                             </TableCell>
                             <TableCell>{getStatusBadge(sub.statut)}</TableCell>
-                            <TableCell className="hidden md:table-cell">{sub.email_limit.toLocaleString()}</TableCell>
+                            <TableCell className="hidden md:table-cell">
+                              {sub.email_limit.toLocaleString()}
+                              {sub.extra_emails > 0 && (
+                                <span className="text-xs text-muted-foreground ml-1">
+                                  (+{sub.extra_emails.toLocaleString()})
+                                </span>
+                              )}
+                            </TableCell>
                             <TableCell className="hidden lg:table-cell">
                               {sub.date_fin
                                 ? new Date(sub.date_fin).toLocaleDateString("fr-FR")
@@ -630,17 +674,21 @@ export default function SuperAdmin() {
                                      <MoreVertical className="h-4 w-4" />
                                    </Button>
                                  </DropdownMenuTrigger>
-                                 <DropdownMenuContent align="end">
-                                   <DropdownMenuItem onClick={() => handleEditSub(sub)}>
-                                     <Edit className="h-4 w-4 mr-2" />
-                                     Modifier
-                                   </DropdownMenuItem>
-                                   <DropdownMenuSeparator />
-                                   <DropdownMenuItem onClick={() => handleExtendSub(sub)}>
-                                     <Calendar className="h-4 w-4 mr-2" />
-                                     Prolonger
-                                   </DropdownMenuItem>
-                                 </DropdownMenuContent>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => handleEditSub(sub)}>
+                                      <Edit className="h-4 w-4 mr-2" />
+                                      Modifier
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => handleAddEmails(sub)}>
+                                      <Mail className="h-4 w-4 mr-2" />
+                                      Ajouter emails
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleExtendSub(sub)}>
+                                      <Calendar className="h-4 w-4 mr-2" />
+                                      Prolonger
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
                                </DropdownMenu>
                              </TableCell>
                           </TableRow>
@@ -945,6 +993,72 @@ export default function SuperAdmin() {
               }
             >
               Prolonger
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Extra Emails Dialog */}
+      <Dialog open={isAddEmailsDialogOpen} onOpenChange={setIsAddEmailsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ajouter des emails supplémentaires</DialogTitle>
+            <DialogDescription>
+              Ajoutez des emails supplémentaires pour {selectedSub?.organizations?.nom}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="emails">Nombre d'emails (multiples de 1000)</Label>
+              <Select
+                value={emailsToAdd.toString()}
+                onValueChange={(value) => setEmailsToAdd(parseInt(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1000">1 000 emails</SelectItem>
+                  <SelectItem value="2000">2 000 emails</SelectItem>
+                  <SelectItem value="3000">3 000 emails</SelectItem>
+                  <SelectItem value="5000">5 000 emails</SelectItem>
+                  <SelectItem value="10000">10 000 emails</SelectItem>
+                  <SelectItem value="25000">25 000 emails</SelectItem>
+                  <SelectItem value="50000">50 000 emails</SelectItem>
+                  <SelectItem value="100000">100 000 emails</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {selectedSub && (
+              <div className="p-4 bg-muted rounded-lg space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Limite actuelle du plan:</span>
+                  <span className="font-medium">{selectedSub.email_limit.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Emails supplémentaires actuels:</span>
+                  <span className="font-medium">{(selectedSub.extra_emails || 0).toLocaleString()}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between font-semibold">
+                  <span>Nouvelle limite totale:</span>
+                  <span className="text-primary">
+                    {(selectedSub.email_limit + (selectedSub.extra_emails || 0) + emailsToAdd).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddEmailsDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button
+              onClick={() =>
+                addExtraEmailsMutation.mutate({ id: selectedSub?.id, extraEmails: emailsToAdd })
+              }
+            >
+              Ajouter
             </Button>
           </DialogFooter>
         </DialogContent>

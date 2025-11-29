@@ -448,6 +448,7 @@ export type Database = {
           date_debut: string
           date_fin: string | null
           email_limit: number
+          extra_emails: number
           id: string
           notes: string | null
           organization_id: string
@@ -460,6 +461,7 @@ export type Database = {
           date_debut?: string
           date_fin?: string | null
           email_limit?: number
+          extra_emails?: number
           id?: string
           notes?: string | null
           organization_id: string
@@ -472,6 +474,7 @@ export type Database = {
           date_debut?: string
           date_fin?: string | null
           email_limit?: number
+          extra_emails?: number
           id?: string
           notes?: string | null
           organization_id?: string
