@@ -996,16 +996,6 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
               </p>
             </div>
 
-            {/* Sources recommandées */}
-            <div className="rounded-lg border bg-muted/50 p-4">
-              <h4 className="text-sm font-semibold mb-2">Où trouver des templates ?</h4>
-              <ul className="text-xs text-muted-foreground space-y-1">
-                <li>• <strong>ThemeForest</strong> - Templates premium professionnels</li>
-                <li>• <strong>Stripo</strong> - Templates gratuits et premium</li>
-                <li>• <strong>Really Good Emails</strong> - Collection gratuite</li>
-                <li>• <strong>Mailchimp</strong> - Templates gratuits</li>
-              </ul>
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => {
