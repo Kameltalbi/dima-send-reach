@@ -44,6 +44,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTranslation } from "react-i18next";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const Contacts = () => {
   const { t } = useTranslation();
@@ -69,6 +70,7 @@ const Contacts = () => {
     ville: "",
     segment: "",
     statut: "actif",
+    is_test_contact: false,
   });
 
   // Charger les contacts
@@ -188,6 +190,7 @@ const Contacts = () => {
       ville: "",
       segment: "",
       statut: "actif",
+      is_test_contact: false,
     });
   };
 
@@ -210,6 +213,7 @@ const Contacts = () => {
       ville: contact.ville || "",
       segment: contact.segment || "",
       statut: contact.statut || "actif",
+      is_test_contact: contact.is_test_contact || false,
     });
     setIsEditOpen(true);
   };
@@ -253,6 +257,7 @@ const Contacts = () => {
       ville: formData.ville?.trim() || null,
       segment: formData.segment?.trim() || null,
       statut: formData.statut,
+      is_test_contact: formData.is_test_contact,
     };
 
     if (selectedContact) {
@@ -559,8 +564,23 @@ const Contacts = () => {
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="nom">Nom *</Label>
+          <div className="space-y-2">
+            <Label htmlFor="nom">Nom *</Label>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="is-test-contact"
+                checked={formData.is_test_contact || false}
+                onCheckedChange={(checked) => 
+                  setFormData({ ...formData, is_test_contact: checked as boolean })
+                }
+              />
+              <Label htmlFor="is-test-contact" className="text-sm font-normal cursor-pointer">
+                Contact de test (utilisé pour les envois de test)
+              </Label>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="nom">Nom *</Label>
                   <Input
                     id="nom"
                     value={formData.nom}

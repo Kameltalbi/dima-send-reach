@@ -165,6 +165,7 @@ export type Database = {
           email: string
           fonction: string | null
           id: string
+          is_test_contact: boolean
           nom: string
           pays: string | null
           prenom: string
@@ -181,6 +182,7 @@ export type Database = {
           email: string
           fonction?: string | null
           id?: string
+          is_test_contact?: boolean
           nom: string
           pays?: string | null
           prenom: string
@@ -197,6 +199,7 @@ export type Database = {
           email?: string
           fonction?: string | null
           id?: string
+          is_test_contact?: boolean
           nom?: string
           pays?: string | null
           prenom?: string
