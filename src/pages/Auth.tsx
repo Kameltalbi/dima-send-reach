@@ -114,13 +114,11 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center mb-4 relative">
-            {/* Effet de flou d'arrière-plan pour le logo */}
-            <div className="absolute inset-0 backdrop-blur-md rounded-lg -z-10 scale-110"></div>
+          <div className="inline-flex items-center justify-center mb-4">
             <img 
-              src="/logoDimaMail.png" 
+              src="/DimaMail blanc.png" 
               alt="DimaMail Logo" 
-              className="h-16 w-auto object-contain relative z-10"
+              className="h-16 w-auto object-contain"
             />
           </div>
           <p className="text-muted-foreground">
