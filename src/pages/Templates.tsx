@@ -24,8 +24,10 @@ import {
   Clock,
   Tag,
   ChevronDown,
-  ArrowRight
+  ArrowRight,
+  Menu
 } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { TemplateEditor } from "@/components/templates/TemplateEditor";
 import { useSeedTemplates } from "@/hooks/useSeedTemplates";
 import { toast } from "sonner";
@@ -46,6 +48,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 export default function Templates() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
@@ -57,8 +66,10 @@ export default function Templates() {
   const [sortBy, setSortBy] = useState<"recent" | "name" | "type">("recent");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<any>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { seedTemplates } = useSeedTemplates();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
 
   const { data: templates, isLoading, refetch } = useQuery({
     queryKey: ["templates"],
@@ -344,61 +355,169 @@ export default function Templates() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search templates..."
+              placeholder={isMobile ? "Search..." : "Search templates..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 h-9 bg-background border-0 focus-visible:ring-1 focus-visible:ring-primary"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-2 h-9 text-muted-foreground hover:text-foreground">
-                  <Filter className="h-4 w-4" />
-                  <span className="text-xs">Sort</span>
-                  <ChevronDown className="h-3 w-3" />
+          {!isMobile ? (
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-2 h-9 text-muted-foreground hover:text-foreground">
+                    <Filter className="h-4 w-4" />
+                    <span className="text-xs">Sort</span>
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuItem 
+                    onClick={() => setSortBy("recent")}
+                    className={sortBy === "recent" ? "bg-primary/10" : ""}
+                  >
+                    Most Recent
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => setSortBy("name")}
+                    className={sortBy === "name" ? "bg-primary/10" : ""}
+                  >
+                    By Name
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => setSortBy("type")}
+                    className={sortBy === "type" ? "bg-primary/10" : ""}
+                  >
+                    By Type
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <div className="flex items-center gap-1 bg-background rounded-md p-0.5 border border-border/40">
+                <Button
+                  variant={viewMode === "grid" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("grid")}
+                  className="h-7 w-7 p-0"
+                >
+                  <Grid3x3 className="h-3.5 w-3.5" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
-                <DropdownMenuItem 
-                  onClick={() => setSortBy("recent")}
-                  className={sortBy === "recent" ? "bg-primary/10" : ""}
+                <Button
+                  variant={viewMode === "list" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("list")}
+                  className="h-7 w-7 p-0"
                 >
-                  Most Recent
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setSortBy("name")}
-                  className={sortBy === "name" ? "bg-primary/10" : ""}
-                >
-                  By Name
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setSortBy("type")}
-                  className={sortBy === "type" ? "bg-primary/10" : ""}
-                >
-                  By Type
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <div className="flex items-center gap-1 bg-background rounded-md p-0.5 border border-border/40">
-              <Button
-                variant={viewMode === "grid" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("grid")}
-                className="h-7 w-7 p-0"
-              >
-                <Grid3x3 className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant={viewMode === "list" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("list")}
-                className="h-7 w-7 p-0"
-              >
-                <List className="h-3.5 w-3.5" />
-              </Button>
+                  <List className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Options</SheetTitle>
+                </SheetHeader>
+                <div className="flex flex-col gap-4 mt-6">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Actions</p>
+                    <div className="flex flex-col gap-2">
+                      <Button 
+                        onClick={() => {
+                          setShowCreateModal(true);
+                          setMobileMenuOpen(false);
+                        }} 
+                        className="w-full justify-start gap-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                        New Template
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          handleLoadExamples();
+                          setMobileMenuOpen(false);
+                        }} 
+                        className="w-full justify-start gap-2"
+                        disabled={isLoading}
+                      >
+                        <Sparkles className="h-4 w-4" />
+                        Load Examples
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Sort By</p>
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        variant={sortBy === "recent" ? "secondary" : "outline"}
+                        onClick={() => {
+                          setSortBy("recent");
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full justify-start"
+                      >
+                        Most Recent
+                      </Button>
+                      <Button
+                        variant={sortBy === "name" ? "secondary" : "outline"}
+                        onClick={() => {
+                          setSortBy("name");
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full justify-start"
+                      >
+                        By Name
+                      </Button>
+                      <Button
+                        variant={sortBy === "type" ? "secondary" : "outline"}
+                        onClick={() => {
+                          setSortBy("type");
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full justify-start"
+                      >
+                        By Type
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">View Mode</p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant={viewMode === "grid" ? "secondary" : "outline"}
+                        onClick={() => {
+                          setViewMode("grid");
+                          setMobileMenuOpen(false);
+                        }}
+                        className="flex-1 gap-2"
+                      >
+                        <Grid3x3 className="h-4 w-4" />
+                        Grid
+                      </Button>
+                      <Button
+                        variant={viewMode === "list" ? "secondary" : "outline"}
+                        onClick={() => {
+                          setViewMode("list");
+                          setMobileMenuOpen(false);
+                        }}
+                        className="flex-1 gap-2"
+                      >
+                        <List className="h-4 w-4" />
+                        List
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+          )}
         </div>
 
         {/* Contenu principal */}
