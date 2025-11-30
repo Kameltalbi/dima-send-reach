@@ -18,7 +18,6 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
-import { AppLayout } from "@/components/layouts/AppLayout";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
@@ -27,7 +26,7 @@ type PaymentMethod = "card" | "check" | "transfer" | "cash";
 const plans = {
   starter: {
     name: "Starter",
-    price: 35,
+    price: 29,
     currency: "DT",
     period: "/mois",
     emails: "10,000 e-mails / mois",
@@ -36,7 +35,7 @@ const plans = {
   },
   essential: {
     name: "Essential",
-    price: 70,
+    price: 49,
     currency: "DT",
     period: "/mois",
     emails: "20,000 e-mails / mois",
@@ -288,8 +287,7 @@ const Checkout = () => {
   // Success state
   if (isSuccess && orderId) {
     return (
-      <AppLayout>
-        <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-background flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-background flex items-center justify-center p-4">
           <div className="max-w-2xl w-full bg-background rounded-2xl shadow-2xl p-8 border-2 border-primary/20">
             <div className="text-center space-y-6">
               <div className="mx-auto w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center animate-in zoom-in duration-500">
@@ -329,13 +327,11 @@ const Checkout = () => {
             </div>
           </div>
         </div>
-      </AppLayout>
     );
   }
 
   return (
-    <AppLayout>
-      <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-background">
         <div className="max-w-4xl mx-auto px-4 py-8">
           {/* Header */}
           <Button
@@ -777,7 +773,6 @@ const Checkout = () => {
           </div>
         </div>
       </div>
-    </AppLayout>
   );
 };
 

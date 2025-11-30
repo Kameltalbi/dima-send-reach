@@ -1,4 +1,5 @@
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { checkWarmingLimit, WarmingCheckResult } from "./warming-check.ts";
 
 export interface QuotaCheckResult {
   allowed: boolean;
@@ -6,6 +7,7 @@ export interface QuotaCheckResult {
   limit?: number;
   used?: number;
   remaining?: number;
+  warming?: WarmingCheckResult;
 }
 
 /**
@@ -84,6 +86,25 @@ export async function checkEmailQuota(
 
     const remaining = Math.max(0, limit - used);
 
+    // Vérifier le warming AVANT le quota mensuel
+    const warmingCheck = await checkWarmingLimit(
+      supabaseClient,
+      profile.organization_id,
+      emailCount
+    );
+
+    // Si le warming est actif et bloque, retourner l'erreur de warming
+    if (warmingCheck.isWarming && !warmingCheck.allowed) {
+      return {
+        allowed: false,
+        reason: warmingCheck.reason || "Limite de warming atteinte",
+        limit: warmingCheck.limit,
+        used: warmingCheck.used,
+        remaining: warmingCheck.remaining,
+        warming: warmingCheck,
+      };
+    }
+
     // Vérifier si le quota est suffisant
     if (remaining < emailCount) {
       return {
@@ -92,6 +113,7 @@ export async function checkEmailQuota(
         limit,
         used,
         remaining,
+        warming: warmingCheck,
       };
     }
 
@@ -103,6 +125,7 @@ export async function checkEmailQuota(
         limit,
         used,
         remaining: 0,
+        warming: warmingCheck,
       };
     }
 
@@ -111,6 +134,7 @@ export async function checkEmailQuota(
       limit,
       used,
       remaining,
+      warming: warmingCheck,
     };
   } catch (error) {
     console.error("Error in checkEmailQuota:", error);

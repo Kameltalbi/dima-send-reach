@@ -44,22 +44,57 @@
       "pricing": "Discover Pricing"
     },
     "features": {
-      "title": "Everything you need to succeed with your campaigns",
-      "easyCreation": {
-        "title": "Easy Creation",
-        "description": "Create your emails in a few clicks with our visual editor."
-      },
-      "massSending": {
-        "title": "Secure Mass Sending",
-        "description": "Up to 1 million emails per campaign via Amazon SES."
+      "title": "Key Features",
+      "subtitle": "Everything you need to succeed with your campaigns",
+      "performance": {
+        "title": "High-performance email sending",
+        "description": "Easy campaign management with modern editor."
       },
       "statistics": {
-        "title": "Detailed Statistics",
-        "description": "Track your performance in real-time: opens, clicks, unsubscribes."
+        "title": "Advanced statistics",
+        "description": "Open rates, clicks, simple heatmaps, segmentation."
       },
-      "reliability": {
-        "title": "Global Reliability",
-        "description": "Compliant with international security and deliverability standards."
+      "automation": {
+        "title": "Smart automations",
+        "description": "Email sequences and behavior-based workflows."
+      },
+      "preview": {
+        "title": "Professional previews",
+        "description": "Multi-client simulation (Gmail, Outlook, iOS, Android)."
+      },
+      "landing": {
+        "title": "Landing pages & forms",
+        "description": "Create optimized pages without a developer."
+      },
+      "deliverability": {
+        "title": "Optimized deliverability",
+        "description": "Dedicated IP (advanced plans), DMARC, DKIM, SPF."
+      }
+    },
+    "whyChoose": {
+      "title": "Why choose DimaMail?",
+      "subtitle": "The email marketing solution that makes the difference",
+      "points": {
+        "multilingual": {
+          "title": "French & Arabic interface",
+          "description": "A complete user experience in your language."
+        },
+        "pricing": {
+          "title": "Very competitive pricing",
+          "description": "Billed in TND or USD, adapted to the local market."
+        },
+        "support": {
+          "title": "Human support based in Tunisia",
+          "description": "A local team listening to you, quickly available."
+        },
+        "subaccounts": {
+          "title": "20 sub-accounts for agencies",
+          "description": "Manage multiple clients from a single platform."
+        },
+        "flexible": {
+          "title": "Free plan + flexible plans",
+          "description": "Start for free, grow according to your needs."
+        }
       }
     },
     "product": {
@@ -75,6 +110,7 @@
       "title": "Flexible pricing for every need",
       "subtitle": "Choose the plan that fits your business",
       "seeDetails": "See all plan details",
+      "payableAnnual": "Payable annually:",
       "plans": {
         "free": {
           "name": "Free",
@@ -91,8 +127,9 @@
         "starter": {
           "name": "Starter",
           "description": "For small businesses",
-          "price": "35 DT",
+          "price": "29 DT",
           "period": "/month",
+          "annualPrice": "348 DT",
           "features": {
             "emails": "10,000 emails / month",
             "users": "3 users",
@@ -103,8 +140,9 @@
         "essential": {
           "name": "Essential",
           "description": "For SMEs and agencies",
-          "price": "70 DT",
+          "price": "49 DT",
           "period": "/month",
+          "annualPrice": "588 DT",
           "popular": "MOST POPULAR",
           "features": {
             "emails": "20,000 emails / month",

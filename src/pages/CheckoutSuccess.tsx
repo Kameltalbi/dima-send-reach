@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Loader2, XCircle } from "lucide-react";
-import { AppLayout } from "@/components/layouts/AppLayout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useTranslation } from "react-i18next";
 
@@ -34,8 +33,8 @@ const CheckoutSuccess = () => {
 
   if (isLoading || paymentStatus === "pending") {
     return (
-      <AppLayout>
-        <div className="max-w-2xl mx-auto py-12">
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-background flex items-center justify-center p-4">
+        <div className="max-w-2xl w-full">
           <Card>
             <CardContent className="py-12">
               <div className="text-center space-y-4">
@@ -47,14 +46,14 @@ const CheckoutSuccess = () => {
             </CardContent>
           </Card>
         </div>
-      </AppLayout>
+      </div>
     );
   }
 
   if (paymentStatus === "failed" || !order) {
     return (
-      <AppLayout>
-        <div className="max-w-2xl mx-auto py-12">
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-background flex items-center justify-center p-4">
+        <div className="max-w-2xl w-full">
           <Card className="border-red-500">
             <CardHeader className="text-center">
               <div className="mx-auto mb-4 w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
@@ -82,13 +81,13 @@ const CheckoutSuccess = () => {
             </CardContent>
           </Card>
         </div>
-      </AppLayout>
+      </div>
     );
   }
 
   return (
-    <AppLayout>
-      <div className="max-w-2xl mx-auto py-12">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-background flex items-center justify-center p-4">
+      <div className="max-w-2xl w-full">
         <Card className="border-green-500">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
@@ -123,7 +122,7 @@ const CheckoutSuccess = () => {
           </CardContent>
         </Card>
       </div>
-    </AppLayout>
+    </div>
   );
 };
 

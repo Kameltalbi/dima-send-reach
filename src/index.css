@@ -8,60 +8,60 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* DimaMail Design System - Couleurs adaptées au logo */
-    /* Palette moderne et professionnelle harmonisée avec le logo */
-    --primary: 220 30% 25%;  /* Bleu profond moderne #2C3E5A */
+    /* Design System inspiré de Finpay - Moderne et épuré */
+    /* Palette claire et moderne avec accents teal/blue */
+    --primary: 180 60% 45%;  /* Teal moderne #14B8A6 */
     --primary-foreground: 0 0% 100%;  /* Blanc */
     
-    --secondary: 220 15% 65%;  /* Bleu-gris clair #9CA8B8 */
+    --secondary: 220 15% 70%;  /* Gris bleu clair */
     --secondary-foreground: 220 30% 15%;  /* Gris foncé */
     
-    --accent: 39 48% 60%;  /* Doré doux / Moutarde #D4A55D */
-    --accent-foreground: 0 0% 18%;  /* Presque noir */
+    --accent: 180 50% 50%;  /* Teal accent #0D9488 */
+    --accent-foreground: 0 0% 100%;  /* Blanc */
     
-    --background: 220 20% 96%;  /* Gris très clair #F5F6F8 */
-    --foreground: 220 30% 15%;  /* Gris anthracite #1F2937 */
+    --background: 0 0% 100%;  /* Blanc pur */
+    --foreground: 220 15% 20%;  /* Gris anthracite très foncé */
     
     --card: 0 0% 100%;  /* Blanc pur */
-    --card-foreground: 220 30% 15%;
+    --card-foreground: 220 15% 20%;
     
     --popover: 0 0% 100%;
-    --popover-foreground: 220 30% 15%;
+    --popover-foreground: 220 15% 20%;
     
-    --muted: 220 15% 90%;  /* Gris très doux */
-    --muted-foreground: 220 10% 45%;
+    --muted: 220 10% 96%;  /* Gris très très clair */
+    --muted-foreground: 220 10% 50%;
     
-    --destructive: 0 70% 55%;  /* Rouge moderne #E63946 */
+    --destructive: 0 70% 55%;  /* Rouge moderne */
     --destructive-foreground: 0 0% 100%;
     
-    --border: 220 15% 85%;
-    --input: 220 15% 92%;
-    --ring: 220 30% 25%;
+    --border: 220 10% 90%;  /* Bordure très claire */
+    --input: 220 10% 96%;  /* Input très clair */
+    --ring: 180 60% 45%;  /* Ring teal */
     
-    --radius: 0.75rem;
+    --radius: 0.5rem;  /* Bordures plus arrondies */
     
     /* Sidebar */
-    --sidebar-background: 220 30% 25%;  /* Bleu profond */
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 39 48% 60%;  /* Doré */
-    --sidebar-primary-foreground: 0 0% 18%;
-    --sidebar-accent: 220 20% 40%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 220 20% 30%;
-    --sidebar-ring: 39 48% 60%;
+    --sidebar-background: 220 15% 98%;  /* Gris très clair */
+    --sidebar-foreground: 220 15% 20%;
+    --sidebar-primary: 180 60% 45%;  /* Teal */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 10% 95%;
+    --sidebar-accent-foreground: 220 15% 20%;
+    --sidebar-border: 220 10% 90%;
+    --sidebar-ring: 180 60% 45%;
   }
 
   .dark {
-    --background: 220 30% 8%;
+    --background: 220 15% 8%;
     --foreground: 0 0% 95%;
     
-    --card: 220 25% 12%;
+    --card: 220 15% 12%;
     --card-foreground: 0 0% 95%;
     
-    --popover: 220 25% 12%;
+    --popover: 220 15% 12%;
     --popover-foreground: 0 0% 95%;
     
-    --primary: 220 50% 55%;
+    --primary: 180 60% 50%;
     --primary-foreground: 0 0% 100%;
     
     --secondary: 220 15% 30%;
@@ -70,24 +70,24 @@ All colors MUST be HSL.
     --muted: 220 15% 18%;
     --muted-foreground: 220 10% 70%;
     
-    --accent: 39 48% 55%;
-    --accent-foreground: 0 0% 95%;
+    --accent: 180 50% 55%;
+    --accent-foreground: 0 0% 100%;
     
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 95%;
     
     --border: 220 15% 22%;
     --input: 220 15% 22%;
-    --ring: 220 50% 55%;
+    --ring: 180 60% 50%;
     
-    --sidebar-background: 220 30% 10%;
+    --sidebar-background: 220 15% 10%;
     --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 39 48% 55%;
-    --sidebar-primary-foreground: 0 0% 95%;
-    --sidebar-accent: 220 20% 25%;
+    --sidebar-primary: 180 60% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 15% 20%;
     --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 220 20% 18%;
-    --sidebar-ring: 39 48% 55%;
+    --sidebar-border: 220 15% 18%;
+    --sidebar-ring: 180 60% 50%;
   }
 }
 

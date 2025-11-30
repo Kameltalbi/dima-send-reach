@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mail, Zap, BarChart3, Globe, ArrowRight, Check, Menu } from "lucide-react";
+import { Mail, Zap, BarChart3, Globe, ArrowRight, Check, Menu, Send, TrendingUp, Workflow, Eye, FileText, Shield, Languages, DollarSign, Headphones, Users, Gift } from "lucide-react";
 import { Link } from "react-router-dom";
 import { LogoWithText, LogoLight } from "@/components/Logo";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
@@ -14,29 +14,31 @@ const Landing = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const heroRef = useScrollAnimation();
   const featuresRef = useScrollAnimation();
+  const whyChooseRef = useScrollAnimation();
   const productRef = useScrollAnimation();
   const pricingRef = useScrollAnimation();
   const aboutRef = useScrollAnimation();
   const ctaRef = useScrollAnimation();
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-card/95 backdrop-blur-sm shadow-sm sticky top-0 z-50 transition-all duration-300">
-        <div className="container mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 animate-fade-in-left flex-shrink-0">
-            <LogoWithText className="h-12 sm:h-14" />
+    <div className="min-h-screen bg-white">
+      {/* Header - Design minimaliste style Finpay */}
+      <header className="bg-white border-b border-border/50 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4 flex items-center justify-between">
+          <div className="flex items-center flex-shrink-0">
+            <LogoWithText className="h-10" />
           </div>
-          <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
-            <a href="#home" className="text-base xl:text-lg font-semibold text-foreground hover:text-accent transition-all duration-300 hover:scale-110">{t('nav.home')}</a>
-            <a href="#features" className="text-base xl:text-lg font-semibold text-foreground hover:text-accent transition-all duration-300 hover:scale-110">{t('nav.features')}</a>
-            <Link to="/pricing" className="text-base xl:text-lg font-semibold text-foreground hover:text-accent transition-all duration-300 hover:scale-110">{t('nav.pricing')}</Link>
-            <a href="#about" className="text-base xl:text-lg font-semibold text-foreground hover:text-accent transition-all duration-300 hover:scale-110">{t('nav.about')}</a>
-            <a href="#contact" className="text-base xl:text-lg font-semibold text-foreground hover:text-accent transition-all duration-300 hover:scale-110">{t('nav.contact')}</a>
+          <nav className="hidden lg:flex items-center gap-8 mx-auto">
+            <a href="#features" className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors">{t('nav.features')}</a>
+            <Link to="/pricing" className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors">{t('nav.pricing')}</Link>
+            <a href="#about" className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors">{t('nav.about')}</a>
           </nav>
-          <div className="flex items-center gap-2 sm:gap-4 animate-fade-in-right">
+          <div className="flex items-center gap-4">
             <LanguageSwitcher />
             <Link to="/auth">
-              <Button variant="default" size="sm" className="hidden sm:inline-flex transition-all duration-300 hover:scale-105 hover:shadow-lg">{t('common.signIn')}</Button>
+              <Button variant="ghost" size="sm" className="hidden sm:inline-flex text-sm font-medium">{t('common.signIn')}</Button>
+            </Link>
+            <Link to="/auth">
+              <Button size="sm" className="hidden sm:inline-flex bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium">{t('common.signUp')}</Button>
             </Link>
             {/* Menu mobile */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -101,37 +103,38 @@ const Landing = () => {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section id="home" className="py-20 bg-gradient-to-br from-muted/30 via-background to-muted/20 relative overflow-hidden">
-        <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-        <div className="container mx-auto px-6 relative z-10">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+      {/* Hero Section - Design minimaliste style Finpay */}
+      <section id="home" className="py-24 lg:py-32 bg-white">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div ref={heroRef.ref} className={`animate-on-scroll ${heroRef.isVisible ? 'visible' : ''}`}>
-              <h1 className="text-5xl md:text-6xl font-heading font-bold text-foreground mb-6 leading-tight">
+              <h1 className="text-5xl lg:text-6xl xl:text-7xl font-heading font-bold text-foreground mb-6 leading-[1.1] tracking-tight">
                 {t('landing.hero.title')}
               </h1>
-              <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
+              <p className="text-lg lg:text-xl text-muted-foreground mb-10 leading-relaxed max-w-xl">
                 {t('landing.hero.subtitle')}
               </p>
-              <div className="flex flex-wrap gap-4">
-                <Link to="/auth">
-                  <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 transition-all duration-300 hover:scale-105 hover:shadow-xl group">
-                    {t('landing.hero.cta')}
-                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </Link>
-                <Button size="lg" variant="outline" className="transition-all duration-300 hover:scale-105 hover:shadow-lg">
-                  <Link to="/pricing">{t('landing.hero.pricing')}</Link>
-                </Button>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex items-center gap-3 bg-muted/50 rounded-lg px-4 py-3 max-w-md">
+                  <input 
+                    type="email" 
+                    placeholder={t('landing.hero.emailPlaceholder') || "Votre email professionnel"}
+                    className="flex-1 bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground"
+                  />
+                  <Link to="/auth">
+                    <Button className="bg-primary text-primary-foreground hover:bg-primary/90 whitespace-nowrap">
+                      {t('landing.hero.cta')}
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
-            <div className={`hidden md:block animate-on-scroll-right ${heroRef.isVisible ? 'visible animate-delay-200' : ''}`}>
+            <div className={`hidden lg:block animate-on-scroll-right ${heroRef.isVisible ? 'visible animate-delay-200' : ''}`}>
               <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 rounded-lg blur-3xl -z-10 animate-pulse-slow"></div>
                 <img 
                   src="/dimaDima.png" 
                   alt="DimaMail - Plateforme d'Email Marketing" 
-                  className="rounded-lg shadow-2xl w-full h-auto object-contain animate-float relative z-10"
+                  className="w-full h-auto object-contain"
                 />
               </div>
             </div>
@@ -140,67 +143,195 @@ const Landing = () => {
       </section>
 
       {/* Features */}
-      <section id="features" className="py-20 relative">
-        <div className="container mx-auto px-6">
-          <div ref={featuresRef.ref} className={`text-center mb-16 animate-on-scroll ${featuresRef.isVisible ? 'visible' : ''}`}>
-            <h2 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-4">
+      <section id="features" className="py-24 lg:py-32 bg-white">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div ref={featuresRef.ref} className={`text-center mb-20 animate-on-scroll ${featuresRef.isVisible ? 'visible' : ''}`}>
+            <h2 className="text-4xl lg:text-5xl font-heading font-bold text-foreground mb-4">
               {t('landing.features.title')}
             </h2>
-            <div className="w-24 h-1 bg-gradient-to-r from-transparent via-accent to-transparent mx-auto mt-4"></div>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              {t('landing.features.subtitle')}
+            </p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <Card className="text-center hover-lift group transition-all duration-300">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Envoi d'emails performant */}
+            <Card className="border border-border/50 hover:border-primary/50 transition-all duration-300 bg-white">
               <CardContent className="pt-8 pb-8">
-                <div className="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/10 group-hover:bg-accent/20 transition-all duration-300 group-hover:scale-110">
-                  <Mail className="h-8 w-8 text-accent group-hover:scale-110 transition-transform duration-300" />
+                <div className="mb-6 inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10">
+                  <Send className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-heading font-semibold text-foreground mb-3">
-                  {t('landing.features.easyCreation.title')}
+                <h3 className="text-lg font-semibold text-foreground mb-3">
+                  {t('landing.features.performance.title')}
                 </h3>
-                <p className="text-muted-foreground">
-                  {t('landing.features.easyCreation.description')}
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {t('landing.features.performance.description')}
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="text-center hover-lift group transition-all duration-300 animate-delay-100">
+            {/* Statistiques avancées */}
+            <Card className="border border-border/50 hover:border-primary/50 transition-all duration-300 bg-white">
               <CardContent className="pt-8 pb-8">
-                <div className="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/10 group-hover:bg-accent/20 transition-all duration-300 group-hover:scale-110">
-                  <Zap className="h-8 w-8 text-accent group-hover:scale-110 transition-transform duration-300" />
+                <div className="mb-6 inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10">
+                  <TrendingUp className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-heading font-semibold text-foreground mb-3">
-                  {t('landing.features.massSending.title')}
-                </h3>
-                <p className="text-muted-foreground">
-                  {t('landing.features.massSending.description')}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center hover-lift group transition-all duration-300 animate-delay-200">
-              <CardContent className="pt-8 pb-8">
-                <div className="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/10 group-hover:bg-accent/20 transition-all duration-300 group-hover:scale-110">
-                  <BarChart3 className="h-8 w-8 text-accent group-hover:scale-110 transition-transform duration-300" />
-                </div>
-                <h3 className="text-xl font-heading font-semibold text-foreground mb-3">
+                <h3 className="text-lg font-semibold text-foreground mb-3">
                   {t('landing.features.statistics.title')}
                 </h3>
-                <p className="text-muted-foreground">
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   {t('landing.features.statistics.description')}
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="text-center hover-lift group transition-all duration-300 animate-delay-300">
+            {/* Automatisations intelligentes */}
+            <Card className="border border-border/50 hover:border-primary/50 transition-all duration-300 bg-white">
               <CardContent className="pt-8 pb-8">
-                <div className="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/10 group-hover:bg-accent/20 transition-all duration-300 group-hover:scale-110">
-                  <Globe className="h-8 w-8 text-accent group-hover:scale-110 transition-transform duration-300" />
+                <div className="mb-6 inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10">
+                  <Workflow className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-3">
+                  {t('landing.features.automation.title')}
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {t('landing.features.automation.description')}
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Prévisualisations professionnelles */}
+            <Card className="border border-border/50 hover:border-primary/50 transition-all duration-300 bg-white">
+              <CardContent className="pt-8 pb-8">
+                <div className="mb-6 inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10">
+                  <Eye className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-3">
+                  {t('landing.features.preview.title')}
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {t('landing.features.preview.description')}
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Landing pages & formulaires */}
+            <Card className="border border-border/50 hover:border-primary/50 transition-all duration-300 bg-white">
+              <CardContent className="pt-8 pb-8">
+                <div className="mb-6 inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10">
+                  <FileText className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-3">
+                  {t('landing.features.landing.title')}
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {t('landing.features.landing.description')}
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Délivrabilité optimisée */}
+            <Card className="border border-border/50 hover:border-primary/50 transition-all duration-300 bg-white">
+              <CardContent className="pt-8 pb-8">
+                <div className="mb-6 inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10">
+                  <Shield className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-3">
+                  {t('landing.features.deliverability.title')}
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {t('landing.features.deliverability.description')}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Choose DimaMail */}
+      <section className="py-20 bg-gradient-to-br from-primary/5 via-accent/5 to-background relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
+        <div className="container mx-auto px-6 relative z-10">
+          <div ref={whyChooseRef.ref} className={`text-center mb-16 animate-on-scroll ${whyChooseRef.isVisible ? 'visible' : ''}`}>
+            <h2 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-4">
+              {t('landing.whyChoose.title')}
+            </h2>
+            <p className="text-xl text-muted-foreground mb-4">
+              {t('landing.whyChoose.subtitle')}
+            </p>
+            <div className="w-24 h-1 bg-gradient-to-r from-transparent via-accent to-transparent mx-auto mt-4"></div>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Interface multilingue */}
+            <Card className="hover-lift group transition-all duration-300">
+              <CardContent className="pt-8 pb-8">
+                <div className="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-all duration-300 group-hover:scale-110">
+                  <Languages className="h-8 w-8 text-primary group-hover:scale-110 transition-transform duration-300" />
                 </div>
                 <h3 className="text-xl font-heading font-semibold text-foreground mb-3">
-                  {t('landing.features.reliability.title')}
+                  {t('landing.whyChoose.points.multilingual.title')}
                 </h3>
                 <p className="text-muted-foreground">
-                  {t('landing.features.reliability.description')}
+                  {t('landing.whyChoose.points.multilingual.description')}
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Prix compétitifs */}
+            <Card className="hover-lift group transition-all duration-300">
+              <CardContent className="pt-8 pb-8">
+                <div className="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/10 group-hover:bg-accent/20 transition-all duration-300 group-hover:scale-110">
+                  <DollarSign className="h-8 w-8 text-accent group-hover:scale-110 transition-transform duration-300" />
+                </div>
+                <h3 className="text-xl font-heading font-semibold text-foreground mb-3">
+                  {t('landing.whyChoose.points.pricing.title')}
+                </h3>
+                <p className="text-muted-foreground">
+                  {t('landing.whyChoose.points.pricing.description')}
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Support humain */}
+            <Card className="hover-lift group transition-all duration-300">
+              <CardContent className="pt-8 pb-8">
+                <div className="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-all duration-300 group-hover:scale-110">
+                  <Headphones className="h-8 w-8 text-primary group-hover:scale-110 transition-transform duration-300" />
+                </div>
+                <h3 className="text-xl font-heading font-semibold text-foreground mb-3">
+                  {t('landing.whyChoose.points.support.title')}
+                </h3>
+                <p className="text-muted-foreground">
+                  {t('landing.whyChoose.points.support.description')}
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Sous-comptes pour agences */}
+            <Card className="hover-lift group transition-all duration-300">
+              <CardContent className="pt-8 pb-8">
+                <div className="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/10 group-hover:bg-accent/20 transition-all duration-300 group-hover:scale-110">
+                  <Users className="h-8 w-8 text-accent group-hover:scale-110 transition-transform duration-300" />
+                </div>
+                <h3 className="text-xl font-heading font-semibold text-foreground mb-3">
+                  {t('landing.whyChoose.points.subaccounts.title')}
+                </h3>
+                <p className="text-muted-foreground">
+                  {t('landing.whyChoose.points.subaccounts.description')}
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Plan gratuit + flexibilité */}
+            <Card className="hover-lift group transition-all duration-300 md:col-span-2 lg:col-span-1">
+              <CardContent className="pt-8 pb-8">
+                <div className="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-all duration-300 group-hover:scale-110">
+                  <Gift className="h-8 w-8 text-primary group-hover:scale-110 transition-transform duration-300" />
+                </div>
+                <h3 className="text-xl font-heading font-semibold text-foreground mb-3">
+                  {t('landing.whyChoose.points.flexible.title')}
+                </h3>
+                <p className="text-muted-foreground">
+                  {t('landing.whyChoose.points.flexible.description')}
                 </p>
               </CardContent>
             </Card>
@@ -294,9 +425,20 @@ const Landing = () => {
               <CardContent className="pt-8 pb-8">
                 <h3 className="text-2xl font-heading font-bold text-foreground mb-2">{t('landing.pricing.plans.starter.name')}</h3>
                 <p className="text-muted-foreground mb-6 text-sm">{t('landing.pricing.plans.starter.description')}</p>
-                <p className="text-3xl font-bold text-foreground mb-6">
-                  {t('landing.pricing.plans.starter.price')}<span className="text-lg font-normal text-muted-foreground">{t('landing.pricing.plans.starter.period')}</span>
-                </p>
+                <div className="mb-6">
+                  <div className="flex flex-col items-center">
+                    <div className="flex items-baseline">
+                      <span className="text-4xl font-bold text-foreground">{t('landing.pricing.plans.starter.price')}</span>
+                      <span className="text-lg font-normal text-muted-foreground ml-2">{t('landing.pricing.plans.starter.period')}</span>
+                    </div>
+                    {t('landing.pricing.plans.starter.annualPrice') && (
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        <span>{t('landing.pricing.payableAnnual')} </span>
+                        <span className="font-medium">{t('landing.pricing.plans.starter.annualPrice')}/an</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-start gap-2">
                     <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
@@ -327,9 +469,20 @@ const Landing = () => {
               <CardContent className="pt-8 pb-8">
                 <h3 className="text-2xl font-heading font-bold text-foreground mb-2">{t('landing.pricing.plans.essential.name')}</h3>
                 <p className="text-muted-foreground mb-6 text-sm">{t('landing.pricing.plans.essential.description')}</p>
-                <p className="text-3xl font-bold text-foreground mb-6">
-                  {t('landing.pricing.plans.essential.price')}<span className="text-lg font-normal text-muted-foreground">{t('landing.pricing.plans.essential.period')}</span>
-                </p>
+                <div className="mb-6">
+                  <div className="flex flex-col items-center">
+                    <div className="flex items-baseline">
+                      <span className="text-4xl font-bold text-foreground">{t('landing.pricing.plans.essential.price')}</span>
+                      <span className="text-lg font-normal text-muted-foreground ml-2">{t('landing.pricing.plans.essential.period')}</span>
+                    </div>
+                    {t('landing.pricing.plans.essential.annualPrice') && (
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        <span>{t('landing.pricing.payableAnnual')} </span>
+                        <span className="font-medium">{t('landing.pricing.plans.essential.annualPrice')}/an</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-start gap-2">
                     <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />

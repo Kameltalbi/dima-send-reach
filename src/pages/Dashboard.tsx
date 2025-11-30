@@ -70,25 +70,9 @@ const Dashboard = () => {
   const [selectedEmail, setSelectedEmail] = useState(user?.email || "votre@email.com");
   const [status, setStatus] = useState("Running");
 
-  // Vérifier l'abonnement et rediriger si nécessaire (sauf pour les superadmins)
-  useEffect(() => {
-    const checkSubscription = async () => {
-      if (!quotaLoading && !quota && user) {
-        // Vérifier si l'utilisateur est superadmin
-        const { data: isSuperadmin } = await supabase.rpc('is_superadmin');
-        
-        if (!isSuperadmin) {
-          // Pas d'abonnement actif et pas superadmin, rediriger vers la page de pricing
-          navigate("/pricing", { replace: true });
-        }
-      }
-    };
-    
-    checkSubscription();
-  }, [quotaLoading, quota, user, navigate]);
-
   useEffect(() => {
     // Ne charger les données que si l'utilisateur a un abonnement
+    // La vérification d'abonnement est gérée par SubscriptionProtectedRoute
     if (quota && !quotaLoading) {
       loadDashboardData();
     }

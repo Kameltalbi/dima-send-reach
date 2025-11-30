@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/layouts/AppLayout";
 import { SuperAdminLayout } from "@/components/layouts/SuperAdminLayout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { SubscriptionProtectedRoute } from "@/components/SubscriptionProtectedRoute";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -44,25 +45,25 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/pricing" element={<Pricing />} />
-            <Route path="/checkout" element={<AppLayout><Checkout /></AppLayout>} />
-            <Route path="/checkout/success" element={<AppLayout><CheckoutSuccess /></AppLayout>} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/checkout/success" element={<CheckoutSuccess />} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
+            <Route path="/support" element={<Support />} />
             
             {/* Routes protégées */}
-            <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
-            <Route path="/contacts" element={<AppLayout><Contacts /></AppLayout>} />
-            <Route path="/listes" element={<AppLayout><Listes /></AppLayout>} />
-            <Route path="/listes/:id" element={<AppLayout><GestionListe /></AppLayout>} />
-            <Route path="/campagnes" element={<AppLayout><Campagnes /></AppLayout>} />
-            <Route path="/campagnes/nouvelle" element={<AppLayout><NouvelleCampagne /></AppLayout>} />
-            <Route path="/statistiques" element={<AppLayout><Statistiques /></AppLayout>} />
-            <Route path="/templates" element={<AppLayout><Templates /></AppLayout>} />
-            <Route path="/parametres" element={<AppLayout><Parametres /></AppLayout>} />
-            <Route path="/team" element={<AppLayout><Team /></AppLayout>} />
-            <Route path="/config-ses" element={<AppLayout><ConfigurationSES /></AppLayout>} />
-            <Route path="/test-email" element={<AppLayout><TestEmail /></AppLayout>} />
+            <Route path="/dashboard" element={<AppLayout><SubscriptionProtectedRoute><Dashboard /></SubscriptionProtectedRoute></AppLayout>} />
+            <Route path="/contacts" element={<AppLayout><SubscriptionProtectedRoute><Contacts /></SubscriptionProtectedRoute></AppLayout>} />
+            <Route path="/listes" element={<AppLayout><SubscriptionProtectedRoute><Listes /></SubscriptionProtectedRoute></AppLayout>} />
+            <Route path="/listes/:id" element={<AppLayout><SubscriptionProtectedRoute><GestionListe /></SubscriptionProtectedRoute></AppLayout>} />
+            <Route path="/campagnes" element={<AppLayout><SubscriptionProtectedRoute><Campagnes /></SubscriptionProtectedRoute></AppLayout>} />
+            <Route path="/campagnes/nouvelle" element={<AppLayout><SubscriptionProtectedRoute><NouvelleCampagne /></SubscriptionProtectedRoute></AppLayout>} />
+            <Route path="/statistiques" element={<AppLayout><SubscriptionProtectedRoute><Statistiques /></SubscriptionProtectedRoute></AppLayout>} />
+            <Route path="/templates" element={<AppLayout><SubscriptionProtectedRoute><Templates /></SubscriptionProtectedRoute></AppLayout>} />
+            <Route path="/parametres" element={<AppLayout><SubscriptionProtectedRoute><Parametres /></SubscriptionProtectedRoute></AppLayout>} />
+            <Route path="/team" element={<AppLayout><SubscriptionProtectedRoute><Team /></SubscriptionProtectedRoute></AppLayout>} />
+            <Route path="/config-ses" element={<AppLayout><SubscriptionProtectedRoute><ConfigurationSES /></SubscriptionProtectedRoute></AppLayout>} />
+            <Route path="/test-email" element={<AppLayout><SubscriptionProtectedRoute><TestEmail /></SubscriptionProtectedRoute></AppLayout>} />
             <Route path="/superadmin" element={<SuperAdminLayout><ProtectedRoute requiredRole="superadmin"><SuperAdmin /></ProtectedRoute></SuperAdminLayout>} />
-            <Route path="/support" element={<AppLayout><Support /></AppLayout>} />
             
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />

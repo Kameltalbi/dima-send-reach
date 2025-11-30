@@ -19,6 +19,7 @@ const plans = [
     dailyLimit: "100 e-mails / jour",
     domains: "1 domaine",
     users: "1 utilisateur",
+    contacts: "1,000 contacts",
     popular: false,
     features: [
       { text: "Éditeur email simple", included: true },
@@ -37,12 +38,14 @@ const plans = [
   },
   {
     name: "Starter",
-    price: "35 DT",
+    price: "29 DT",
     period: "/mois",
+    annualPrice: "348 DT",
     description: "Pour les petites entreprises",
     emails: "10,000 e-mails / mois",
     domains: "2 domaines",
     users: "3 utilisateurs",
+    contacts: "Contacts illimités",
     popular: false,
     features: [
       { text: "Éditeur drag & drop avancé", included: true },
@@ -61,12 +64,14 @@ const plans = [
   },
   {
     name: "Essential",
-    price: "70 DT",
+    price: "49 DT",
     period: "/mois",
+    annualPrice: "588 DT",
     description: "Pour les PME et agences",
     emails: "20,000 e-mails / mois",
     domains: "5 domaines",
     users: "10 utilisateurs",
+    contacts: "Contacts illimités",
     popular: true,
     features: [
       { text: "Tout de Starter, plus:", included: true },
@@ -89,6 +94,7 @@ const plans = [
     emails: "50,000 e-mails / mois",
     domains: "10 domaines",
     users: "Utilisateurs illimités",
+    contacts: "Contacts illimités",
     popular: false,
     features: [
       { text: "Tout de Essential, plus:", included: true },
@@ -111,6 +117,7 @@ const plans = [
     emails: "100,000 e-mails / mois",
     domains: "20 domaines",
     users: "Multi-équipes (3 utilisateurs)",
+    contacts: "Contacts illimités",
     popular: false,
     features: [
       { text: "Tout de Pro, plus:", included: true },
@@ -133,7 +140,7 @@ const Pricing = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-accent/5 to-background">
       {/* Header */}
       <header className="border-b border-border bg-white dark:bg-gray-900 backdrop-blur supports-[backdrop-filter]:bg-white/95 dark:supports-[backdrop-filter]:bg-gray-900/95 sticky top-0 z-50 shadow-sm">
         <div className="container flex h-16 items-center justify-between px-4 md:px-6">
@@ -234,8 +241,8 @@ const Pricing = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="container px-4 py-16 md:py-24 md:px-6">
-        <div className="text-center space-y-4 mb-16">
+      <section className="w-full px-4 py-16 md:py-24 md:px-6">
+        <div className="text-center space-y-4 mb-16 max-w-7xl mx-auto">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-foreground">
             {t('pricing.title')}
           </h1>
@@ -245,58 +252,71 @@ const Pricing = () => {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 max-w-[1600px] mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-5 gap-6 max-w-[1920px] mx-auto px-4">
           {plans.map((plan) => (
             <Card
               key={plan.name}
-              className={`relative flex flex-col ${
+              className={`relative flex flex-col transition-all duration-300 hover:shadow-xl ${
                 plan.popular
-                  ? "border-primary shadow-lg shadow-primary/20 scale-105"
-                  : "border-border"
+                  ? "border-l-4 border-l-primary border-2 border-t border-r border-b shadow-xl shadow-primary/30 scale-105 bg-gradient-to-br from-primary/10 via-primary/5 to-accent/5"
+                  : "border-l-4 border-l-border border-2 border-t border-r border-b bg-card hover:border-l-primary/50 hover:bg-gradient-to-br hover:from-primary/5 hover:to-transparent"
               }`}
             >
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-primary text-primary-foreground px-4 py-1">
+                  <Badge className="bg-gradient-to-r from-primary to-accent text-primary-foreground px-4 py-1 shadow-lg font-semibold">
                     {t('pricing.popular')}
                   </Badge>
                 </div>
               )}
 
               <CardHeader className="text-center pb-8 pt-8">
-                <CardTitle className="text-2xl font-heading font-bold">
+                <CardTitle className={`text-2xl font-heading font-bold ${plan.popular ? 'text-primary' : 'text-foreground'}`}>
                   {plan.name}
                 </CardTitle>
                 <CardDescription className="mt-2">{plan.description}</CardDescription>
                 <div className="mt-6">
-                  <span className="text-5xl font-bold text-foreground">{plan.price}</span>
-                  {plan.period && (
-                    <span className="text-muted-foreground ml-2">{plan.period}</span>
-                  )}
+                  <div className="flex flex-col items-center">
+                    <div className="flex items-baseline">
+                      <span className={`text-5xl font-bold ${plan.popular ? 'text-primary' : 'text-foreground'}`}>{plan.price}</span>
+                      {plan.period && (
+                        <span className="text-muted-foreground ml-2 text-xl">{plan.period}</span>
+                      )}
+                    </div>
+                    {plan.annualPrice && (
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        <span>{t('landing.pricing.payableAnnual')} </span>
+                        <span className={`font-medium ${plan.popular ? 'text-primary' : ''}`}>{plan.annualPrice}/an</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
 
               <CardContent className="flex-1 space-y-6">
                 {/* Capacités */}
                 <div className="space-y-2 pb-6 border-b border-border">
-                  <p className="font-semibold text-sm text-muted-foreground">{t('pricing.capacities')}</p>
-                  <p className="text-sm font-medium">{plan.emails}</p>
+                  <p className="font-semibold text-sm text-muted-foreground mb-3">{t('pricing.capacities')}</p>
+                  <p className="text-base font-bold text-foreground">{plan.emails}</p>
                   {plan.dailyLimit && (
-                    <p className="text-xs text-muted-foreground">{plan.dailyLimit}</p>
+                    <p className="text-sm text-muted-foreground">{plan.dailyLimit}</p>
                   )}
-                  <p className="text-sm">{plan.users}</p>
-                  <p className="text-sm">{plan.domains}</p>
+                  <p className="text-base font-bold text-foreground mt-2">{plan.contacts}</p>
+                  <p className="text-sm text-foreground mt-2">{plan.users}</p>
+                  <p className="text-sm text-foreground">{plan.domains}</p>
                 </div>
 
                 {/* Features */}
                 <div className="space-y-3">
-                  <p className="font-semibold text-sm text-muted-foreground">
+                  <p className="font-semibold text-sm text-foreground mb-3">
                     {t('pricing.features')}
                   </p>
                   {plan.features.map((feature, index) => (
-                    <div key={index} className="flex items-start gap-2">
+                    <div key={index} className="flex items-start gap-3">
                       {feature.included ? (
-                        <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                        <div className="h-5 w-5 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
+                          <Check className="h-3.5 w-3.5 text-foreground" />
+                        </div>
                       ) : (
                         <X className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                       )}
@@ -317,7 +337,7 @@ const Pricing = () => {
                   <Link to="/auth" className="w-full">
                     <Button
                       variant="outline"
-                      className="w-full"
+                      className="w-full border-2 border-primary text-foreground hover:bg-primary/5"
                       size="lg"
                     >
                       {t('pricing.startFree')}
@@ -327,7 +347,7 @@ const Pricing = () => {
                   <Link to={`/checkout?plan=${plan.name.toLowerCase()}`} className="w-full">
                     <Button
                       variant={plan.popular ? "default" : "outline"}
-                      className="w-full"
+                      className={`w-full ${plan.popular ? "" : "border-2 border-primary text-foreground hover:bg-primary/5"}`}
                       size="lg"
                     >
                       {t('pricing.choosePlan')}
@@ -340,8 +360,8 @@ const Pricing = () => {
         </div>
 
         {/* Emails supplémentaires */}
-        <div className="mt-16 max-w-5xl mx-auto">
-          <Card className="border-2 border-accent/30 bg-gradient-to-br from-accent/5 to-transparent">
+        <div className="mt-16 max-w-7xl mx-auto px-4">
+          <Card className="border-2 border-accent/50 bg-gradient-to-br from-accent/15 via-primary/10 to-accent/10 shadow-lg">
             <CardContent className="p-8">
               <div className="text-center mb-8">
                 <h3 className="text-2xl font-heading font-bold text-foreground mb-2">
@@ -353,38 +373,38 @@ const Pricing = () => {
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-background rounded-lg p-5 border-2 border-border text-center">
-                  <p className="text-sm font-semibold text-muted-foreground mb-2">Starter</p>
+                <div className="bg-gradient-to-br from-primary/15 to-primary/5 rounded-lg p-5 border-2 border-primary/40 hover:border-primary transition-all text-center shadow-md hover:shadow-lg hover:scale-105">
+                  <p className="text-sm font-semibold text-primary mb-2">Starter</p>
                   <div className="flex items-baseline justify-center gap-2">
-                    <span className="text-2xl font-bold text-foreground">10 DT</span>
+                    <span className="text-2xl font-bold text-primary">10 DT</span>
                     <span className="text-sm text-muted-foreground">/ 1,000 emails</span>
                   </div>
                 </div>
                 
-                <div className="bg-background rounded-lg p-5 border-2 border-border text-center">
-                  <p className="text-sm font-semibold text-muted-foreground mb-2">Essential</p>
+                <div className="bg-gradient-to-br from-primary/15 to-primary/5 rounded-lg p-5 border-2 border-primary/40 hover:border-primary transition-all text-center shadow-md hover:shadow-lg hover:scale-105">
+                  <p className="text-sm font-semibold text-primary mb-2">Essential</p>
                   <div className="flex items-baseline justify-center gap-2">
-                    <span className="text-2xl font-bold text-foreground">10 DT</span>
+                    <span className="text-2xl font-bold text-primary">10 DT</span>
                     <span className="text-sm text-muted-foreground">/ 1,000 emails</span>
                   </div>
                 </div>
                 
-                <div className="bg-background rounded-lg p-5 border-2 border-primary text-center">
+                <div className="bg-gradient-to-br from-primary/20 to-accent/10 rounded-lg p-5 border-2 border-primary hover:border-primary transition-all text-center shadow-lg hover:shadow-xl hover:scale-105">
                   <p className="text-sm font-semibold text-primary mb-2">Pro</p>
                   <div className="flex items-baseline justify-center gap-2">
                     <span className="text-2xl font-bold text-primary">9 DT</span>
                     <span className="text-sm text-muted-foreground">/ 1,000 emails</span>
                   </div>
-                  <p className="text-xs text-primary mt-2">Avantage volume</p>
+                  <p className="text-xs text-primary mt-2 font-semibold">Avantage volume</p>
                 </div>
                 
-                <div className="bg-background rounded-lg p-5 border-2 border-accent text-center">
+                <div className="bg-gradient-to-br from-accent/20 to-accent/10 rounded-lg p-5 border-2 border-accent hover:border-accent transition-all text-center shadow-lg hover:shadow-xl hover:scale-105">
                   <p className="text-sm font-semibold text-accent mb-2">Business</p>
                   <div className="flex items-baseline justify-center gap-2">
                     <span className="text-2xl font-bold text-accent">8 DT</span>
                     <span className="text-sm text-muted-foreground">/ 1,000 emails</span>
                   </div>
-                  <p className="text-xs text-accent mt-2">Prix réduit</p>
+                  <p className="text-xs text-accent mt-2 font-semibold">Prix réduit</p>
                 </div>
               </div>
             </CardContent>
@@ -392,11 +412,11 @@ const Pricing = () => {
         </div>
 
         {/* FAQ / Additional Info */}
-        <div className="mt-24 text-center space-y-4">
+        <div className="mt-24 text-center space-y-4 max-w-7xl mx-auto px-4">
           <h2 className="text-3xl font-heading font-bold text-foreground">
             {t('pricing.faq.title')}
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mt-12 text-left">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto mt-12 text-left">
             <div className="space-y-2">
               <h3 className="font-semibold text-lg">{t('pricing.faq.changePlan.q')}</h3>
               <p className="text-muted-foreground">
@@ -425,7 +445,7 @@ const Pricing = () => {
         </div>
 
         {/* CTA Section */}
-        <div className="mt-24 text-center space-y-6 p-12 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20">
+        <div className="mt-24 text-center space-y-6 p-12 rounded-2xl bg-gradient-to-br from-primary/20 via-accent/15 to-primary/10 border-2 border-primary/50 shadow-xl max-w-7xl mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-heading font-bold text-foreground">
             {t('pricing.cta.title')}
           </h2>

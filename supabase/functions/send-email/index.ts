@@ -128,18 +128,18 @@ serve(async (req) => {
       throw new Error("Vous n'avez pas l'autorisation d'envoyer cette campagne");
     }
 
-    // Récupérer les destinataires
-    const { data: recipients, error: recipientsError } = await supabaseClient
+    // Compter d'abord le total de destinataires pour vérifier le quota
+    const { count: totalRecipientsCount, error: countError } = await supabaseClient
       .from("campaign_recipients")
-      .select("*, contacts(*)")
+      .select("*", { count: "exact", head: true })
       .eq("campaign_id", campaignId)
       .eq("statut_envoi", "en_attente");
 
-    if (recipientsError) {
-      throw new Error("Erreur lors de la récupération des destinataires");
+    if (countError) {
+      throw new Error("Erreur lors du comptage des destinataires");
     }
 
-    if (!recipients || recipients.length === 0) {
+    if (!totalRecipientsCount || totalRecipientsCount === 0) {
       throw new Error("Aucun destinataire en attente");
     }
 
@@ -147,7 +147,7 @@ serve(async (req) => {
     const quotaCheck = await checkEmailQuota(
       supabaseClient,
       user.id,
-      recipients.length
+      totalRecipientsCount
     );
 
     if (!quotaCheck.allowed) {
@@ -160,6 +160,14 @@ serve(async (req) => {
             used: quotaCheck.used,
             remaining: quotaCheck.remaining,
           },
+          warming: quotaCheck.warming ? {
+            isWarming: quotaCheck.warming.isWarming,
+            currentDay: quotaCheck.warming.currentDay,
+            limit: quotaCheck.warming.limit,
+            used: quotaCheck.warming.used,
+            remaining: quotaCheck.warming.remaining,
+            warmingCompleted: quotaCheck.warming.warmingCompleted,
+          } : undefined,
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -168,96 +176,166 @@ serve(async (req) => {
       );
     }
 
-    // Récupérer les emails des contacts pour validation
-    const contactIds = recipients.map((r: any) => r.contact_id);
-    const { data: contacts, error: contactsError } = await supabaseClient
-      .from("contacts")
-      .select("id, email, statut")
-      .in("id", contactIds);
+    console.log(`Processing ${totalRecipientsCount} recipients in batches`);
 
-    if (contactsError) {
-      console.error("Error fetching contacts:", contactsError);
-    }
-
-    // Valider les emails et filtrer les invalides
-    const emailMap = new Map(
-      (contacts || []).map((c: any) => [c.id, c.email])
-    );
-    const emailsToValidate = recipients
-      .map((r: any) => emailMap.get(r.contact_id))
-      .filter(Boolean) as string[];
-
-    const { valid: validEmails, invalid: invalidEmails } =
-      validateEmailList(emailsToValidate);
-
-    // Filtrer les destinataires avec emails invalides
-    const validRecipients = recipients.filter((r: any) => {
-      const email = emailMap.get(r.contact_id);
-      return email && validEmails.includes(email.toLowerCase().trim());
-    });
-
-    if (invalidEmails.length > 0) {
-      console.warn(
-        `${invalidEmails.length} emails invalides détectés:`,
-        invalidEmails
-      );
-    }
-
-    if (validRecipients.length === 0) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          message: "Aucun email valide trouvé dans les destinataires",
-          invalidEmails,
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 400,
-        }
-      );
-    }
-
-    // Détecter les emails à risque de rebond
-    const bounceWarnings: Array<{ email: string; reason: string }> = [];
-    for (const recipient of validRecipients) {
-      const email = emailMap.get(recipient.contact_id);
-      if (email) {
-        const bounceCheck = detectPotentialBounces(email);
-        if (bounceCheck.likelyToBounce) {
-          bounceWarnings.push({
-            email,
-            reason: bounceCheck.reason || "Risque de rebond",
-          });
-        }
-      }
-    }
-
-    if (bounceWarnings.length > 0) {
-      console.warn("Emails à risque de rebond:", bounceWarnings);
-    }
-
-    console.log(`Queueing emails for ${validRecipients.length} valid recipients`);
-
+    // Traitement par batch pour éviter timeout et dépassement mémoire
+    const PROCESSING_BATCH_SIZE = 1000;
+    const INSERT_BATCH_SIZE = 1000;
+    let offset = 0;
     let queuedCount = 0;
     let errorCount = 0;
+    let totalInvalidEmails = 0;
     const queueErrors: Array<{ email: string; reason: string }> = [];
+    const bounceWarnings: Array<{ email: string; reason: string }> = [];
 
-    // Queue emails in batches for efficient processing
-    const emailsToQueue = [];
-    
-    for (const recipient of validRecipients) {
-      try {
-        const email = emailMap.get(recipient.contact_id);
-        if (!email) {
-          console.warn(`Email missing for contact ${recipient.contact_id}`);
+    // Traiter les destinataires par batch
+    while (offset < totalRecipientsCount) {
+      console.log(`Processing batch: ${offset} to ${offset + PROCESSING_BATCH_SIZE - 1}`);
+
+      // Récupérer un batch de destinataires
+      const { data: recipients, error: recipientsError } = await supabaseClient
+        .from("campaign_recipients")
+        .select("*, contacts(*)")
+        .eq("campaign_id", campaignId)
+        .eq("statut_envoi", "en_attente")
+        .range(offset, offset + PROCESSING_BATCH_SIZE - 1);
+
+      if (recipientsError) {
+        console.error(`Error fetching recipients batch at offset ${offset}:`, recipientsError);
+        errorCount += PROCESSING_BATCH_SIZE;
+        offset += PROCESSING_BATCH_SIZE;
+        continue;
+      }
+
+      if (!recipients || recipients.length === 0) {
+        break; // Plus de destinataires à traiter
+      }
+
+      // Récupérer les emails des contacts pour validation
+      const contactIds = recipients.map((r: any) => r.contact_id);
+      const { data: contacts, error: contactsError } = await supabaseClient
+        .from("contacts")
+        .select("id, email, statut")
+        .in("id", contactIds);
+
+      if (contactsError) {
+        console.error("Error fetching contacts:", contactsError);
+      }
+
+      // Créer une map email pour ce batch
+      const emailMap = new Map(
+        (contacts || []).map((c: any) => [c.id, c.email])
+      );
+      const emailsToValidate = recipients
+        .map((r: any) => emailMap.get(r.contact_id))
+        .filter(Boolean) as string[];
+
+      const { valid: validEmails, invalid: invalidEmails } =
+        validateEmailList(emailsToValidate);
+
+      totalInvalidEmails += invalidEmails.length;
+
+      // Filtrer les destinataires avec emails invalides
+      const validRecipients = recipients.filter((r: any) => {
+        const email = emailMap.get(r.contact_id);
+        return email && validEmails.includes(email.toLowerCase().trim());
+      });
+
+      // Préparer les emails pour ce batch
+      const emailsToQueue: any[] = [];
+
+      for (const recipient of validRecipients) {
+        try {
+          const email = emailMap.get(recipient.contact_id);
+          if (!email) {
+            console.warn(`Email missing for contact ${recipient.contact_id}`);
+            errorCount++;
+            continue;
+          }
+
+          // Check if email is likely to bounce before queueing
+          const bounceCheck = detectPotentialBounces(email);
+          if (bounceCheck.likelyToBounce) {
+            // Mark as error if high bounce risk
+            await supabaseClient
+              .from("campaign_recipients")
+              .update({
+                statut_envoi: "erreur",
+                date_envoi: new Date().toISOString(),
+              })
+              .eq("id", recipient.id);
+
+            queueErrors.push({
+              email,
+              reason: bounceCheck.reason || "High bounce risk email",
+            });
+            bounceWarnings.push({
+              email,
+              reason: bounceCheck.reason || "Risque de rebond",
+            });
+            errorCount++;
+            continue;
+          }
+
+          // Prepare HTML with tracking
+          let trackedHtml = campaign.html_contenu || "";
+          
+          // 1. Add open tracking pixel
+          const trackOpenUrl = `${SUPABASE_URL}/functions/v1/track-open?r=${recipient.id}`;
+          const trackingPixel = `<img src="${trackOpenUrl}" width="1" height="1" style="display:none;" alt="" />`;
+          
+          if (trackedHtml.includes("</body>")) {
+            trackedHtml = trackedHtml.replace("</body>", `${trackingPixel}</body>`);
+          } else {
+            trackedHtml += trackingPixel;
+          }
+          
+          // 2. Replace all links with tracked links
+          trackedHtml = trackedHtml.replace(
+            /href="([^"]+)"/gi,
+            (match: string, url: string) => {
+              if (url.startsWith("mailto:") || url.startsWith("tel:") || url.startsWith("#")) {
+                return match;
+              }
+              const trackClickUrl = `${SUPABASE_URL}/functions/v1/track-click?r=${recipient.id}&url=${encodeURIComponent(url)}`;
+              return `href="${trackClickUrl}"`;
+            }
+          );
+          
+          // 3. Add unsubscribe link
+          const unsubscribeUrl = `${SUPABASE_URL.replace('/functions/v1', '')}/unsubscribe?r=${recipient.id}`;
+          const unsubscribeLink = `
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 12px; color: #666;">
+              <p>Don't want to receive these emails anymore?</p>
+              <a href="${unsubscribeUrl}" style="color: #666; text-decoration: underline;">Unsubscribe</a>
+            </div>
+          `;
+          
+          if (trackedHtml.includes("</body>")) {
+            trackedHtml = trackedHtml.replace("</body>", `${unsubscribeLink}</body>`);
+          } else {
+            trackedHtml += unsubscribeLink;
+          }
+
+          // Add to queue batch
+          emailsToQueue.push({
+            campaign_id: campaignId,
+            recipient_id: recipient.id,
+            to_email: email,
+            from_name: campaign.expediteur_nom,
+            from_email: campaign.expediteur_email,
+            subject: campaign.sujet_email,
+            html: trackedHtml,
+            status: 'pending',
+            attempts: 0,
+          });
+
+          queuedCount++;
+        } catch (err) {
+          const email = emailMap.get(recipient.contact_id);
+          console.error(`Error queueing email for ${email}:`, err);
           errorCount++;
-          continue;
-        }
-
-        // Check if email is likely to bounce before queueing
-        const bounceCheck = detectPotentialBounces(email);
-        if (bounceCheck.likelyToBounce) {
-          // Mark as error if high bounce risk
+          
           await supabaseClient
             .from("campaign_recipients")
             .update({
@@ -265,97 +343,41 @@ serve(async (req) => {
               date_envoi: new Date().toISOString(),
             })
             .eq("id", recipient.id);
-
-          queueErrors.push({
-            email,
-            reason: bounceCheck.reason || "High bounce risk email",
-          });
-          errorCount++;
-          continue;
         }
+      }
 
-        // Prepare HTML with tracking
-        let trackedHtml = campaign.html_contenu || "";
-        
-        // 1. Add open tracking pixel
-        const trackOpenUrl = `${SUPABASE_URL}/functions/v1/track-open?r=${recipient.id}`;
-        const trackingPixel = `<img src="${trackOpenUrl}" width="1" height="1" style="display:none;" alt="" />`;
-        
-        if (trackedHtml.includes("</body>")) {
-          trackedHtml = trackedHtml.replace("</body>", `${trackingPixel}</body>`);
-        } else {
-          trackedHtml += trackingPixel;
-        }
-        
-        // 2. Replace all links with tracked links
-        trackedHtml = trackedHtml.replace(
-          /href="([^"]+)"/gi,
-          (match: string, url: string) => {
-            if (url.startsWith("mailto:") || url.startsWith("tel:") || url.startsWith("#")) {
-              return match;
+      // Insérer les emails dans la queue par batch pour éviter les erreurs de taille
+      if (emailsToQueue.length > 0) {
+        for (let i = 0; i < emailsToQueue.length; i += INSERT_BATCH_SIZE) {
+          const insertBatch = emailsToQueue.slice(i, i + INSERT_BATCH_SIZE);
+          const { error: queueError } = await supabaseClient
+            .from("email_queue")
+            .insert(insertBatch);
+
+          if (queueError) {
+            console.error(`Error inserting email batch at index ${i}:`, queueError);
+            // Marquer ces emails comme erreur dans campaign_recipients
+            for (const emailData of insertBatch) {
+              await supabaseClient
+                .from("campaign_recipients")
+                .update({
+                  statut_envoi: "erreur",
+                  date_envoi: new Date().toISOString(),
+                })
+                .eq("id", emailData.recipient_id);
             }
-            const trackClickUrl = `${SUPABASE_URL}/functions/v1/track-click?r=${recipient.id}&url=${encodeURIComponent(url)}`;
-            return `href="${trackClickUrl}"`;
+            errorCount += insertBatch.length;
+            queuedCount -= insertBatch.length;
+          } else {
+            console.log(`Successfully queued batch of ${insertBatch.length} emails`);
           }
-        );
-        
-        // 3. Add unsubscribe link
-        const unsubscribeUrl = `${SUPABASE_URL.replace('/functions/v1', '')}/unsubscribe?r=${recipient.id}`;
-        const unsubscribeLink = `
-          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 12px; color: #666;">
-            <p>Don't want to receive these emails anymore?</p>
-            <a href="${unsubscribeUrl}" style="color: #666; text-decoration: underline;">Unsubscribe</a>
-          </div>
-        `;
-        
-        if (trackedHtml.includes("</body>")) {
-          trackedHtml = trackedHtml.replace("</body>", `${unsubscribeLink}</body>`);
-        } else {
-          trackedHtml += unsubscribeLink;
         }
-
-        // Add to queue batch
-        emailsToQueue.push({
-          campaign_id: campaignId,
-          recipient_id: recipient.id,
-          to_email: email,
-          from_name: campaign.expediteur_nom,
-          from_email: campaign.expediteur_email,
-          subject: campaign.sujet_email,
-          html: trackedHtml,
-          status: 'pending',
-          attempts: 0,
-        });
-
-        queuedCount++;
-      } catch (err) {
-        const email = emailMap.get(recipient.contact_id);
-        console.error(`Error queueing email for ${email}:`, err);
-        errorCount++;
-        
-        await supabaseClient
-          .from("campaign_recipients")
-          .update({
-            statut_envoi: "erreur",
-            date_envoi: new Date().toISOString(),
-          })
-          .eq("id", recipient.id);
       }
+
+      offset += PROCESSING_BATCH_SIZE;
     }
 
-    // Insert all queued emails in batch
-    if (emailsToQueue.length > 0) {
-      const { error: queueError } = await supabaseClient
-        .from("email_queue")
-        .insert(emailsToQueue);
-
-      if (queueError) {
-        console.error("Error inserting emails into queue:", queueError);
-        throw new Error("Failed to queue emails");
-      }
-      
-      console.log(`Successfully queued ${emailsToQueue.length} emails`);
-    }
+    console.log(`Finished processing: ${queuedCount} queued, ${errorCount} errors`);
 
     // Update campaign status to "en_cours" (in progress) since emails are queued
     const newStatus = errorCount === 0 && queuedCount > 0 ? "en_cours" : (queuedCount > 0 ? "en_cours" : "erreur");
@@ -376,12 +398,11 @@ serve(async (req) => {
         stats: {
           queued: queuedCount,
           failed: errorCount,
-          total: validRecipients.length,
-          invalidEmails: invalidEmails.length,
+          total: totalRecipientsCount,
+          invalidEmails: totalInvalidEmails,
           bounceWarnings: bounceWarnings.length,
         },
         warnings: bounceWarnings.length > 0 ? bounceWarnings : undefined,
-        invalidEmails: invalidEmails.length > 0 ? invalidEmails : undefined,
         queueErrors: queueErrors.length > 0 ? queueErrors : undefined,
         quota: {
           limit: quotaCheck.limit,

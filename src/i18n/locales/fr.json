@@ -46,22 +46,57 @@
       "pricing": "Découvrir les tarifs"
     },
     "features": {
-      "title": "Tout ce dont vous avez besoin pour réussir vos campagnes",
-      "easyCreation": {
-        "title": "Création facile",
-        "description": "Créez vos emails en quelques clics avec notre éditeur visuel."
-      },
-      "massSending": {
-        "title": "Envoi en masse sécurisé",
-        "description": "Jusqu'à 1 million d'emails par campagne via Amazon SES."
+      "title": "Fonctionnalités clés",
+      "subtitle": "Tout ce dont vous avez besoin pour réussir vos campagnes",
+      "performance": {
+        "title": "Envoi d'emails performant",
+        "description": "Gestion facile des campagnes avec éditeur moderne."
       },
       "statistics": {
-        "title": "Statistiques détaillées",
-        "description": "Suivez vos performances en temps réel : ouvertures, clics, désabonnements."
+        "title": "Statistiques avancées",
+        "description": "Taux d'ouverture, clics, heatmaps simples, segmentation."
       },
-      "reliability": {
-        "title": "Fiabilité mondiale",
-        "description": "Conforme aux standards internationaux de sécurité et de délivrabilité."
+      "automation": {
+        "title": "Automatisations intelligentes",
+        "description": "Séquences email et workflows basés sur le comportement."
+      },
+      "preview": {
+        "title": "Prévisualisations professionnelles",
+        "description": "Simulation multi-clients (Gmail, Outlook, iOS, Android)."
+      },
+      "landing": {
+        "title": "Landing pages & formulaires",
+        "description": "Crée des pages optimisées sans développeur."
+      },
+      "deliverability": {
+        "title": "Délivrabilité optimisée",
+        "description": "IP dédiée (plans avancés), DMARC, DKIM, SPF."
+      }
+    },
+    "whyChoose": {
+      "title": "Pourquoi choisir DimaMail ?",
+      "subtitle": "La solution d'email marketing qui fait la différence",
+      "points": {
+        "multilingual": {
+          "title": "Interface en français & arabe",
+          "description": "Une expérience utilisateur complète dans votre langue."
+        },
+        "pricing": {
+          "title": "Prix très compétitifs",
+          "description": "Facturés en TND ou USD, adaptés au marché local."
+        },
+        "support": {
+          "title": "Support humain basé en Tunisie",
+          "description": "Une équipe locale à votre écoute, disponible rapidement."
+        },
+        "subaccounts": {
+          "title": "20 sous-comptes pour les agences",
+          "description": "Gérez plusieurs clients depuis une seule plateforme."
+        },
+        "flexible": {
+          "title": "Plan gratuit + plans flexibles",
+          "description": "Commencez gratuitement, évoluez selon vos besoins."
+        }
       }
     },
     "product": {
@@ -77,6 +112,7 @@
       "title": "Tarifs flexibles pour tous les besoins",
       "subtitle": "Choisissez le plan qui correspond à votre entreprise",
       "seeDetails": "Voir tous les détails des plans",
+      "payableAnnual": "Payable par an :",
       "plans": {
         "free": {
           "name": "Free",
@@ -93,8 +129,9 @@
         "starter": {
           "name": "Starter",
           "description": "Pour les petites entreprises",
-          "price": "35 DT",
+          "price": "29 DT",
           "period": "/mois",
+          "annualPrice": "348 DT",
           "features": {
             "emails": "10,000 e-mails / mois",
             "users": "3 utilisateurs",
@@ -105,8 +142,9 @@
         "essential": {
           "name": "Essential",
           "description": "Pour les PME et agences",
-          "price": "70 DT",
+          "price": "49 DT",
           "period": "/mois",
+          "annualPrice": "588 DT",
           "popular": "PLUS POPULAIRE",
           "features": {
             "emails": "20,000 e-mails / mois",

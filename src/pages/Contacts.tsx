@@ -48,12 +48,17 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { usePermissions } from "@/hooks/usePermissions";
 import { Download } from "lucide-react";
+import { useContactQuota } from "@/hooks/useContactQuota";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, AlertTriangle } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Contacts = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { canDeleteContacts, canExportContacts } = usePermissions();
+  const { quota: contactQuota, canAddContacts } = useContactQuota();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [segmentFilter, setSegmentFilter] = useState<string>("all");
@@ -186,6 +191,7 @@ const Contacts = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["contact-quota"] });
       toast.success(t('contacts.createSuccess'));
       setIsCreateOpen(false);
       resetForm();
@@ -230,6 +236,7 @@ const Contacts = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["contact-quota"] });
       toast.success(t('contacts.deleteSuccess'));
       setIsDeleteOpen(false);
       setSelectedContact(null);
@@ -305,6 +312,7 @@ const Contacts = () => {
     onSuccess: (data) => {
       const deletedCount = data?.deletedCount || (selectAllMode ? totalCount : selectedContacts.length) || 0;
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["contact-quota"] });
       toast.success(`${deletedCount} contact(s) supprimé(s)`);
       setDeleteProgress(0);
       setIsBulkDeleteOpen(false);
@@ -526,6 +534,16 @@ const Contacts = () => {
       return;
     }
 
+    // Vérifier le quota de contacts (uniquement pour Free)
+    if (!selectedContact && !canAddContacts(1)) {
+      if (contactQuota?.isBlocked) {
+        toast.error(`Limite de contacts atteinte (${contactQuota.limit} contacts). Passez à un plan payant pour des contacts illimités.`);
+      } else {
+        toast.error(`Quota de contacts insuffisant. Limite: ${contactQuota?.limit}, Restant: ${contactQuota?.remaining}`);
+      }
+      return;
+    }
+
     // Préparer les données
     const dataToSubmit = {
       email: formData.email.trim(),
@@ -654,6 +672,17 @@ const Contacts = () => {
         return;
       }
 
+      // Vérifier le quota de contacts (uniquement pour Free)
+      if (!canAddContacts(contactsToImport.length)) {
+        if (contactQuota?.isBlocked) {
+          toast.error(`Limite de contacts atteinte (${contactQuota.limit} contacts). Vous ne pouvez pas importer ${contactsToImport.length} contacts. Passez à un plan payant pour des contacts illimités.`);
+        } else {
+          toast.error(`Quota de contacts insuffisant. Limite: ${contactQuota?.limit}, Restant: ${contactQuota?.remaining}, Demandé: ${contactsToImport.length}. Passez à un plan payant pour des contacts illimités.`);
+        }
+        setIsImporting(false);
+        return;
+      }
+
       // Importer par lots de 500 contacts pour éviter les timeouts et limites de taille
       const batchSize = 500;
       const batches: any[][] = [];
@@ -690,6 +719,7 @@ const Contacts = () => {
       }
 
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["contact-quota"] });
       
       if (totalImported > 0) {
         toast.success(`${totalImported} contact(s) importé(s) avec succès`);
@@ -855,6 +885,62 @@ const Contacts = () => {
 
   return (
     <div className="space-y-6">
+      {/* Widget quota contacts pour plan Free */}
+      {contactQuota && contactQuota.limit !== null && (
+        <Alert className={contactQuota.isBlocked ? "border-destructive" : contactQuota.isNearLimit ? "border-accent" : ""}>
+          <div className="flex items-start gap-3 w-full">
+            {contactQuota.isBlocked ? (
+              <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
+            ) : contactQuota.isNearLimit ? (
+              <AlertTriangle className="h-5 w-5 text-accent mt-0.5" />
+            ) : (
+              <User className="h-5 w-5 text-primary mt-0.5" />
+            )}
+            <div className="flex-1">
+              <AlertTitle className="flex items-center justify-between">
+                <span>
+                  {contactQuota.isBlocked 
+                    ? "Limite de contacts atteinte" 
+                    : contactQuota.isNearLimit 
+                    ? "Limite de contacts proche" 
+                    : "Quota de contacts"}
+                </span>
+                {!contactQuota.isBlocked && (
+                  <Link to="/pricing">
+                    <Button variant="link" size="sm" className="h-auto p-0 text-primary">
+                      Voir les plans
+                    </Button>
+                  </Link>
+                )}
+              </AlertTitle>
+              <AlertDescription className="mt-2">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>
+                      {contactQuota.used} / {contactQuota.limit} contacts utilisés
+                    </span>
+                    <span className="font-medium">
+                      {contactQuota.remaining} restant{contactQuota.remaining !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <Progress value={contactQuota.percentage} className="h-2" />
+                  {contactQuota.isBlocked && (
+                    <p className="text-sm text-destructive mt-2">
+                      Vous avez atteint la limite de contacts du plan Free. Passez à un plan payant pour des contacts illimités.
+                    </p>
+                  )}
+                  {contactQuota.isNearLimit && !contactQuota.isBlocked && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Vous avez utilisé {Math.round(contactQuota.percentage)}% de votre quota. Passez à un plan payant pour des contacts illimités.
+                    </p>
+                  )}
+                </div>
+              </AlertDescription>
+            </div>
+          </div>
+        </Alert>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
