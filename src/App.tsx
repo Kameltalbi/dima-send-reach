@@ -29,6 +29,8 @@ import CheckoutSuccess from "./pages/CheckoutSuccess";
 import NotFound from "./pages/NotFound";
 import TestEmail from "./pages/TestEmail";
 import Team from "./pages/Team";
+import Segmentation from "./pages/Segmentation";
+import Automatisations from "./pages/Automatisations";
 import { ErrorBoundary } from "./lib/error-boundary";
 
 const queryClient = new QueryClient();
@@ -62,6 +64,8 @@ const App = () => (
             <Route path="/parametres" element={<AppLayout><SubscriptionProtectedRoute><Parametres /></SubscriptionProtectedRoute></AppLayout>} />
             <Route path="/team" element={<AppLayout><SubscriptionProtectedRoute><Team /></SubscriptionProtectedRoute></AppLayout>} />
             <Route path="/config-ses" element={<AppLayout><SubscriptionProtectedRoute><ConfigurationSES /></SubscriptionProtectedRoute></AppLayout>} />
+            <Route path="/segmentation" element={<AppLayout><SubscriptionProtectedRoute><Segmentation /></SubscriptionProtectedRoute></AppLayout>} />
+            <Route path="/automatisations" element={<AppLayout><SubscriptionProtectedRoute><Automatisations /></SubscriptionProtectedRoute></AppLayout>} />
             <Route path="/test-email" element={<AppLayout><SubscriptionProtectedRoute><TestEmail /></SubscriptionProtectedRoute></AppLayout>} />
             <Route path="/superadmin" element={<SuperAdminLayout><ProtectedRoute requiredRole="superadmin"><SuperAdmin /></ProtectedRoute></SuperAdminLayout>} />
             

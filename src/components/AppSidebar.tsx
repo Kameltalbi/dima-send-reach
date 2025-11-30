@@ -10,7 +10,9 @@ import {
   HelpCircle,
   Shield,
   Crown,
-  UsersRound
+  UsersRound,
+  Filter,
+  Zap
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -36,6 +38,8 @@ const menuItems = [
   { title: "Campagnes", url: "/campagnes", icon: Mail },
   { title: "Contacts", url: "/contacts", icon: Users },
   { title: "Listes", url: "/listes", icon: ListChecks },
+  { title: "Segmentation", url: "/segmentation", icon: Filter },
+  { title: "Automatisations", url: "/automatisations", icon: Zap },
   { title: "Statistiques", url: "/statistiques", icon: BarChart3 },
   { title: "Templates", url: "/templates", icon: FileText },
 ];
