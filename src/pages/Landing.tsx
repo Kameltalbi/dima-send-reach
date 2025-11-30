@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mail, Zap, BarChart3, Globe, ArrowRight, Check, Menu, Send, TrendingUp, Workflow, Eye, FileText, Shield, Languages, DollarSign, Headphones, Users, Gift } from "lucide-react";
+import { ArrowRight, Check, Menu, Send, TrendingUp, Workflow, Eye, FileText, Shield, Languages, DollarSign, Headphones, Users, Gift } from "lucide-react";
 import { Link } from "react-router-dom";
 import { LogoWithText, LogoLight } from "@/components/Logo";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
@@ -15,7 +15,6 @@ const Landing = () => {
   const heroRef = useScrollAnimation();
   const featuresRef = useScrollAnimation();
   const whyChooseRef = useScrollAnimation();
-  const productRef = useScrollAnimation();
   const pricingRef = useScrollAnimation();
   const aboutRef = useScrollAnimation();
   const ctaRef = useScrollAnimation();
@@ -104,10 +103,15 @@ const Landing = () => {
       </header>
 
       {/* Hero Section - Design minimaliste style Finpay */}
-      <section id="home" className="py-24 lg:py-32 bg-white">
+      <section id="home" className="py-16 lg:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div ref={heroRef.ref} className={`animate-on-scroll ${heroRef.isVisible ? 'visible' : ''}`}>
+              <div className="mb-4">
+                <span className="inline-block px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium">
+                  DymaMail la solution tunisienne emailing
+                </span>
+              </div>
               <h1 className="text-5xl lg:text-6xl xl:text-7xl font-heading font-bold text-foreground mb-6 leading-[1.1] tracking-tight">
                 {t('landing.hero.title')}
               </h1>
@@ -142,247 +146,213 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Features */}
-      <section id="features" className="py-24 lg:py-32 bg-white">
+      {/* Features - Design épuré sans cartes */}
+      <section id="features" className="py-16 lg:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div ref={featuresRef.ref} className={`text-center mb-20 animate-on-scroll ${featuresRef.isVisible ? 'visible' : ''}`}>
+          <div ref={featuresRef.ref} className={`mb-12 animate-on-scroll ${featuresRef.isVisible ? 'visible' : ''}`}>
             <h2 className="text-4xl lg:text-5xl font-heading font-bold text-foreground mb-4">
               {t('landing.features.title')}
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-lg text-muted-foreground max-w-2xl mb-12">
               {t('landing.features.subtitle')}
             </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Envoi d'emails performant */}
-            <Card className="border border-border/50 hover:border-primary/50 transition-all duration-300 bg-white">
-              <CardContent className="pt-8 pb-8">
-                <div className="mb-6 inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10">
-                  <Send className="h-6 w-6 text-primary" />
+            
+            <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
+              {/* Colonne gauche */}
+              <div className="space-y-8">
+                {/* Envoi d'emails performant */}
+                <div className="flex gap-6 group">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <Send className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">
+                      {t('landing.features.performance.title')}
+                    </h3>
+                    <p className="text-muted-foreground leading-relaxed">
+                      {t('landing.features.performance.description')}
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-lg font-semibold text-foreground mb-3">
-                  {t('landing.features.performance.title')}
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {t('landing.features.performance.description')}
-                </p>
-              </CardContent>
-            </Card>
 
-            {/* Statistiques avancées */}
-            <Card className="border border-border/50 hover:border-primary/50 transition-all duration-300 bg-white">
-              <CardContent className="pt-8 pb-8">
-                <div className="mb-6 inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10">
-                  <TrendingUp className="h-6 w-6 text-primary" />
+                {/* Automatisations intelligentes */}
+                <div className="flex gap-6 group">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <Workflow className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">
+                      {t('landing.features.automation.title')}
+                    </h3>
+                    <p className="text-muted-foreground leading-relaxed">
+                      {t('landing.features.automation.description')}
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-lg font-semibold text-foreground mb-3">
-                  {t('landing.features.statistics.title')}
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {t('landing.features.statistics.description')}
-                </p>
-              </CardContent>
-            </Card>
 
-            {/* Automatisations intelligentes */}
-            <Card className="border border-border/50 hover:border-primary/50 transition-all duration-300 bg-white">
-              <CardContent className="pt-8 pb-8">
-                <div className="mb-6 inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10">
-                  <Workflow className="h-6 w-6 text-primary" />
+                {/* Landing pages & formulaires */}
+                <div className="flex gap-6 group">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <FileText className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">
+                      {t('landing.features.landing.title')}
+                    </h3>
+                    <p className="text-muted-foreground leading-relaxed">
+                      {t('landing.features.landing.description')}
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-lg font-semibold text-foreground mb-3">
-                  {t('landing.features.automation.title')}
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {t('landing.features.automation.description')}
-                </p>
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Prévisualisations professionnelles */}
-            <Card className="border border-border/50 hover:border-primary/50 transition-all duration-300 bg-white">
-              <CardContent className="pt-8 pb-8">
-                <div className="mb-6 inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10">
-                  <Eye className="h-6 w-6 text-primary" />
+              {/* Colonne droite */}
+              <div className="space-y-8">
+                {/* Statistiques avancées */}
+                <div className="flex gap-6 group">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <TrendingUp className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">
+                      {t('landing.features.statistics.title')}
+                    </h3>
+                    <p className="text-muted-foreground leading-relaxed">
+                      {t('landing.features.statistics.description')}
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-lg font-semibold text-foreground mb-3">
-                  {t('landing.features.preview.title')}
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {t('landing.features.preview.description')}
-                </p>
-              </CardContent>
-            </Card>
 
-            {/* Landing pages & formulaires */}
-            <Card className="border border-border/50 hover:border-primary/50 transition-all duration-300 bg-white">
-              <CardContent className="pt-8 pb-8">
-                <div className="mb-6 inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10">
-                  <FileText className="h-6 w-6 text-primary" />
+                {/* Prévisualisations professionnelles */}
+                <div className="flex gap-6 group">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <Eye className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">
+                      {t('landing.features.preview.title')}
+                    </h3>
+                    <p className="text-muted-foreground leading-relaxed">
+                      {t('landing.features.preview.description')}
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-lg font-semibold text-foreground mb-3">
-                  {t('landing.features.landing.title')}
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {t('landing.features.landing.description')}
-                </p>
-              </CardContent>
-            </Card>
 
-            {/* Délivrabilité optimisée */}
-            <Card className="border border-border/50 hover:border-primary/50 transition-all duration-300 bg-white">
-              <CardContent className="pt-8 pb-8">
-                <div className="mb-6 inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10">
-                  <Shield className="h-6 w-6 text-primary" />
+                {/* Délivrabilité optimisée */}
+                <div className="flex gap-6 group">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <Shield className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">
+                      {t('landing.features.deliverability.title')}
+                    </h3>
+                    <p className="text-muted-foreground leading-relaxed">
+                      {t('landing.features.deliverability.description')}
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-lg font-semibold text-foreground mb-3">
-                  {t('landing.features.deliverability.title')}
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {t('landing.features.deliverability.description')}
-                </p>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Why Choose DymaMail */}
-      <section className="py-20 bg-gradient-to-br from-primary/5 via-accent/5 to-background relative overflow-hidden">
-        <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-        <div className="container mx-auto px-6 relative z-10">
-          <div ref={whyChooseRef.ref} className={`text-center mb-16 animate-on-scroll ${whyChooseRef.isVisible ? 'visible' : ''}`}>
-            <h2 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-4">
+      {/* Why Choose DymaMail - Design épuré sans cartes */}
+      <section className="py-16 lg:py-20 bg-muted/30">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div ref={whyChooseRef.ref} className={`mb-12 animate-on-scroll ${whyChooseRef.isVisible ? 'visible' : ''}`}>
+            <h2 className="text-4xl lg:text-5xl font-heading font-bold text-foreground mb-4">
               {t('landing.whyChoose.title')}
             </h2>
-            <p className="text-xl text-muted-foreground mb-4">
+            <p className="text-lg text-muted-foreground max-w-2xl mb-12">
               {t('landing.whyChoose.subtitle')}
             </p>
-            <div className="w-24 h-1 bg-gradient-to-r from-transparent via-accent to-transparent mx-auto mt-4"></div>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {/* Interface multilingue */}
-            <Card className="hover-lift group transition-all duration-300">
-              <CardContent className="pt-8 pb-8">
-                <div className="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-all duration-300 group-hover:scale-110">
-                  <Languages className="h-8 w-8 text-primary group-hover:scale-110 transition-transform duration-300" />
+            
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
+              {/* Interface multilingue */}
+              <div className="flex gap-6 group">
+                <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <Languages className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-heading font-semibold text-foreground mb-3">
-                  {t('landing.whyChoose.points.multilingual.title')}
-                </h3>
-                <p className="text-muted-foreground">
-                  {t('landing.whyChoose.points.multilingual.description')}
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Prix compétitifs */}
-            <Card className="hover-lift group transition-all duration-300">
-              <CardContent className="pt-8 pb-8">
-                <div className="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/10 group-hover:bg-accent/20 transition-all duration-300 group-hover:scale-110">
-                  <DollarSign className="h-8 w-8 text-accent group-hover:scale-110 transition-transform duration-300" />
+                <div>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">
+                    {t('landing.whyChoose.points.multilingual.title')}
+                  </h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {t('landing.whyChoose.points.multilingual.description')}
+                  </p>
                 </div>
-                <h3 className="text-xl font-heading font-semibold text-foreground mb-3">
-                  {t('landing.whyChoose.points.pricing.title')}
-                </h3>
-                <p className="text-muted-foreground">
-                  {t('landing.whyChoose.points.pricing.description')}
-                </p>
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Support humain */}
-            <Card className="hover-lift group transition-all duration-300">
-              <CardContent className="pt-8 pb-8">
-                <div className="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-all duration-300 group-hover:scale-110">
-                  <Headphones className="h-8 w-8 text-primary group-hover:scale-110 transition-transform duration-300" />
+              {/* Prix compétitifs */}
+              <div className="flex gap-6 group">
+                <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <DollarSign className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-heading font-semibold text-foreground mb-3">
-                  {t('landing.whyChoose.points.support.title')}
-                </h3>
-                <p className="text-muted-foreground">
-                  {t('landing.whyChoose.points.support.description')}
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Sous-comptes pour agences */}
-            <Card className="hover-lift group transition-all duration-300">
-              <CardContent className="pt-8 pb-8">
-                <div className="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/10 group-hover:bg-accent/20 transition-all duration-300 group-hover:scale-110">
-                  <Users className="h-8 w-8 text-accent group-hover:scale-110 transition-transform duration-300" />
+                <div>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">
+                    {t('landing.whyChoose.points.pricing.title')}
+                  </h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {t('landing.whyChoose.points.pricing.description')}
+                  </p>
                 </div>
-                <h3 className="text-xl font-heading font-semibold text-foreground mb-3">
-                  {t('landing.whyChoose.points.subaccounts.title')}
-                </h3>
-                <p className="text-muted-foreground">
-                  {t('landing.whyChoose.points.subaccounts.description')}
-                </p>
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Plan gratuit + flexibilité */}
-            <Card className="hover-lift group transition-all duration-300 md:col-span-2 lg:col-span-1">
-              <CardContent className="pt-8 pb-8">
-                <div className="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-all duration-300 group-hover:scale-110">
-                  <Gift className="h-8 w-8 text-primary group-hover:scale-110 transition-transform duration-300" />
+              {/* Support humain */}
+              <div className="flex gap-6 group">
+                <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <Headphones className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-heading font-semibold text-foreground mb-3">
-                  {t('landing.whyChoose.points.flexible.title')}
-                </h3>
-                <p className="text-muted-foreground">
-                  {t('landing.whyChoose.points.flexible.description')}
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
+                <div>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">
+                    {t('landing.whyChoose.points.support.title')}
+                  </h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {t('landing.whyChoose.points.support.description')}
+                  </p>
+                </div>
+              </div>
 
-      {/* Product Overview */}
-      <section className="py-20 bg-gradient-to-br from-muted/30 to-background relative overflow-hidden">
-        <div className="container mx-auto px-6">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div ref={productRef.ref} className={`hidden md:block animate-on-scroll-left ${productRef.isVisible ? 'visible' : ''}`}>
-              <Card className="shadow-2xl hover-lift transition-all duration-300">
-                <CardContent className="p-0">
-                  <div className="aspect-video bg-gradient-to-br from-primary/20 via-accent/20 to-primary/20 rounded-lg flex items-center justify-center relative overflow-hidden">
-                    <div className="absolute inset-0 gradient-animated opacity-30"></div>
-                    <BarChart3 className="h-32 w-32 text-primary/60 relative z-10 animate-pulse-slow" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            <div ref={productRef.ref} className={`animate-on-scroll-right ${productRef.isVisible ? 'visible animate-delay-200' : ''}`}>
-              <h2 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-6">
-                {t('landing.product.title')}
-              </h2>
-              <p className="text-xl text-muted-foreground mb-6 leading-relaxed">
-                {t('landing.product.subtitle')}
-              </p>
-              <ul className="space-y-4">
-                <li className="flex items-start gap-3 group">
-                  <Check className="h-6 w-6 text-accent flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform duration-300" />
-                  <span className="text-muted-foreground group-hover:text-foreground transition-colors">{t('landing.product.features.overview')}</span>
-                </li>
-                <li className="flex items-start gap-3 group">
-                  <Check className="h-6 w-6 text-accent flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform duration-300" />
-                  <span className="text-muted-foreground group-hover:text-foreground transition-colors">{t('landing.product.features.graphs')}</span>
-                </li>
-                <li className="flex items-start gap-3 group">
-                  <Check className="h-6 w-6 text-accent flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform duration-300" />
-                  <span className="text-muted-foreground group-hover:text-foreground transition-colors">{t('landing.product.features.export')}</span>
-                </li>
-              </ul>
+              {/* Sous-comptes pour agences */}
+              <div className="flex gap-6 group">
+                <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">
+                    {t('landing.whyChoose.points.subaccounts.title')}
+                  </h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {t('landing.whyChoose.points.subaccounts.description')}
+                  </p>
+                </div>
+              </div>
+
+              {/* Plan gratuit + flexibilité */}
+              <div className="flex gap-6 group">
+                <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <Gift className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">
+                    {t('landing.whyChoose.points.flexible.title')}
+                  </h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {t('landing.whyChoose.points.flexible.description')}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="py-20 relative">
+      <section id="pricing" className="py-16 lg:py-20 relative">
         <div className="container mx-auto px-6">
-          <div ref={pricingRef.ref} className={`text-center mb-16 animate-on-scroll ${pricingRef.isVisible ? 'visible' : ''}`}>
+          <div ref={pricingRef.ref} className={`text-center mb-12 animate-on-scroll ${pricingRef.isVisible ? 'visible' : ''}`}>
             <h2 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-4">
               {t('landing.pricing.title')}
             </h2>
@@ -589,7 +559,7 @@ const Landing = () => {
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 bg-gradient-to-br from-primary via-primary/95 to-primary text-primary-foreground relative overflow-hidden">
+      <section className="py-16 lg:py-20 bg-gradient-to-br from-primary via-primary/95 to-primary text-primary-foreground relative overflow-hidden">
         <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-accent/10 to-transparent"></div>
         <div ref={ctaRef.ref} className={`container mx-auto px-6 text-center relative z-10 animate-on-scroll ${ctaRef.isVisible ? 'visible' : ''}`}>
