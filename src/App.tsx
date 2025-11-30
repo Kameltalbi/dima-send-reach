@@ -31,6 +31,8 @@ import TestEmail from "./pages/TestEmail";
 import Team from "./pages/Team";
 import Segmentation from "./pages/Segmentation";
 import Automatisations from "./pages/Automatisations";
+import Bounces from "./pages/Bounces";
+import CampaignAnalytics from "./pages/CampaignAnalytics";
 import { ErrorBoundary } from "./lib/error-boundary";
 
 const queryClient = new QueryClient();
@@ -59,6 +61,7 @@ const App = () => (
             <Route path="/listes/:id" element={<AppLayout><SubscriptionProtectedRoute><GestionListe /></SubscriptionProtectedRoute></AppLayout>} />
             <Route path="/campagnes" element={<AppLayout><SubscriptionProtectedRoute><Campagnes /></SubscriptionProtectedRoute></AppLayout>} />
             <Route path="/campagnes/nouvelle" element={<AppLayout><SubscriptionProtectedRoute><NouvelleCampagne /></SubscriptionProtectedRoute></AppLayout>} />
+            <Route path="/campagnes/:id/analytics" element={<AppLayout><SubscriptionProtectedRoute><CampaignAnalytics /></SubscriptionProtectedRoute></AppLayout>} />
             <Route path="/statistiques" element={<AppLayout><SubscriptionProtectedRoute><Statistiques /></SubscriptionProtectedRoute></AppLayout>} />
             <Route path="/templates" element={<AppLayout><SubscriptionProtectedRoute><Templates /></SubscriptionProtectedRoute></AppLayout>} />
             <Route path="/parametres" element={<AppLayout><SubscriptionProtectedRoute><Parametres /></SubscriptionProtectedRoute></AppLayout>} />
@@ -66,6 +69,7 @@ const App = () => (
             <Route path="/config-ses" element={<AppLayout><SubscriptionProtectedRoute><ConfigurationSES /></SubscriptionProtectedRoute></AppLayout>} />
             <Route path="/segmentation" element={<AppLayout><SubscriptionProtectedRoute><Segmentation /></SubscriptionProtectedRoute></AppLayout>} />
             <Route path="/automatisations" element={<AppLayout><SubscriptionProtectedRoute><Automatisations /></SubscriptionProtectedRoute></AppLayout>} />
+            <Route path="/bounces" element={<AppLayout><SubscriptionProtectedRoute><Bounces /></SubscriptionProtectedRoute></AppLayout>} />
             <Route path="/test-email" element={<AppLayout><SubscriptionProtectedRoute><TestEmail /></SubscriptionProtectedRoute></AppLayout>} />
             <Route path="/superadmin" element={<SuperAdminLayout><ProtectedRoute requiredRole="superadmin"><SuperAdmin /></ProtectedRoute></SuperAdminLayout>} />
             

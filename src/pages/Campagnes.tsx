@@ -30,7 +30,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, MoreVertical, Eye, Trash2, Mail, Calendar, Users, Filter } from "lucide-react";
+import { Plus, Search, MoreVertical, Eye, Trash2, Mail, Calendar, Users, Filter, BarChart3 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -288,6 +288,12 @@ const Campagnes = () => {
                                 <Eye className="h-4 w-4 mr-2" />
                                 Voir les détails
                               </DropdownMenuItem>
+                              {campaign.statut === "envoye" && (
+                                <DropdownMenuItem onClick={() => navigate(`/campagnes/${campaign.id}/analytics`)}>
+                                  <BarChart3 className="h-4 w-4 mr-2" />
+                                  Voir les analytics
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 className="text-destructive"

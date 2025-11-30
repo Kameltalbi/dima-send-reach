@@ -12,7 +12,8 @@ import {
   Crown,
   UsersRound,
   Filter,
-  Zap
+  Zap,
+  AlertTriangle
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -40,6 +41,7 @@ const menuItems = [
   { title: "Listes", url: "/listes", icon: ListChecks },
   { title: "Segmentation", url: "/segmentation", icon: Filter },
   { title: "Automatisations", url: "/automatisations", icon: Zap },
+  { title: "Bounces", url: "/bounces", icon: AlertTriangle },
   { title: "Statistiques", url: "/statistiques", icon: BarChart3 },
   { title: "Templates", url: "/templates", icon: FileText },
 ];

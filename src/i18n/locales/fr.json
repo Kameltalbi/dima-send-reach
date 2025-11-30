@@ -963,6 +963,152 @@
       "listAdded": "Ajouté à une liste",
       "custom": "Personnalisé"
     }
+  },
+  "bounces": {
+    "title": "Gestion des Bounces",
+    "subtitle": "Gérez les bounces et plaintes spam de vos emails",
+    "searchPlaceholder": "Rechercher par email ou raison...",
+    "filter": {
+      "type": "Type",
+      "status": "Statut",
+      "all": "Tous",
+      "processed": "Traités",
+      "unprocessed": "Non traités"
+    },
+    "type": {
+      "hard": "Hard bounce",
+      "soft": "Soft bounce",
+      "complaint": "Plainte spam",
+      "unknown": "Inconnu"
+    },
+    "stats": {
+      "total": "Total bounces",
+      "hard": "Hard bounces",
+      "soft": "Soft bounces",
+      "complaints": "Plaintes spam"
+    },
+    "table": {
+      "email": "Email",
+      "type": "Type",
+      "reason": "Raison",
+      "date": "Date",
+      "status": "Statut",
+      "actions": "Actions"
+    },
+    "processed": "Traité",
+    "unprocessed": "Non traité",
+    "deleteSuccess": "Bounce supprimé",
+    "deleteError": "Erreur lors de la suppression",
+    "processSuccess": "Bounce marqué comme traité",
+    "processError": "Erreur",
+    "confirmDelete": "Supprimer ce bounce ?",
+    "deleteWarning": "Cette action est irréversible. Le bounce sera supprimé définitivement.",
+    "noBounces": "Aucun bounce trouvé",
+    "pagination": "Page {{page}} sur {{total}} ({{count}} bounces)"
+  },
+  "unsubscribe": {
+    "processing": "Traitement en cours...",
+    "processingDesc": "Veuillez patienter pendant le traitement de votre demande.",
+    "preferences": {
+      "email": "Email: {{email}}",
+      "title": "Choisissez vos préférences",
+      "subtitle": "Vous pouvez vous désabonner de tous les emails ou choisir les types d'emails que vous souhaitez continuer à recevoir.",
+      "unsubscribeAll": "Me désabonner de tous les emails",
+      "unsubscribeAllDesc": "Vous ne recevrez plus aucun email de notre part",
+      "selective": "Choisir les types d'emails",
+      "selectiveDesc": "Choisissez les types d'emails que vous souhaitez continuer à recevoir",
+      "selectTypes": "Types d'emails à recevoir",
+      "newsletters": "Newsletters",
+      "promotions": "Promotions et offres",
+      "transactional": "Emails transactionnels",
+      "updates": "Mises à jour importantes",
+      "reason": "Raison (optionnel)",
+      "reasonPlaceholder": "Pourquoi vous désabonnez-vous ?",
+      "confirm": "Confirmer"
+    },
+    "success": {
+      "title": "Désabonnement réussi",
+      "subtitle": "Vous avez été désabonné avec succès.",
+      "alreadyTitle": "Déjà désabonné",
+      "alreadySubtitle": "Vous êtes déjà désabonné de nos emails.",
+      "message": "L'email {{email}} a été désabonné avec succès.",
+      "info": "Vous ne recevrez plus d'emails de notre part. Si vous changez d'avis, vous pouvez vous réabonner à tout moment.",
+      "alreadyInfo": "Vous êtes déjà désabonné de nos emails.",
+      "reSubscribe": "Si vous souhaitez vous réabonner, contactez notre support.",
+      "backHome": "Retour à l'accueil",
+      "contactSupport": "Contacter le support"
+    },
+    "error": {
+      "title": "Erreur de désabonnement",
+      "subtitle": "Une erreur s'est produite lors du traitement de votre demande.",
+      "invalidLink": "Lien de désabonnement invalide",
+      "message": "Code de référence: {{code}}"
+    },
+    "copyright": "© {{year}} DymaMail. Tous droits réservés."
+  },
+  "analytics": {
+    "title": "Analyses de Campagne",
+    "notFound": "Campagne non trouvée",
+    "backToCampaigns": "Retour aux campagnes",
+    "notSent": "Non envoyée",
+    "kpi": {
+      "sent": "Envoyés",
+      "total": "Total",
+      "openRate": "Taux d'ouverture",
+      "clickRate": "Taux de clic",
+      "clicks": "clics",
+      "unsubscribeRate": "Désabonnements",
+      "unsubscribed": "contacts"
+    },
+    "good": "Bon",
+    "toImprove": "À améliorer",
+    "tabs": {
+      "overview": "Vue d'ensemble",
+      "timeline": "Timeline",
+      "geography": "Géographie",
+      "engagement": "Engagement"
+    },
+    "charts": {
+      "timeline": "Évolution temporelle",
+      "timelineDesc": "Ouvertures et clics par heure",
+      "sent": "Envoyés",
+      "opened": "Ouverts",
+      "clicked": "Clics",
+      "distribution": "Répartition de l'engagement",
+      "distributionDesc": "Distribution des interactions",
+      "hourly": "Performance par heure",
+      "hourlyDesc": "Détail des ouvertures et clics",
+      "geography": "Performance par pays",
+      "geographyDesc": "Top 10 des pays par nombre d'envois",
+      "engagement": "Taux d'engagement",
+      "engagementDesc": "Répartition des interactions",
+      "metrics": "Métriques clés",
+      "metricsDesc": "Indicateurs de performance"
+    },
+    "metrics": {
+      "openRate": "Taux d'ouverture",
+      "clickRate": "Taux de clic",
+      "clickToOpen": "Taux de clic/ouverture",
+      "unsubscribeRate": "Taux de désabonnement"
+    },
+    "engaged": "Engagés",
+    "notOpened": "Non ouverts",
+    "export": {
+      "excel": "Excel",
+      "pdf": "PDF",
+      "success": "Export réussi",
+      "pdfSuccess": "Rapport généré",
+      "email": "Email",
+      "name": "Nom",
+      "sent": "Envoyé",
+      "opened": "Ouvert",
+      "clicked": "Cliqué",
+      "unsubscribed": "Désabonné",
+      "country": "Pays",
+      "city": "Ville",
+      "yes": "Oui",
+      "no": "Non"
+    }
   }
 }
 
