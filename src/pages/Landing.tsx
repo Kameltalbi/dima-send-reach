@@ -133,7 +133,7 @@ const Landing = () => {
               <div className="relative">
                 <img 
                   src="/dimaDima.png" 
-                  alt="DimaMail - Plateforme d'Email Marketing" 
+                  alt="DymaMail - Plateforme d'Email Marketing" 
                   className="w-full h-auto object-contain"
                 />
               </div>
@@ -247,7 +247,7 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Why Choose DimaMail */}
+      {/* Why Choose DymaMail */}
       <section className="py-20 bg-gradient-to-br from-primary/5 via-accent/5 to-background relative overflow-hidden">
         <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
         <div className="container mx-auto px-6 relative z-10">
@@ -646,7 +646,7 @@ const Landing = () => {
             </div>
           </div>
           <div className="border-t border-background/20 pt-8 text-center text-sm opacity-80">
-            <p>© 2025 DimaMail — All rights reserved. Made with 🇹🇳 in Tunis.</p>
+            <p>© 2025 DymaMail — All rights reserved. Made with 🇹🇳 in Tunis.</p>
           </div>
         </div>
       </footer>

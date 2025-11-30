@@ -242,7 +242,7 @@ const Support = () => {
               variant="outline" 
               className="w-full"
               onClick={() => {
-                window.location.href = "mailto:support@dimamail.com?subject=Support DimaMail";
+                window.location.href = "mailto:support@dimamail.com?subject=Support DymaMail";
               }}
             >
               support@dimamail.com
@@ -378,7 +378,7 @@ const Support = () => {
             </div>
           </div>
           <div className="border-t border-background/20 pt-8 text-center text-sm opacity-80">
-            <p>© {new Date().getFullYear()} DimaMail — All rights reserved. Made with 🇹🇳 in Tunis.</p>
+            <p>© {new Date().getFullYear()} DymaMail — All rights reserved. Made with 🇹🇳 in Tunis.</p>
           </div>
         </div>
       </footer>

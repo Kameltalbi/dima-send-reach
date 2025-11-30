@@ -39,9 +39,10 @@
   "landing": {
     "hero": {
       "title": "Send your email campaigns simply and effectively",
-      "subtitle": "DimaMail is the email marketing platform that allows you to send up to 1,000,000 emails per campaign, with real-time tracking.",
+      "subtitle": "DymaMail is the email marketing platform that allows you to send up to 1,000,000 emails per campaign, with real-time tracking.",
       "cta": "Create Free Account",
-      "pricing": "Discover Pricing"
+      "pricing": "Discover Pricing",
+      "emailPlaceholder": "Your business email"
     },
     "features": {
       "title": "Key Features",
@@ -72,7 +73,7 @@
       }
     },
     "whyChoose": {
-      "title": "Why choose DimaMail?",
+      "title": "Why choose DymaMail?",
       "subtitle": "The email marketing solution that makes the difference",
       "points": {
         "multilingual": {
@@ -179,12 +180,12 @@
     },
     "about": {
       "title": "A solution designed for professionals",
-      "description": "DimaMail was born from the desire to offer businesses a reliable and powerful email marketing solution. Simple, fast, and effective, DimaMail helps you stay connected with your customers, wherever they are.",
+      "description": "DymaMail was born from the desire to offer businesses a reliable and powerful email marketing solution. Simple, fast, and effective, DymaMail helps you stay connected with your customers, wherever they are.",
       "cta": "Contact Us"
     },
     "cta": {
       "title": "Start sending your campaigns today",
-      "subtitle": "Join the businesses that trust DimaMail for their communication.",
+      "subtitle": "Join the businesses that trust DymaMail for their communication.",
       "button": "Create Free Account"
     }
   },
@@ -262,7 +263,7 @@
     "faq": "Frequently Asked Questions"
   },
   "auth": {
-    "title": "DimaMail",
+    "title": "DymaMail",
     "subtitle": "Professional email marketing platform",
     "cardTitle": "Access your account",
     "cardDescription": "Sign in or create a new account",
@@ -282,7 +283,7 @@
     "registrationSuccessDesc": "You can now log in.",
     "registrationError": "Registration error",
     "loginSuccess": "Login successful!",
-    "loginSuccessDesc": "Welcome to DimaMail.",
+    "loginSuccessDesc": "Welcome to DymaMail.",
     "loginError": "Login error"
   },
   "dashboard": {
@@ -371,13 +372,13 @@
       }
     },
     "cta": {
-      "title": "Ready to get started with DimaMail?",
+      "title": "Ready to get started with DymaMail?",
       "subtitle": "Start free today. No credit card required.",
       "startFree": "Start for free",
       "contactSales": "Contact Sales"
     },
     "footer": {
-      "copyright": "© {{year}} DimaMail. All rights reserved.",
+      "copyright": "© {{year}} DymaMail. All rights reserved.",
       "support": "Support",
       "pricing": "Pricing"
     }
@@ -434,7 +435,7 @@
     "nextSteps": "Next steps:",
     "checkInstructions": {
       "title": "Check payment instructions:",
-      "libelle": "Make check payable to \"DimaMail\"",
+      "libelle": "Make check payable to \"DymaMail\"",
       "amount": "Amount: {{amount}} {{currency}}",
       "send": "Send check to: [Address to be completed]",
       "activate": "Your subscription will be activated upon receipt of check"
@@ -501,7 +502,7 @@
       "backHome": "Back to home",
       "contactSupport": "Contact support"
     },
-    "copyright": "© {{year}} DimaMail. All rights reserved."
+    "copyright": "© {{year}} DymaMail. All rights reserved."
   },
   "notFound": {
     "title": "404",
@@ -726,7 +727,7 @@
     "viewSubscription": "View Subscription",
     "checkInstructions": {
       "title": "Check Payment Instructions:",
-      "libelle": "Make check payable to \"DimaMail\"",
+      "libelle": "Make check payable to \"DymaMail\"",
       "amount": "Amount: {{amount}} {{currency}}",
       "send": "Mail to our business address",
       "activate": "Your subscription will be activated upon receipt"

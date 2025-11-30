@@ -13,10 +13,10 @@ const TestEmail = () => {
   const [loading, setLoading] = useState(false);
   const [testData, setTestData] = useState({
     to: "",
-    fromName: "DimaMail Test",
+    fromName: "DymaMail Test",
     fromEmail: "onboarding@resend.dev",
-    subject: "Email de test - DimaMail",
-    html: "<h1>Test d'envoi</h1><p>Ceci est un email de test envoyé depuis DimaMail.</p>",
+    subject: "Email de test - DymaMail",
+    html: "<h1>Test d'envoi</h1><p>Ceci est un email de test envoyé depuis DymaMail.</p>",
   });
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);

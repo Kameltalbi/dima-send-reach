@@ -30,7 +30,7 @@ const plans = [
       { text: "Anti-spam basique", included: true },
       { text: "Rétention 1 jour", included: true },
       { text: "Support Ticket uniquement", included: true },
-      { text: "Branding 'Powered by DimaMail'", included: true },
+      { text: "Branding 'Powered by DymaMail'", included: true },
       { text: "Automations", included: false },
       { text: "Segmentation", included: false },
       { text: "Warm-up", included: false },
@@ -505,7 +505,7 @@ const Pricing = () => {
             </div>
           </div>
           <div className="border-t border-background/20 pt-8 text-center text-sm opacity-80">
-            <p>© {new Date().getFullYear()} DimaMail — All rights reserved. Made with 🇹🇳 in Tunis.</p>
+            <p>© {new Date().getFullYear()} DymaMail — All rights reserved. Made with 🇹🇳 in Tunis.</p>
           </div>
         </div>
       </footer>

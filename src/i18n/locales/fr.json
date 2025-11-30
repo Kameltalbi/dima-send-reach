@@ -41,9 +41,10 @@
   "landing": {
     "hero": {
       "title": "Envoyez vos campagnes email simplement et efficacement",
-      "subtitle": "DimaMail est la plateforme d'email marketing qui vous permet d'envoyer jusqu'à 1 000 000 d'emails par campagne, avec un suivi en temps réel.",
+      "subtitle": "DymaMail est la plateforme d'email marketing qui vous permet d'envoyer jusqu'à 1 000 000 d'emails par campagne, avec un suivi en temps réel.",
       "cta": "Créer un compte gratuit",
-      "pricing": "Découvrir les tarifs"
+      "pricing": "Découvrir les tarifs",
+      "emailPlaceholder": "Votre email professionnel"
     },
     "features": {
       "title": "Fonctionnalités clés",
@@ -74,7 +75,7 @@
       }
     },
     "whyChoose": {
-      "title": "Pourquoi choisir DimaMail ?",
+      "title": "Pourquoi choisir DymaMail ?",
       "subtitle": "La solution d'email marketing qui fait la différence",
       "points": {
         "multilingual": {
@@ -181,12 +182,12 @@
     },
     "about": {
       "title": "Une solution conçue pour les professionnels",
-      "description": "DimaMail est né de la volonté d'offrir aux entreprises une solution d'email marketing fiable et puissante. Simple, rapide et efficace, DimaMail vous aide à rester connecté avec vos clients, où qu'ils soient.",
+      "description": "DymaMail est né de la volonté d'offrir aux entreprises une solution d'email marketing fiable et puissante. Simple, rapide et efficace, DymaMail vous aide à rester connecté avec vos clients, où qu'ils soient.",
       "cta": "Nous contacter"
     },
     "cta": {
       "title": "Commencez à envoyer vos campagnes dès aujourd'hui",
-      "subtitle": "Rejoignez les entreprises qui font confiance à DimaMail pour leur communication.",
+      "subtitle": "Rejoignez les entreprises qui font confiance à DymaMail pour leur communication.",
       "button": "Créer un compte gratuit"
     }
   },
@@ -319,7 +320,7 @@
     "faq": "Questions fréquentes"
   },
   "auth": {
-    "title": "DimaMail",
+    "title": "DymaMail",
     "subtitle": "Plateforme professionnelle d'email marketing",
     "cardTitle": "Accéder à votre compte",
     "cardDescription": "Connectez-vous ou créez un nouveau compte",
@@ -339,7 +340,7 @@
     "registrationSuccessDesc": "Vous pouvez maintenant vous connecter.",
     "registrationError": "Erreur d'inscription",
     "loginSuccess": "Connexion réussie !",
-    "loginSuccessDesc": "Bienvenue sur DimaMail.",
+    "loginSuccessDesc": "Bienvenue sur DymaMail.",
     "loginError": "Erreur de connexion"
   },
   "dashboard": {
@@ -485,13 +486,13 @@
       }
     },
     "cta": {
-      "title": "Prêt à démarrer avec DimaMail ?",
+      "title": "Prêt à démarrer avec DymaMail ?",
       "subtitle": "Commencez gratuitement dès aujourd'hui. Aucune carte bancaire requise.",
       "startFree": "Commencer gratuitement",
       "contactSales": "Contacter les ventes"
     },
     "footer": {
-      "copyright": "© {{year}} DimaMail. Tous droits réservés.",
+      "copyright": "© {{year}} DymaMail. Tous droits réservés.",
       "support": "Support",
       "pricing": "Tarifs"
     }
@@ -548,7 +549,7 @@
     "nextSteps": "Prochaines étapes :",
     "checkInstructions": {
       "title": "Instructions pour le paiement par chèque :",
-      "libelle": "Libellez le chèque à l'ordre de \"DimaMail\"",
+      "libelle": "Libellez le chèque à l'ordre de \"DymaMail\"",
       "amount": "Montant : {{amount}} {{currency}}",
       "send": "Envoyez le chèque à : [Adresse à compléter]",
       "activate": "Votre abonnement sera activé dès réception du chèque"
@@ -615,7 +616,7 @@
       "backHome": "Retour à l'accueil",
       "contactSupport": "Contacter le support"
     },
-    "copyright": "© {{year}} DimaMail. Tous droits réservés."
+    "copyright": "© {{year}} DymaMail. Tous droits réservés."
   },
   "notFound": {
     "title": "404",
@@ -840,7 +841,7 @@
     "viewSubscription": "Voir l'abonnement",
     "checkInstructions": {
       "title": "Instructions pour le paiement par chèque :",
-      "libelle": "Libeller le chèque à l'ordre de \"DimaMail\"",
+      "libelle": "Libeller le chèque à l'ordre de \"DymaMail\"",
       "amount": "Montant : {{amount}} {{currency}}",
       "send": "Envoyer à notre adresse professionnelle",
       "activate": "Votre abonnement sera activé dès réception"
