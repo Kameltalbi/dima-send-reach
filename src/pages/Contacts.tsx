@@ -1802,8 +1802,8 @@ const Contacts = () => {
                   <Checkbox
                     id="add-to-list"
                     checked={addToListEnabled}
-                    onCheckedChange={(checked) => {
-                      setAddToListEnabled(checked);
+                onCheckedChange={(checked) => {
+                      setAddToListEnabled(checked === true);
                       if (!checked) {
                         // Si on décoche, réinitialiser tout
                         setSelectedListId("");
