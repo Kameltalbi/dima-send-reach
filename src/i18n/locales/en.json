@@ -155,7 +155,7 @@
         "pro": {
           "name": "Pro",
           "description": "For e-commerce and active businesses",
-          "price": "170 DT",
+          "price": "150 DT",
           "period": "/month",
           "features": {
             "emails": "50,000 emails / month",
@@ -167,7 +167,7 @@
         "business": {
           "name": "Business",
           "description": "For large SMEs and institutions",
-          "price": "700 DT",
+          "price": "330 DT",
           "period": "/month",
           "features": {
             "emails": "100,000 emails / month",

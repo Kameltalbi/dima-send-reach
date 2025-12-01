@@ -367,8 +367,8 @@ const Landing = () => {
               <CardContent className="pt-8 pb-8">
                 <h3 className="text-2xl font-heading font-bold text-foreground mb-2">{t('landing.pricing.plans.free.name')}</h3>
                 <p className="text-muted-foreground mb-6 text-sm">{t('landing.pricing.plans.free.description')}</p>
-                <p className="text-3xl font-bold text-foreground mb-6">
-                  {t('landing.pricing.plans.free.price')}<span className="text-lg font-normal text-muted-foreground">{t('landing.pricing.plans.free.period')}</span>
+                <p className="text-2xl md:text-3xl font-bold text-foreground mb-6">
+                  {t('landing.pricing.plans.free.price')}<span className="text-sm md:text-base font-normal text-muted-foreground ml-1">{t('landing.pricing.plans.free.period')}</span>
                 </p>
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-start gap-2">
@@ -398,8 +398,8 @@ const Landing = () => {
                 <div className="mb-6">
                   <div className="flex flex-col items-center">
                     <div className="flex items-baseline">
-                      <span className="text-4xl font-bold text-foreground">{t('landing.pricing.plans.starter.price')}</span>
-                      <span className="text-lg font-normal text-muted-foreground ml-2">{t('landing.pricing.plans.starter.period')}</span>
+                      <span className="text-2xl md:text-3xl font-bold text-foreground">{t('landing.pricing.plans.starter.price')}</span>
+                      <span className="text-sm md:text-base font-normal text-muted-foreground ml-1">{t('landing.pricing.plans.starter.period')}</span>
                     </div>
                     {t('landing.pricing.plans.starter.annualPrice') && (
                       <div className="mt-2 text-xs text-muted-foreground">
@@ -442,8 +442,8 @@ const Landing = () => {
                 <div className="mb-6">
                   <div className="flex flex-col items-center">
                     <div className="flex items-baseline">
-                      <span className="text-4xl font-bold text-foreground">{t('landing.pricing.plans.essential.price')}</span>
-                      <span className="text-lg font-normal text-muted-foreground ml-2">{t('landing.pricing.plans.essential.period')}</span>
+                      <span className="text-2xl md:text-3xl font-bold text-foreground">{t('landing.pricing.plans.essential.price')}</span>
+                      <span className="text-sm md:text-base font-normal text-muted-foreground ml-1">{t('landing.pricing.plans.essential.period')}</span>
                     </div>
                     {t('landing.pricing.plans.essential.annualPrice') && (
                       <div className="mt-2 text-xs text-muted-foreground">
@@ -480,8 +480,8 @@ const Landing = () => {
               <CardContent className="pt-8 pb-8">
                 <h3 className="text-2xl font-heading font-bold text-foreground mb-2">{t('landing.pricing.plans.pro.name')}</h3>
                 <p className="text-muted-foreground mb-6 text-sm">{t('landing.pricing.plans.pro.description')}</p>
-                <p className="text-3xl font-bold text-foreground mb-6">
-                  {t('landing.pricing.plans.pro.price')}<span className="text-lg font-normal text-muted-foreground">{t('landing.pricing.plans.pro.period')}</span>
+                <p className="text-2xl md:text-3xl font-bold text-foreground mb-6">
+                  {t('landing.pricing.plans.pro.price')}<span className="text-sm md:text-base font-normal text-muted-foreground ml-1">{t('landing.pricing.plans.pro.period')}</span>
                 </p>
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-start gap-2">
@@ -508,8 +508,8 @@ const Landing = () => {
               <CardContent className="pt-8 pb-8">
                 <h3 className="text-2xl font-heading font-bold text-foreground mb-2">{t('landing.pricing.plans.business.name')}</h3>
                 <p className="text-muted-foreground mb-6 text-sm">{t('landing.pricing.plans.business.description')}</p>
-                <p className="text-3xl font-bold text-foreground mb-6">
-                  {t('landing.pricing.plans.business.price')}<span className="text-lg font-normal text-muted-foreground">{t('landing.pricing.plans.business.period')}</span>
+                <p className="text-2xl md:text-3xl font-bold text-foreground mb-6">
+                  {t('landing.pricing.plans.business.price')}<span className="text-sm md:text-base font-normal text-muted-foreground ml-1">{t('landing.pricing.plans.business.period')}</span>
                 </p>
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-start gap-2">

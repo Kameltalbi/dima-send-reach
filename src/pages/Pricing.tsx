@@ -88,7 +88,7 @@ const plans = [
   },
   {
     name: "Pro",
-    price: "170 DT",
+    price: "150 DT",
     period: "/mois",
     description: "Pour l'e-commerce et entreprises actives",
     emails: "50,000 e-mails / mois",
@@ -111,7 +111,7 @@ const plans = [
   },
   {
     name: "Business",
-    price: "700 DT",
+    price: "330 DT",
     period: "/mois",
     description: "Pour les grandes PME et institutions",
     emails: "100,000 e-mails / mois",
@@ -278,9 +278,9 @@ const Pricing = () => {
                 <div className="mt-6">
                   <div className="flex flex-col items-center">
                     <div className="flex items-baseline">
-                      <span className={`text-5xl font-bold ${plan.popular ? 'text-primary' : 'text-foreground'}`}>{plan.price}</span>
+                      <span className={`text-3xl md:text-4xl font-bold ${plan.popular ? 'text-primary' : 'text-foreground'}`}>{plan.price}</span>
                       {plan.period && (
-                        <span className="text-muted-foreground ml-2 text-xl">{plan.period}</span>
+                        <span className="text-muted-foreground ml-1 text-base md:text-lg">{plan.period}</span>
                       )}
                     </div>
                     {plan.annualPrice && (
