@@ -72,6 +72,8 @@ const Contacts = () => {
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
   const [deleteProgress, setDeleteProgress] = useState(0);
+  const [bulkAssignProgress, setBulkAssignProgress] = useState(0);
+  const [isAssigning, setIsAssigning] = useState(false);
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [importProgress, setImportProgress] = useState(0);
   const [isImporting, setIsImporting] = useState(false);
@@ -422,11 +424,14 @@ const Contacts = () => {
   // Mutation pour assigner plusieurs contacts à une liste
   const bulkAssignToListMutation = useMutation({
     mutationFn: async ({ contactIds, listId, assignAll }: { contactIds: string[]; listId: string; assignAll?: boolean }) => {
+      setIsAssigning(true);
+      setBulkAssignProgress(0);
+
       if (assignAll) {
         // Mode "tous les contacts" : on récupère tous les IDs qui correspondent aux filtres
         let query = supabase
           .from("contacts")
-          .select("id")
+          .select("id, email")
           .eq("user_id", user?.id);
 
         if (statusFilter !== "all") {
@@ -452,19 +457,38 @@ const Contacts = () => {
         throw new Error("Aucun contact à assigner");
       }
 
-      // Pour les grands volumes, on insère directement par lots avec gestion des conflits
-      // au lieu de vérifier d'abord les existants (ce qui causerait des erreurs URL trop longue)
+      // Récupérer les emails des contacts à assigner pour vérifier les doublons par email
       const batchSize = 500;
       const batches: string[][] = [];
       for (let i = 0; i < contactIds.length; i += batchSize) {
         batches.push(contactIds.slice(i, i + batchSize));
       }
 
+      // Récupérer tous les emails déjà présents dans la liste
+      const { data: existingListContacts } = await supabase
+        .from("list_contacts")
+        .select("contact_id, contacts!inner(email)")
+        .eq("list_id", listId);
+
+      const existingEmails = new Set(
+        existingListContacts?.map((lc: any) => lc.contacts?.email?.toLowerCase()) || []
+      );
+
       let totalAssigned = 0;
       let totalSkipped = 0;
+      let totalEmailDuplicates = 0;
+      let processedBatches = 0;
 
       for (const batch of batches) {
-        // Pour chaque lot, vérifier les contacts existants (lot par lot pour éviter URL trop longue)
+        // Récupérer les emails des contacts de ce lot
+        const { data: batchContacts } = await supabase
+          .from("contacts")
+          .select("id, email")
+          .in("id", batch);
+
+        const contactEmailMap = new Map(batchContacts?.map(c => [c.id, c.email?.toLowerCase()]) || []);
+
+        // Vérifier les contacts existants par ID (lot par lot)
         const { data: existing } = await supabase
           .from("list_contacts")
           .select("contact_id")
@@ -472,9 +496,27 @@ const Contacts = () => {
           .in("contact_id", batch);
 
         const existingIds = new Set(existing?.map(e => e.contact_id) || []);
-        const newContactIds = batch.filter(id => !existingIds.has(id));
 
-        totalSkipped += existingIds.size;
+        // Filtrer : exclure les contacts déjà présents par ID ou par email
+        const newContactIds: string[] = [];
+        for (const id of batch) {
+          if (existingIds.has(id)) {
+            totalSkipped++;
+            continue;
+          }
+
+          const email = contactEmailMap.get(id);
+          if (email && existingEmails.has(email)) {
+            totalEmailDuplicates++;
+            continue;
+          }
+
+          // Ajouter l'email aux emails existants pour éviter les doublons dans le même lot
+          if (email) {
+            existingEmails.add(email);
+          }
+          newContactIds.push(id);
+        }
 
         if (newContactIds.length > 0) {
           const contactsToInsert = newContactIds.map(contactId => ({
@@ -489,24 +531,45 @@ const Contacts = () => {
           if (error) throw error;
           totalAssigned += newContactIds.length;
         }
+
+        processedBatches++;
+        setBulkAssignProgress(Math.round((processedBatches / batches.length) * 100));
       }
 
       return {
         assigned: totalAssigned,
         skipped: totalSkipped,
+        emailDuplicates: totalEmailDuplicates,
       };
     },
     onSuccess: (data) => {
-      if (data.skipped > 0) {
-        toast.success(`${data.assigned} contact(s) assigné(s), ${data.skipped} déjà présent(s)`);
-      } else {
-        toast.success(`${data.assigned} contact(s) assigné(s) à la liste`);
+      setIsAssigning(false);
+      setBulkAssignProgress(100);
+      
+      const messages: string[] = [];
+      if (data.assigned > 0) {
+        messages.push(`${data.assigned} contact(s) assigné(s)`);
       }
+      if (data.skipped > 0) {
+        messages.push(`${data.skipped} déjà présent(s)`);
+      }
+      if (data.emailDuplicates > 0) {
+        messages.push(`${data.emailDuplicates} doublon(s) email ignoré(s)`);
+      }
+      
+      if (messages.length > 0) {
+        toast.success(messages.join(", "));
+      } else {
+        toast.info("Aucun contact à assigner");
+      }
+      
       setIsBulkAssignOpen(false);
       setSelectedContacts([]);
       setSelectAllMode(false);
     },
     onError: (error: any) => {
+      setIsAssigning(false);
+      setBulkAssignProgress(0);
       console.error("Erreur assignation en masse:", error);
       if (error.message === "Tous les contacts sont déjà dans cette liste") {
         toast.error(error.message);
@@ -1632,18 +1695,35 @@ const Contacts = () => {
       </Dialog>
 
       {/* Dialog assignation en masse à une liste */}
-      <Dialog open={isBulkAssignOpen} onOpenChange={setIsBulkAssignOpen}>
+      <Dialog open={isBulkAssignOpen} onOpenChange={(open) => {
+        if (!isAssigning) {
+          setIsBulkAssignOpen(open);
+          if (!open) {
+            setBulkAssignProgress(0);
+          }
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
               Assigner {selectAllMode ? `${totalCount} contacts` : `${selectedContacts.length} contact(s)`} à une liste
             </DialogTitle>
             <DialogDescription>
-              Sélectionnez une liste pour y ajouter les contacts {selectAllMode ? "filtrés" : "sélectionnés"}
+              {isAssigning 
+                ? "Assignation en cours... Les doublons par email sont automatiquement ignorés."
+                : `Sélectionnez une liste pour y ajouter les contacts ${selectAllMode ? "filtrés" : "sélectionnés"}`
+              }
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            {!lists || lists.length === 0 ? (
+            {isAssigning ? (
+              <div className="space-y-4">
+                <Progress value={bulkAssignProgress} className="h-3" />
+                <p className="text-center text-sm text-muted-foreground">
+                  {bulkAssignProgress}% complété
+                </p>
+              </div>
+            ) : !lists || lists.length === 0 ? (
               <div className="text-center py-8">
                 <ListPlus className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                 <p className="text-muted-foreground text-sm">
@@ -1676,9 +1756,11 @@ const Contacts = () => {
               variant="outline"
               onClick={() => {
                 setIsBulkAssignOpen(false);
+                setBulkAssignProgress(0);
               }}
+              disabled={isAssigning}
             >
-              Annuler
+              {isAssigning ? "Veuillez patienter..." : "Annuler"}
             </Button>
           </DialogFooter>
         </DialogContent>
