@@ -13,18 +13,24 @@ export interface ContactQuota {
   isBlocked: boolean;
 }
 
+interface QuotaResponse {
+  limit: number | null;
+  used: number;
+  remaining: number | null;
+}
+
 export const useContactQuota = () => {
   const { user } = useAuth();
 
   // Récupérer le quota de contacts depuis la fonction SQL
   const { data: quotaData, isLoading } = useQuery({
     queryKey: ["contact-quota", user?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<QuotaResponse | null> => {
       if (!user) return null;
 
-      const { data, error } = await supabase.rpc("get_contact_quota", {
-        p_user_id: user.id,
-      });
+      // Appeler la fonction RPC directement avec le client
+      const { data, error } = await supabase
+        .rpc("get_contact_quota", { p_user_id: user.id } as unknown as Record<string, unknown>);
 
       if (error) {
         console.error("Erreur lors de la récupération du quota:", error);
@@ -37,7 +43,9 @@ export const useContactQuota = () => {
         return { limit: null, used: 0, remaining: null };
       }
       
-      return data as { limit: number | null; used: number; remaining: number | null };
+      // Cast le résultat JSON
+      const result = data as unknown as QuotaResponse;
+      return result;
     },
     enabled: !!user,
     refetchOnWindowFocus: true,
@@ -93,7 +101,7 @@ export const useContactQuota = () => {
       isAtLimit,
       isBlocked,
     };
-  }, [quotaData]);
+  }, [quotaData, isLoading]);
 
   // Vérifier si l'utilisateur peut ajouter un nombre donné de contacts
   const canAddContacts = (count: number): boolean => {
@@ -113,4 +121,3 @@ export const useContactQuota = () => {
     canAddContacts,
   };
 };
-

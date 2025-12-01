@@ -49,7 +49,7 @@ serve(async (req) => {
       );
     }
 
-    const results = [];
+    const results: Array<{ automation_id: string; automation_name?: string; contacts_processed?: number; error?: string }> = [];
 
     // Traiter chaque automatisation
     for (const automation of automations) {
@@ -134,11 +134,12 @@ serve(async (req) => {
           automation_name: automation.nom,
           contacts_processed: contacts.length,
         });
-      } catch (error) {
-        console.error(`Error processing automation ${automation.id}:`, error);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Unknown error";
+        console.error(`Error processing automation ${automation.id}:`, err);
         results.push({
           automation_id: automation.id,
-          error: error.message,
+          error: errorMessage,
         });
       }
     }
@@ -154,11 +155,12 @@ serve(async (req) => {
         status: 200,
       }
     );
-  } catch (error) {
-    console.error("Error processing automations:", error);
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    console.error("Error processing automations:", err);
     return new Response(
       JSON.stringify({
-        error: error.message,
+        error: errorMessage,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -170,11 +172,11 @@ serve(async (req) => {
 
 // Trouver les contacts qui correspondent au déclencheur
 async function findTriggeredContacts(
-  supabaseClient: any,
+  supabaseClient: ReturnType<typeof createClient>,
   triggerType: string,
-  triggerConfig: Record<string, any>,
+  triggerConfig: Record<string, unknown>,
   userId: string
-): Promise<any[]> {
+): Promise<Array<{ id: string; email: string; nom: string; prenom: string }>> {
   let query = supabaseClient
     .from("contacts")
     .select("*")
@@ -199,10 +201,10 @@ async function findTriggeredContacts(
         const { data: listContacts } = await supabaseClient
           .from("list_contacts")
           .select("contact_id")
-          .eq("list_id", triggerConfig.list_id);
+          .eq("list_id", triggerConfig.list_id as string);
 
         if (listContacts && listContacts.length > 0) {
-          const contactIds = listContacts.map((lc: any) => lc.contact_id);
+          const contactIds = listContacts.map((lc: { contact_id: string }) => lc.contact_id);
           query = query.in("id", contactIds);
         } else {
           return [];
@@ -235,11 +237,11 @@ async function findTriggeredContacts(
 
 // Traiter une étape d'automatisation
 async function processAutomationStep(
-  supabaseClient: any,
-  automation: any,
-  steps: any[],
+  supabaseClient: ReturnType<typeof createClient>,
+  automation: { id: string; user_id: string; nom: string; total_sent?: number },
+  steps: Array<{ step_type: string; step_config: Record<string, unknown> }>,
   execution: AutomationExecution,
-  contact: any
+  contact: { id: string; email: string; nom: string; prenom: string }
 ) {
   const currentStepIndex = execution.current_step - 1;
   const currentStep = steps[currentStepIndex];
@@ -283,7 +285,7 @@ async function processAutomationStep(
         .eq("id", automation.id);
     } else if (currentStep.step_type === "wait") {
       // Calculer la prochaine date d'exécution
-      const waitDays = currentStep.step_config.days || 1;
+      const waitDays = (currentStep.step_config.days as number) || 1;
       const nextExecution = new Date();
       nextExecution.setDate(nextExecution.getDate() + waitDays);
 
@@ -308,7 +310,7 @@ async function processAutomationStep(
 
       // Si la prochaine étape est un "wait", calculer la date
       if (nextStep.step_type === "wait") {
-        const waitDays = nextStep.step_config.days || 1;
+        const waitDays = (nextStep.step_config.days as number) || 1;
         const nextDate = new Date();
         nextDate.setDate(nextDate.getDate() + waitDays);
         nextExecutionAt = nextDate.toISOString();
@@ -332,8 +334,8 @@ async function processAutomationStep(
         })
         .eq("id", execution.id);
     }
-  } catch (error) {
-    console.error(`Error executing step ${currentStepIndex + 1}:`, error);
+  } catch (err) {
+    console.error(`Error executing step ${currentStepIndex + 1}:`, err);
     await supabaseClient
       .from("automation_executions")
       .update({
@@ -345,12 +347,12 @@ async function processAutomationStep(
 
 // Exécuter une étape d'envoi d'email
 async function executeSendEmailStep(
-  supabaseClient: any,
-  automation: any,
-  step: any,
-  contact: any
+  supabaseClient: ReturnType<typeof createClient>,
+  automation: { id: string; user_id: string; nom: string },
+  step: { step_config: Record<string, unknown> },
+  contact: { email: string; nom: string; prenom: string }
 ) {
-  const templateId = step.step_config.template_id;
+  const templateId = step.step_config.template_id as string;
   if (!templateId) {
     throw new Error("Template ID is required for send_email step");
   }
@@ -406,4 +408,3 @@ async function executeSendEmailStep(
     throw new Error(`Failed to send email: ${errorText}`);
   }
 }
-

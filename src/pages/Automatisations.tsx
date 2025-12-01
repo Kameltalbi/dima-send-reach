@@ -37,12 +37,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface AutomationStep {
   step_type: string;
-  step_config: Record<string, any>;
+  step_config: Record<string, unknown>;
 }
 
 interface Automation {
@@ -50,11 +49,20 @@ interface Automation {
   nom: string;
   description: string | null;
   trigger_type: string;
-  trigger_config: Record<string, any>;
+  trigger_config: Record<string, unknown>;
   is_active: boolean;
-  total_sent: number;
-  total_opened: number;
-  total_clicked: number;
+  total_sent?: number;
+  total_opened?: number;
+  total_clicked?: number;
+  created_at: string;
+}
+
+interface AutomationStepDB {
+  id: string;
+  automation_id: string;
+  step_order: number;
+  step_type: string;
+  step_config: Record<string, unknown>;
   created_at: string;
 }
 
@@ -71,7 +79,7 @@ const Automatisations = () => {
     nom: "",
     description: "",
     trigger_type: "contact_added",
-    trigger_config: {} as Record<string, any>,
+    trigger_config: {} as Record<string, unknown>,
     steps: [] as AutomationStep[],
   });
 
@@ -82,11 +90,11 @@ const Automatisations = () => {
       const { data, error } = await supabase
         .from("automations")
         .select("*")
-        .eq("user_id", user?.id)
+        .eq("user_id", user?.id as string)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as Automation[];
+      return (data || []) as unknown as Automation[];
     },
     enabled: !!user,
   });
@@ -98,7 +106,7 @@ const Automatisations = () => {
       const { data, error } = await supabase
         .from("templates")
         .select("id, nom")
-        .eq("user_id", user?.id)
+        .eq("user_id", user?.id as string)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -114,7 +122,7 @@ const Automatisations = () => {
       const { data, error } = await supabase
         .from("lists")
         .select("id, nom")
-        .eq("user_id", user?.id)
+        .eq("user_id", user?.id as string)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -135,16 +143,18 @@ const Automatisations = () => {
           description: data.description || null,
           trigger_type: data.trigger_type,
           trigger_config: data.trigger_config,
-        })
+        } as Record<string, unknown>)
         .select()
         .single();
 
       if (automationError) throw automationError;
 
+      const automationData = automation as unknown as Automation;
+
       // Créer les étapes
-      if (data.steps.length > 0 && automation) {
+      if (data.steps.length > 0 && automationData) {
         const stepsToInsert = data.steps.map((step, index) => ({
-          automation_id: automation.id,
+          automation_id: automationData.id,
           step_order: index + 1,
           step_type: step.step_type,
           step_config: step.step_config,
@@ -152,12 +162,12 @@ const Automatisations = () => {
 
         const { error: stepsError } = await supabase
           .from("automation_steps")
-          .insert(stepsToInsert);
+          .insert(stepsToInsert as unknown as Record<string, unknown>[]);
 
         if (stepsError) throw stepsError;
       }
 
-      return automation;
+      return automationData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["automations"] });
@@ -165,7 +175,7 @@ const Automatisations = () => {
       setIsCreateOpen(false);
       resetForm();
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || t("automations.createError") || "Erreur lors de la création");
     },
   });
@@ -181,7 +191,7 @@ const Automatisations = () => {
           description: data.description || null,
           trigger_type: data.trigger_type,
           trigger_config: data.trigger_config,
-        })
+        } as Record<string, unknown>)
         .eq("id", data.id);
 
       if (automationError) throw automationError;
@@ -205,7 +215,7 @@ const Automatisations = () => {
 
         const { error: stepsError } = await supabase
           .from("automation_steps")
-          .insert(stepsToInsert);
+          .insert(stepsToInsert as unknown as Record<string, unknown>[]);
 
         if (stepsError) throw stepsError;
       }
@@ -218,7 +228,7 @@ const Automatisations = () => {
       setIsEditOpen(false);
       resetForm();
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || t("automations.updateError") || "Erreur lors de la mise à jour");
     },
   });
@@ -228,7 +238,7 @@ const Automatisations = () => {
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
       const { error } = await supabase
         .from("automations")
-        .update({ is_active })
+        .update({ is_active } as Record<string, unknown>)
         .eq("id", id);
 
       if (error) throw error;
@@ -239,7 +249,7 @@ const Automatisations = () => {
         t("automations.toggleSuccess") || "Statut de l'automatisation mis à jour"
       );
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || t("automations.toggleError") || "Erreur");
     },
   });
@@ -255,7 +265,7 @@ const Automatisations = () => {
       toast.success(t("automations.deleteSuccess") || "Automatisation supprimée");
       setIsDeleteOpen(false);
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || t("automations.deleteError") || "Erreur lors de la suppression");
     },
   });
@@ -289,7 +299,7 @@ const Automatisations = () => {
     });
   };
 
-  const handleStepConfigChange = (index: number, config: Record<string, any>) => {
+  const handleStepConfigChange = (index: number, config: Record<string, unknown>) => {
     const newSteps = [...formData.steps];
     newSteps[index] = { ...newSteps[index], step_config: { ...newSteps[index].step_config, ...config } };
     setFormData({ ...formData, steps: newSteps });
@@ -313,11 +323,12 @@ const Automatisations = () => {
       .order("step_order");
 
     if (steps) {
+      const stepsData = steps as unknown as AutomationStepDB[];
       setFormData((prev) => ({
         ...prev,
-        steps: steps.map((s) => ({
+        steps: stepsData.map((s) => ({
           step_type: s.step_type,
-          step_config: s.step_config,
+          step_config: s.step_config as Record<string, unknown>,
         })),
       }));
     }
@@ -460,7 +471,7 @@ const Automatisations = () => {
                     <div className="flex gap-2 text-xs">
                       <Badge variant="secondary">
                         <Mail className="h-3 w-3 mr-1" />
-                        {automation.total_sent}
+                        {automation.total_sent || 0}
                       </Badge>
                     </div>
                   </div>
@@ -499,7 +510,7 @@ const Automatisations = () => {
           resetForm();
         }
       }}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {selectedAutomation
@@ -508,91 +519,82 @@ const Automatisations = () => {
             </DialogTitle>
             <DialogDescription>
               {t("automations.dialogDescription") ||
-                "Configurez le déclencheur et les étapes de votre workflow"}
+                "Configurez les détails de votre automatisation"}
             </DialogDescription>
           </DialogHeader>
 
           <Tabs defaultValue="general" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="general">
-                {t("automations.general") || "Général"}
-              </TabsTrigger>
-              <TabsTrigger value="trigger">
-                {t("automations.trigger") || "Déclencheur"}
-              </TabsTrigger>
-              <TabsTrigger value="steps">
-                {t("automations.steps") || "Étapes"}
-              </TabsTrigger>
+              <TabsTrigger value="general">{t("automations.tabs.general") || "Général"}</TabsTrigger>
+              <TabsTrigger value="trigger">{t("automations.tabs.trigger") || "Déclencheur"}</TabsTrigger>
+              <TabsTrigger value="steps">{t("automations.tabs.steps") || "Étapes"}</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="general" className="space-y-4">
-              <div>
-                <Label htmlFor="nom">{t("automations.name") || "Nom"} *</Label>
+            <TabsContent value="general" className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="nom">{t("automations.name") || "Nom"}</Label>
                 <Input
                   id="nom"
                   value={formData.nom}
                   onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
                   placeholder={t("automations.namePlaceholder") || "Ex: Email de bienvenue"}
-                  className="mt-2"
                 />
               </div>
-
-              <div>
-                <Label htmlFor="description">
-                  {t("automations.description") || "Description"} (optionnel)
-                </Label>
+              <div className="space-y-2">
+                <Label htmlFor="description">{t("automations.description") || "Description"}</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder={t("automations.descriptionPlaceholder") || "Description de l'automatisation"}
-                  className="mt-2"
-                  rows={3}
+                  placeholder={t("automations.descriptionPlaceholder") || "Description de l'automatisation..."}
                 />
               </div>
             </TabsContent>
 
-            <TabsContent value="trigger" className="space-y-4">
-              <div>
-                <Label>{t("automations.triggerType") || "Type de déclencheur"} *</Label>
+            <TabsContent value="trigger" className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label>{t("automations.triggerType") || "Type de déclencheur"}</Label>
                 <Select
                   value={formData.trigger_type}
-                  onValueChange={(value) => {
-                    setFormData({
-                      ...formData,
-                      trigger_type: value,
-                      trigger_config: {},
-                    });
-                  }}
+                  onValueChange={(value) => setFormData({ ...formData, trigger_type: value, trigger_config: {} })}
                 >
-                  <SelectTrigger className="mt-2">
+                  <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="contact_added">
-                      {t("automations.trigger.contactAdded") || "Contact ajouté"}
-                    </SelectItem>
-                    <SelectItem value="contact_subscribed">
-                      {t("automations.trigger.contactSubscribed") || "Contact abonné"}
+                      <div className="flex items-center">
+                        <Users className="h-4 w-4 mr-2" />
+                        {t("automations.trigger.contactAdded") || "Contact ajouté"}
+                      </div>
                     </SelectItem>
                     <SelectItem value="list_added">
-                      {t("automations.trigger.listAdded") || "Ajouté à une liste"}
+                      <div className="flex items-center">
+                        <Tag className="h-4 w-4 mr-2" />
+                        {t("automations.trigger.listAdded") || "Ajouté à une liste"}
+                      </div>
                     </SelectItem>
                     <SelectItem value="campaign_opened">
-                      {t("automations.trigger.campaignOpened") || "Email ouvert"}
+                      <div className="flex items-center">
+                        <Mail className="h-4 w-4 mr-2" />
+                        {t("automations.trigger.campaignOpened") || "Email ouvert"}
+                      </div>
                     </SelectItem>
                     <SelectItem value="campaign_clicked">
-                      {t("automations.trigger.campaignClicked") || "Email cliqué"}
+                      <div className="flex items-center">
+                        <Mail className="h-4 w-4 mr-2" />
+                        {t("automations.trigger.campaignClicked") || "Email cliqué"}
+                      </div>
                     </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {formData.trigger_type === "list_added" && (
-                <div>
+                <div className="space-y-2">
                   <Label>{t("automations.selectList") || "Sélectionner une liste"}</Label>
                   <Select
-                    value={formData.trigger_config.list_id || ""}
+                    value={formData.trigger_config.list_id as string || ""}
                     onValueChange={(value) =>
                       setFormData({
                         ...formData,
@@ -600,7 +602,7 @@ const Automatisations = () => {
                       })
                     }
                   >
-                    <SelectTrigger className="mt-2">
+                    <SelectTrigger>
                       <SelectValue placeholder={t("automations.selectListPlaceholder") || "Choisir une liste"} />
                     </SelectTrigger>
                     <SelectContent>
@@ -615,76 +617,64 @@ const Automatisations = () => {
               )}
             </TabsContent>
 
-            <TabsContent value="steps" className="space-y-4">
-              <div className="flex items-center justify-between mb-4">
-                <Label>{t("automations.steps") || "Étapes du workflow"} *</Label>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleAddStep("send_email")}
-                  >
-                    <Mail className="h-4 w-4 mr-2" />
-                    {t("automations.addEmail") || "Email"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleAddStep("wait")}
-                  >
-                    <Clock className="h-4 w-4 mr-2" />
-                    {t("automations.addWait") || "Attendre"}
-                  </Button>
-                </div>
+            <TabsContent value="steps" className="space-y-4 mt-4">
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => handleAddStep("send_email")}>
+                  <Mail className="h-4 w-4 mr-2" />
+                  {t("automations.addEmailStep") || "Envoyer un email"}
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleAddStep("wait")}>
+                  <Clock className="h-4 w-4 mr-2" />
+                  {t("automations.addWaitStep") || "Attendre"}
+                </Button>
               </div>
 
               {formData.steps.length === 0 ? (
-                <Card className="border-dashed">
-                  <CardContent className="py-8 text-center">
-                    <Settings className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">
-                      {t("automations.noSteps") || "Aucune étape définie"}
-                    </p>
-                  </CardContent>
-                </Card>
+                <div className="text-center py-8 border-2 border-dashed rounded-lg">
+                  <p className="text-muted-foreground">
+                    {t("automations.noSteps") || "Aucune étape ajoutée. Cliquez sur les boutons ci-dessus pour ajouter des étapes."}
+                  </p>
+                </div>
               ) : (
                 <div className="space-y-4">
                   {formData.steps.map((step, index) => (
                     <Card key={index}>
-                      <CardHeader>
+                      <CardHeader className="py-3">
                         <div className="flex items-center justify-between">
-                          <CardTitle className="text-sm">
-                            {t("automations.step") || "Étape"} {index + 1}:{" "}
-                            {step.step_type === "send_email"
-                              ? t("automations.stepEmail") || "Envoyer un email"
-                              : step.step_type === "wait"
-                              ? t("automations.stepWait") || "Attendre"
-                              : step.step_type}
-                          </CardTitle>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline">{index + 1}</Badge>
+                            {step.step_type === "send_email" ? (
+                              <Mail className="h-4 w-4" />
+                            ) : (
+                              <Clock className="h-4 w-4" />
+                            )}
+                            <span className="font-medium">
+                              {step.step_type === "send_email"
+                                ? t("automations.sendEmail") || "Envoyer un email"
+                                : t("automations.wait") || "Attendre"}
+                            </span>
+                          </div>
                           <Button
-                            type="button"
                             variant="ghost"
-                            size="icon"
+                            size="sm"
                             onClick={() => handleRemoveStep(index)}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </div>
                       </CardHeader>
-                      <CardContent className="space-y-4">
+                      <CardContent className="py-3">
                         {step.step_type === "send_email" && (
-                          <div>
-                            <Label>{t("automations.template") || "Template"}</Label>
+                          <div className="space-y-2">
+                            <Label>{t("automations.selectTemplate") || "Template"}</Label>
                             <Select
-                              value={step.step_config.template_id || ""}
+                              value={step.step_config.template_id as string || ""}
                               onValueChange={(value) =>
                                 handleStepConfigChange(index, { template_id: value })
                               }
                             >
-                              <SelectTrigger className="mt-2">
-                                <SelectValue placeholder={t("automations.selectTemplate") || "Choisir un template"} />
+                              <SelectTrigger>
+                                <SelectValue placeholder={t("automations.selectTemplatePlaceholder") || "Choisir un template"} />
                               </SelectTrigger>
                               <SelectContent>
                                 {templates?.map((template) => (
@@ -696,18 +686,16 @@ const Automatisations = () => {
                             </Select>
                           </div>
                         )}
-
                         {step.step_type === "wait" && (
-                          <div>
-                            <Label>{t("automations.waitDays") || "Nombre de jours"}</Label>
+                          <div className="space-y-2">
+                            <Label>{t("automations.waitDays") || "Jours d'attente"}</Label>
                             <Input
                               type="number"
-                              min="1"
-                              value={step.step_config.days || 1}
+                              min={1}
+                              value={step.step_config.days as number || 1}
                               onChange={(e) =>
                                 handleStepConfigChange(index, { days: parseInt(e.target.value) || 1 })
                               }
-                              className="mt-2"
                             />
                           </div>
                         )}
@@ -732,10 +720,10 @@ const Automatisations = () => {
             </Button>
             <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending}>
               {createMutation.isPending || updateMutation.isPending
-                ? t("common.loading") || "Chargement..."
+                ? t("common.saving") || "Enregistrement..."
                 : selectedAutomation
                 ? t("common.save") || "Enregistrer"
-                : t("automations.create") || "Créer"}
+                : t("common.create") || "Créer"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -746,11 +734,11 @@ const Automatisations = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {t("automations.confirmDelete") || "Supprimer l'automatisation ?"}
+              {t("automations.deleteConfirmTitle") || "Supprimer l'automatisation ?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {t("automations.deleteWarning") ||
-                "Cette action est irréversible. L'automatisation sera supprimée définitivement."}
+              {t("automations.deleteConfirmDescription") ||
+                "Cette action est irréversible. Toutes les données associées seront supprimées."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -759,7 +747,9 @@ const Automatisations = () => {
               onClick={() => selectedAutomation && deleteMutation.mutate(selectedAutomation.id)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {t("common.delete") || "Supprimer"}
+              {deleteMutation.isPending
+                ? t("common.deleting") || "Suppression..."
+                : t("common.delete") || "Supprimer"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -769,4 +759,3 @@ const Automatisations = () => {
 };
 
 export default Automatisations;
-
