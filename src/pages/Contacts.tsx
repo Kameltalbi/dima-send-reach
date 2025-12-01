@@ -452,47 +452,48 @@ const Contacts = () => {
         throw new Error("Aucun contact à assigner");
       }
 
-      // Récupérer les contacts déjà dans la liste
-      const { data: existing } = await supabase
-        .from("list_contacts")
-        .select("contact_id")
-        .eq("list_id", listId)
-        .in("contact_id", contactIds);
-
-      const existingIds = existing?.map(e => e.contact_id) || [];
-      const newContactIds = contactIds.filter(id => !existingIds.includes(id));
-
-      // Si tous les contacts sont déjà dans la liste, retourner un résultat sans erreur
-      if (newContactIds.length === 0) {
-        return {
-          assigned: 0,
-          skipped: existingIds.length,
-        };
-      }
-
-      // Insérer par lots de 500
+      // Pour les grands volumes, on insère directement par lots avec gestion des conflits
+      // au lieu de vérifier d'abord les existants (ce qui causerait des erreurs URL trop longue)
       const batchSize = 500;
       const batches: string[][] = [];
-      for (let i = 0; i < newContactIds.length; i += batchSize) {
-        batches.push(newContactIds.slice(i, i + batchSize));
+      for (let i = 0; i < contactIds.length; i += batchSize) {
+        batches.push(contactIds.slice(i, i + batchSize));
       }
 
+      let totalAssigned = 0;
+      let totalSkipped = 0;
+
       for (const batch of batches) {
-        const contactsToInsert = batch.map(contactId => ({
-          list_id: listId,
-          contact_id: contactId,
-        }));
-
-        const { error } = await supabase
+        // Pour chaque lot, vérifier les contacts existants (lot par lot pour éviter URL trop longue)
+        const { data: existing } = await supabase
           .from("list_contacts")
-          .insert(contactsToInsert);
+          .select("contact_id")
+          .eq("list_id", listId)
+          .in("contact_id", batch);
 
-        if (error) throw error;
+        const existingIds = new Set(existing?.map(e => e.contact_id) || []);
+        const newContactIds = batch.filter(id => !existingIds.has(id));
+
+        totalSkipped += existingIds.size;
+
+        if (newContactIds.length > 0) {
+          const contactsToInsert = newContactIds.map(contactId => ({
+            list_id: listId,
+            contact_id: contactId,
+          }));
+
+          const { error } = await supabase
+            .from("list_contacts")
+            .insert(contactsToInsert);
+
+          if (error) throw error;
+          totalAssigned += newContactIds.length;
+        }
       }
 
       return {
-        assigned: newContactIds.length,
-        skipped: existingIds.length,
+        assigned: totalAssigned,
+        skipped: totalSkipped,
       };
     },
     onSuccess: (data) => {
