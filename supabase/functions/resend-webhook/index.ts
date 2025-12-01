@@ -6,28 +6,28 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface ResendWebhookData {
+  email?: string;
+  from?: string;
+  to?: string;
+  subject?: string;
+  created_at?: string;
+  hard_bounce?: boolean;
+  soft_bounce?: boolean;
+  bounce_type?: string;
+  bounce_code?: string;
+  bounce_message?: string;
+  complaint?: boolean;
+  complaint_feedback?: string;
+}
+
 interface ResendWebhookEvent {
   type: string;
   created_at: string;
-  data: {
-    email: string;
-    created_at: string;
+  data: ResendWebhookData & {
     event?: string;
     type?: string;
-    data?: {
-      email?: string;
-      from?: string;
-      to?: string;
-      subject?: string;
-      created_at?: string;
-      hard_bounce?: boolean;
-      soft_bounce?: boolean;
-      bounce_type?: string;
-      bounce_code?: string;
-      bounce_message?: string;
-      complaint?: boolean;
-      complaint_feedback?: string;
-    };
+    data?: ResendWebhookData;
   };
 }
 
@@ -47,7 +47,7 @@ serve(async (req) => {
     // Resend peut envoyer un seul événement ou un tableau
     const events = Array.isArray(webhookData) ? webhookData : [webhookData];
 
-    const results = [];
+    const results: Array<{ email?: string; status?: string; bounce_type?: string; error?: string }> = [];
 
     for (const event of events) {
       try {
@@ -73,7 +73,7 @@ serve(async (req) => {
             .from("contacts")
             .select("id, user_id, email")
             .eq("email", email.toLowerCase())
-            .single();
+            .maybeSingle();
 
           if (!contact) {
             console.warn(`Contact not found for email: ${email}`);
@@ -141,7 +141,7 @@ serve(async (req) => {
             .from("contacts")
             .select("id, user_id, email")
             .eq("email", email.toLowerCase())
-            .single();
+            .maybeSingle();
 
           if (!contact) {
             console.warn(`Contact not found for email: ${email}`);
@@ -187,7 +187,6 @@ serve(async (req) => {
             .from("contacts")
             .update({
               statut: "desabonne",
-              is_suppressed: true,
             })
             .eq("id", contact.id);
 
@@ -203,9 +202,10 @@ serve(async (req) => {
 
           results.push({ email, status: "processed", bounce_type: "complaint" });
         }
-      } catch (error) {
-        console.error("Error processing event:", error);
-        results.push({ error: error.message });
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Unknown error";
+        console.error("Error processing event:", err);
+        results.push({ error: errorMessage });
       }
     }
 
@@ -220,11 +220,12 @@ serve(async (req) => {
         status: 200,
       }
     );
-  } catch (error) {
-    console.error("Error in webhook:", error);
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    console.error("Error in webhook:", err);
     return new Response(
       JSON.stringify({
-        error: error.message,
+        error: errorMessage,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -233,4 +234,3 @@ serve(async (req) => {
     );
   }
 });
-

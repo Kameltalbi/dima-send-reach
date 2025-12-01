@@ -14,6 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
+      automation_steps: {
+        Row: {
+          automation_id: string
+          created_at: string
+          id: string
+          step_config: Json | null
+          step_order: number
+          step_type: string
+        }
+        Insert: {
+          automation_id: string
+          created_at?: string
+          id?: string
+          step_config?: Json | null
+          step_order?: number
+          step_type?: string
+        }
+        Update: {
+          automation_id?: string
+          created_at?: string
+          id?: string
+          step_config?: Json | null
+          step_order?: number
+          step_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_steps_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "automations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automations: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          last_run_at: string | null
+          nom: string
+          trigger_config: Json | null
+          trigger_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          last_run_at?: string | null
+          nom: string
+          trigger_config?: Json | null
+          trigger_type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          last_run_at?: string | null
+          nom?: string
+          trigger_config?: Json | null
+          trigger_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       campaign_recipients: {
         Row: {
           campaign_id: string
@@ -513,6 +587,7 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          contact_limit: number | null
           created_at: string
           date_debut: string
           date_fin: string | null
@@ -526,6 +601,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          contact_limit?: number | null
           created_at?: string
           date_debut?: string
           date_fin?: string | null
@@ -539,6 +615,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          contact_limit?: number | null
           created_at?: string
           date_debut?: string
           date_fin?: string | null
