@@ -28,9 +28,12 @@ export const useContactQuota = () => {
     queryFn: async (): Promise<QuotaResponse | null> => {
       if (!user) return null;
 
-      // Appeler la fonction RPC directement avec le client
-      const { data, error } = await supabase
-        .rpc("get_contact_quota", { p_user_id: user.id } as unknown as Record<string, unknown>);
+      // Cast supabase client to any to call custom RPC
+      const client = supabase as unknown as {
+        rpc: (fn: string, params: { p_user_id: string }) => Promise<{ data: unknown; error: unknown }>;
+      };
+
+      const { data, error } = await client.rpc("get_contact_quota", { p_user_id: user.id });
 
       if (error) {
         console.error("Erreur lors de la récupération du quota:", error);
@@ -44,8 +47,7 @@ export const useContactQuota = () => {
       }
       
       // Cast le résultat JSON
-      const result = data as unknown as QuotaResponse;
-      return result;
+      return data as QuotaResponse;
     },
     enabled: !!user,
     refetchOnWindowFocus: true,

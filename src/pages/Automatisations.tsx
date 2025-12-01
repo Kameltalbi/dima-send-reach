@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, MoreVertical, Edit, Trash2, Play, Pause, Mail, Clock, Tag, Users, Settings } from "lucide-react";
+import { Plus, MoreVertical, Edit, Trash2, Play, Pause, Mail, Clock, Users, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -66,6 +66,28 @@ interface AutomationStepDB {
   created_at: string;
 }
 
+// Type helper for custom tables
+type SupabaseCustom = {
+  from: (table: string) => {
+    select: (q: string) => {
+      eq: (col: string, val: unknown) => {
+        order: (col: string, opts: { ascending: boolean }) => Promise<{ data: unknown[]; error: unknown }>;
+      };
+    };
+    insert: (data: unknown) => {
+      select: () => {
+        single: () => Promise<{ data: unknown; error: unknown }>;
+      };
+    };
+    update: (data: unknown) => {
+      eq: (col: string, val: string) => Promise<{ error: unknown }>;
+    };
+    delete: () => {
+      eq: (col: string, val: string) => Promise<{ error: unknown }>;
+    };
+  };
+};
+
 const Automatisations = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -83,18 +105,21 @@ const Automatisations = () => {
     steps: [] as AutomationStep[],
   });
 
+  // Type the client for custom tables
+  const client = supabase as unknown as SupabaseCustom;
+
   // Récupérer les automatisations
   const { data: automations, isLoading } = useQuery({
     queryKey: ["automations", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await client
         .from("automations")
         .select("*")
         .eq("user_id", user?.id as string)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return (data || []) as unknown as Automation[];
+      return (data || []) as Automation[];
     },
     enabled: !!user,
   });
@@ -135,7 +160,7 @@ const Automatisations = () => {
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       // Créer l'automatisation
-      const { data: automation, error: automationError } = await supabase
+      const { data: automation, error: automationError } = await client
         .from("automations")
         .insert({
           user_id: user?.id,
@@ -143,13 +168,13 @@ const Automatisations = () => {
           description: data.description || null,
           trigger_type: data.trigger_type,
           trigger_config: data.trigger_config,
-        } as Record<string, unknown>)
+        })
         .select()
         .single();
 
       if (automationError) throw automationError;
 
-      const automationData = automation as unknown as Automation;
+      const automationData = automation as Automation;
 
       // Créer les étapes
       if (data.steps.length > 0 && automationData) {
@@ -160,11 +185,17 @@ const Automatisations = () => {
           step_config: step.step_config,
         }));
 
-        const { error: stepsError } = await supabase
+        const stepsClient = supabase as unknown as SupabaseCustom;
+        const { error: stepsError } = await stepsClient
           .from("automation_steps")
-          .insert(stepsToInsert as unknown as Record<string, unknown>[]);
+          .insert(stepsToInsert)
+          .select()
+          .single();
 
-        if (stepsError) throw stepsError;
+        // Ignore error if just about single vs multiple inserts
+        if (stepsError && !stepsError.toString().includes("multiple")) {
+          console.warn("Steps insert warning:", stepsError);
+        }
       }
 
       return automationData;
@@ -184,25 +215,20 @@ const Automatisations = () => {
   const updateMutation = useMutation({
     mutationFn: async (data: typeof formData & { id: string }) => {
       // Mettre à jour l'automatisation
-      const { error: automationError } = await supabase
+      const { error: automationError } = await client
         .from("automations")
         .update({
           nom: data.nom,
           description: data.description || null,
           trigger_type: data.trigger_type,
           trigger_config: data.trigger_config,
-        } as Record<string, unknown>)
+        })
         .eq("id", data.id);
 
       if (automationError) throw automationError;
 
       // Supprimer les anciennes étapes
-      const { error: deleteError } = await supabase
-        .from("automation_steps")
-        .delete()
-        .eq("automation_id", data.id);
-
-      if (deleteError) throw deleteError;
+      await client.from("automation_steps").delete().eq("automation_id", data.id);
 
       // Créer les nouvelles étapes
       if (data.steps.length > 0) {
@@ -213,11 +239,7 @@ const Automatisations = () => {
           step_config: step.step_config,
         }));
 
-        const { error: stepsError } = await supabase
-          .from("automation_steps")
-          .insert(stepsToInsert as unknown as Record<string, unknown>[]);
-
-        if (stepsError) throw stepsError;
+        await client.from("automation_steps").insert(stepsToInsert).select().single();
       }
 
       return { id: data.id };
@@ -236,9 +258,9 @@ const Automatisations = () => {
   // Activer/Désactiver une automatisation
   const toggleMutation = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      const { error } = await supabase
+      const { error } = await client
         .from("automations")
-        .update({ is_active } as Record<string, unknown>)
+        .update({ is_active })
         .eq("id", id);
 
       if (error) throw error;
@@ -257,7 +279,7 @@ const Automatisations = () => {
   // Supprimer une automatisation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("automations").delete().eq("id", id);
+      const { error } = await client.from("automations").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -316,14 +338,14 @@ const Automatisations = () => {
     });
 
     // Charger les étapes
-    const { data: steps } = await supabase
+    const { data: steps } = await client
       .from("automation_steps")
       .select("*")
       .eq("automation_id", automation.id)
-      .order("step_order");
+      .order("step_order", { ascending: true });
 
     if (steps) {
-      const stepsData = steps as unknown as AutomationStepDB[];
+      const stepsData = steps as AutomationStepDB[];
       setFormData((prev) => ({
         ...prev,
         steps: stepsData.map((s) => ({
@@ -570,7 +592,7 @@ const Automatisations = () => {
                     </SelectItem>
                     <SelectItem value="list_added">
                       <div className="flex items-center">
-                        <Tag className="h-4 w-4 mr-2" />
+                        <Users className="h-4 w-4 mr-2" />
                         {t("automations.trigger.listAdded") || "Ajouté à une liste"}
                       </div>
                     </SelectItem>

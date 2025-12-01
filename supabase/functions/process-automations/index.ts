@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -16,6 +17,37 @@ interface AutomationExecution {
   next_execution_at: string | null;
 }
 
+interface AutomationRecord {
+  id: string;
+  user_id: string;
+  nom: string;
+  trigger_type: string;
+  trigger_config: Record<string, unknown>;
+  is_active: boolean;
+  total_sent?: number;
+}
+
+interface StepRecord {
+  id: string;
+  automation_id: string;
+  step_order: number;
+  step_type: string;
+  step_config: Record<string, unknown>;
+}
+
+interface ContactRecord {
+  id: string;
+  email: string;
+  nom: string;
+  prenom: string;
+}
+
+interface TemplateRecord {
+  id: string;
+  nom: string;
+  content_html: string | null;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -24,7 +56,7 @@ serve(async (req) => {
 
   try {
     // Créer le client Supabase
-    const supabaseClient = createClient(
+    const supabaseClient: any = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
@@ -52,10 +84,11 @@ serve(async (req) => {
     const results: Array<{ automation_id: string; automation_name?: string; contacts_processed?: number; error?: string }> = [];
 
     // Traiter chaque automatisation
-    for (const automation of automations) {
+    for (const rawAutomation of automations) {
+      const automation = rawAutomation as AutomationRecord;
       try {
         // Récupérer les étapes de l'automatisation
-        const { data: steps, error: stepsError } = await supabaseClient
+        const { data: stepsData, error: stepsError } = await supabaseClient
           .from("automation_steps")
           .select("*")
           .eq("automation_id", automation.id)
@@ -66,7 +99,9 @@ serve(async (req) => {
           continue;
         }
 
-        if (!steps || steps.length === 0) {
+        const steps = (stepsData || []) as StepRecord[];
+
+        if (steps.length === 0) {
           continue;
         }
 
@@ -87,7 +122,7 @@ serve(async (req) => {
             .eq("automation_id", automation.id)
             .eq("contact_id", contact.id)
             .in("status", ["pending", "running"])
-            .single();
+            .maybeSingle();
 
           if (existingExecution) {
             // Mettre à jour l'exécution existante
@@ -95,7 +130,7 @@ serve(async (req) => {
               supabaseClient,
               automation,
               steps,
-              existingExecution,
+              existingExecution as AutomationExecution,
               contact
             );
           } else {
@@ -122,7 +157,7 @@ serve(async (req) => {
                 supabaseClient,
                 automation,
                 steps,
-                newExecution,
+                newExecution as AutomationExecution,
                 contact
               );
             }
@@ -172,24 +207,25 @@ serve(async (req) => {
 
 // Trouver les contacts qui correspondent au déclencheur
 async function findTriggeredContacts(
-  supabaseClient: ReturnType<typeof createClient>,
+  supabaseClient: any,
   triggerType: string,
   triggerConfig: Record<string, unknown>,
   userId: string
-): Promise<Array<{ id: string; email: string; nom: string; prenom: string }>> {
+): Promise<ContactRecord[]> {
   let query = supabaseClient
     .from("contacts")
-    .select("*")
+    .select("id, email, nom, prenom")
     .eq("user_id", userId)
     .eq("statut", "actif");
 
   switch (triggerType) {
-    case "contact_added":
+    case "contact_added": {
       // Contacts ajoutés dans les dernières 24 heures
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       query = query.gte("created_at", yesterday.toISOString());
       break;
+    }
 
     case "contact_subscribed":
       // Contacts avec statut actif (déjà filtré)
@@ -214,8 +250,6 @@ async function findTriggeredContacts(
 
     case "campaign_opened":
       // Contacts qui ont ouvert une campagne récemment
-      // Cette logique nécessiterait une table de tracking
-      // Pour l'instant, retourner vide
       return [];
 
     case "campaign_clicked":
@@ -232,16 +266,16 @@ async function findTriggeredContacts(
     return [];
   }
 
-  return data || [];
+  return (data || []) as ContactRecord[];
 }
 
 // Traiter une étape d'automatisation
 async function processAutomationStep(
-  supabaseClient: ReturnType<typeof createClient>,
-  automation: { id: string; user_id: string; nom: string; total_sent?: number },
-  steps: Array<{ step_type: string; step_config: Record<string, unknown> }>,
+  supabaseClient: any,
+  automation: AutomationRecord,
+  steps: StepRecord[],
   execution: AutomationExecution,
-  contact: { id: string; email: string; nom: string; prenom: string }
+  contact: ContactRecord
 ) {
   const currentStepIndex = execution.current_step - 1;
   const currentStep = steps[currentStepIndex];
@@ -347,10 +381,10 @@ async function processAutomationStep(
 
 // Exécuter une étape d'envoi d'email
 async function executeSendEmailStep(
-  supabaseClient: ReturnType<typeof createClient>,
-  automation: { id: string; user_id: string; nom: string },
-  step: { step_config: Record<string, unknown> },
-  contact: { email: string; nom: string; prenom: string }
+  supabaseClient: any,
+  automation: AutomationRecord,
+  step: StepRecord,
+  contact: ContactRecord
 ) {
   const templateId = step.step_config.template_id as string;
   if (!templateId) {
@@ -358,26 +392,17 @@ async function executeSendEmailStep(
   }
 
   // Récupérer le template
-  const { data: template, error: templateError } = await supabaseClient
+  const { data: templateData, error: templateError } = await supabaseClient
     .from("templates")
-    .select("*")
+    .select("id, nom, content_html")
     .eq("id", templateId)
     .single();
 
-  if (templateError || !template) {
+  if (templateError || !templateData) {
     throw new Error("Template not found");
   }
 
-  // Créer une campagne temporaire pour l'envoi
-  const campaignData = {
-    user_id: automation.user_id,
-    nom_campagne: `Automation: ${automation.nom}`,
-    sujet_email: template.sujet || "Email automatique",
-    expediteur_nom: automation.user_id, // À récupérer du profil
-    expediteur_email: contact.email, // Utiliser l'email du contact comme expéditeur par défaut
-    html_contenu: template.html_contenu,
-    statut: "en_attente",
-  };
+  const template = templateData as TemplateRecord;
 
   // Appeler l'Edge Function send-email pour envoyer l'email
   const sendEmailUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`;
@@ -396,10 +421,10 @@ async function executeSendEmailStep(
           prenom: contact.prenom,
         },
       ],
-      subject: template.sujet || "Email automatique",
-      html_content: template.html_contenu,
-      from_name: campaignData.expediteur_nom,
-      from_email: campaignData.expediteur_email,
+      subject: template.nom || "Email automatique",
+      html_content: template.content_html,
+      from_name: automation.nom,
+      from_email: contact.email,
     }),
   });
 
