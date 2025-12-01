@@ -428,29 +428,44 @@ const Contacts = () => {
       setBulkAssignProgress(0);
 
       if (assignAll) {
-        // Mode "tous les contacts" : on récupère tous les IDs qui correspondent aux filtres
-        let query = supabase
-          .from("contacts")
-          .select("id, email")
-          .eq("user_id", user?.id);
+        // Mode "tous les contacts" : on récupère tous les IDs par lots car Supabase limite à 1000 par défaut
+        const allContactIds: string[] = [];
+        const fetchBatchSize = 1000;
+        let offset = 0;
+        let hasMore = true;
 
-        if (statusFilter !== "all") {
-          query = query.eq("statut", statusFilter);
+        while (hasMore) {
+          let query = supabase
+            .from("contacts")
+            .select("id")
+            .eq("user_id", user?.id)
+            .range(offset, offset + fetchBatchSize - 1);
+
+          if (statusFilter !== "all") {
+            query = query.eq("statut", statusFilter);
+          }
+
+          if (segmentFilter !== "all") {
+            query = query.eq("segment", segmentFilter);
+          }
+
+          if (searchQuery) {
+            query = query.or(`nom.ilike.%${searchQuery}%,prenom.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
+          }
+
+          const { data: batchContacts, error: fetchError } = await query;
+          if (fetchError) throw fetchError;
+
+          if (batchContacts && batchContacts.length > 0) {
+            allContactIds.push(...batchContacts.map(c => c.id));
+            offset += fetchBatchSize;
+            hasMore = batchContacts.length === fetchBatchSize;
+          } else {
+            hasMore = false;
+          }
         }
 
-        if (segmentFilter !== "all") {
-          query = query.eq("segment", segmentFilter);
-        }
-
-        if (searchQuery) {
-          // Recherche basique sur nom, prenom, email
-          query = query.or(`nom.ilike.%${searchQuery}%,prenom.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
-        }
-
-        const { data: allContacts, error: fetchError } = await query;
-        if (fetchError) throw fetchError;
-
-        contactIds = allContacts?.map(c => c.id) || [];
+        contactIds = allContactIds;
       }
 
       if (contactIds.length === 0) {
