@@ -744,6 +744,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_contact_quota: { Args: { p_user_id: string }; Returns: Json }
       has_permission: {
         Args: { _permission: string; _user_id: string }
         Returns: boolean
