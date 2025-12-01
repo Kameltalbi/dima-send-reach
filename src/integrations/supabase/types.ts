@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      automation_executions: {
+        Row: {
+          automation_id: string
+          completed_at: string | null
+          contact_id: string
+          created_at: string
+          current_step: number
+          id: string
+          next_execution_at: string | null
+          status: string
+        }
+        Insert: {
+          automation_id: string
+          completed_at?: string | null
+          contact_id: string
+          created_at?: string
+          current_step?: number
+          id?: string
+          next_execution_at?: string | null
+          status?: string
+        }
+        Update: {
+          automation_id?: string
+          completed_at?: string | null
+          contact_id?: string
+          created_at?: string
+          current_step?: number
+          id?: string
+          next_execution_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_executions_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "automations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_executions_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       automation_steps: {
         Row: {
           automation_id: string
@@ -57,6 +105,9 @@ export type Database = {
           is_active: boolean
           last_run_at: string | null
           nom: string
+          total_clicked: number | null
+          total_opened: number | null
+          total_sent: number | null
           trigger_config: Json | null
           trigger_type: string
           updated_at: string
@@ -69,6 +120,9 @@ export type Database = {
           is_active?: boolean
           last_run_at?: string | null
           nom: string
+          total_clicked?: number | null
+          total_opened?: number | null
+          total_sent?: number | null
           trigger_config?: Json | null
           trigger_type?: string
           updated_at?: string
@@ -81,12 +135,71 @@ export type Database = {
           is_active?: boolean
           last_run_at?: string | null
           nom?: string
+          total_clicked?: number | null
+          total_opened?: number | null
+          total_sent?: number | null
           trigger_config?: Json | null
           trigger_type?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      bounces: {
+        Row: {
+          action_taken: string | null
+          bounce_code: string | null
+          bounce_message: string | null
+          bounce_reason: string | null
+          bounce_type: string
+          contact_id: string | null
+          created_at: string
+          email: string
+          id: string
+          is_processed: boolean
+          processed_at: string | null
+          source: string | null
+          user_id: string
+        }
+        Insert: {
+          action_taken?: string | null
+          bounce_code?: string | null
+          bounce_message?: string | null
+          bounce_reason?: string | null
+          bounce_type?: string
+          contact_id?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          is_processed?: boolean
+          processed_at?: string | null
+          source?: string | null
+          user_id: string
+        }
+        Update: {
+          action_taken?: string | null
+          bounce_code?: string | null
+          bounce_message?: string | null
+          bounce_reason?: string | null
+          bounce_type?: string
+          contact_id?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          is_processed?: boolean
+          processed_at?: string | null
+          source?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bounces_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       campaign_recipients: {
         Row: {
@@ -555,6 +668,42 @@ export type Database = {
           },
         ]
       }
+      segments: {
+        Row: {
+          contact_count: number | null
+          created_at: string
+          criteria: Json | null
+          description: string | null
+          id: string
+          is_active: boolean
+          nom: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contact_count?: number | null
+          created_at?: string
+          criteria?: Json | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          nom: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contact_count?: number | null
+          created_at?: string
+          criteria?: Json | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          nom?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ses_config: {
         Row: {
           aws_access_key_id: string | null
@@ -821,6 +970,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_bounce_stats: { Args: { p_user_id: string }; Returns: Json }
       get_contact_quota: { Args: { p_user_id: string }; Returns: Json }
       has_permission: {
         Args: { _permission: string; _user_id: string }
@@ -835,6 +985,10 @@ export type Database = {
       }
       is_org_admin: { Args: { _user_id: string }; Returns: boolean }
       is_superadmin: { Args: never; Returns: boolean }
+      process_bounce: {
+        Args: { p_bounce_type: string; p_contact_id: string; p_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "superadmin" | "user"

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, AlertTriangle, Trash2, RefreshCw, Download, Filter } from "lucide-react";
+import { Search, AlertTriangle, Trash2, RefreshCw } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -48,13 +48,22 @@ interface Bounce {
   action_taken: string | null;
   created_at: string;
   contact_id: string | null;
-  campaign_id: string | null;
   contacts?: {
     nom: string;
     prenom: string;
     email: string;
   };
 }
+
+interface BounceStats {
+  total: number;
+  hard: number;
+  soft: number;
+  complaints: number;
+}
+
+// Type helper for supabase client with custom tables
+type SupabaseAny = ReturnType<typeof supabase.from> extends infer T ? T : never;
 
 const Bounces = () => {
   const { t } = useTranslation();
@@ -71,19 +80,20 @@ const Bounces = () => {
   // Récupérer les statistiques
   const { data: stats } = useQuery({
     queryKey: ["bounce-stats", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_bounce_stats", {
-        p_user_id: user?.id,
-      });
-      if (error) throw error;
-      return data?.[0] || {
-        total_bounces: 0,
-        hard_bounces: 0,
-        soft_bounces: 0,
-        complaints: 0,
-        unprocessed_bounces: 0,
-        suppressed_contacts: 0,
+    queryFn: async (): Promise<BounceStats> => {
+      // Cast to any to call custom RPC function
+      const client = supabase as unknown as {
+        rpc: (fn: string, params: { p_user_id: string }) => Promise<{ data: unknown; error: unknown }>;
       };
+      
+      const { data, error } = await client.rpc("get_bounce_stats", { p_user_id: user?.id || "" });
+      
+      if (error) {
+        console.error("Error fetching bounce stats:", error);
+        return { total: 0, hard: 0, soft: 0, complaints: 0 };
+      }
+      
+      return (data as BounceStats) || { total: 0, hard: 0, soft: 0, complaints: 0 };
     },
     enabled: !!user,
   });
@@ -92,57 +102,46 @@ const Bounces = () => {
   const { data: bouncesData, isLoading } = useQuery({
     queryKey: ["bounces", user?.id, bounceTypeFilter, processedFilter, currentPage],
     queryFn: async () => {
-      let query = supabase
-        .from("bounces")
-        .select(`
-          *,
-          contacts (
-            nom,
-            prenom,
-            email
-          )
-        `)
-        .eq("user_id", user?.id)
-        .order("created_at", { ascending: false });
-
+      // Cast to any for custom table
+      const client = supabase as unknown as {
+        from: (table: string) => {
+          select: (q: string, opts?: { count: string; head: boolean }) => {
+            eq: (col: string, val: unknown) => {
+              eq?: (col: string, val: unknown) => unknown;
+              order: (col: string, opts: { ascending: boolean }) => {
+                range: (start: number, end: number) => Promise<{ data: unknown[]; error: unknown }>;
+              };
+            };
+          };
+        };
+      };
+      
+      // Build main query
+      let baseQuery = client.from("bounces").select("*, contacts (nom, prenom, email)");
+      let filteredQuery = baseQuery.eq("user_id", user?.id);
+      
       if (bounceTypeFilter !== "all") {
-        query = query.eq("bounce_type", bounceTypeFilter);
+        filteredQuery = (filteredQuery as unknown as { eq: (col: string, val: unknown) => typeof filteredQuery }).eq("bounce_type", bounceTypeFilter);
       }
 
       if (processedFilter === "processed") {
-        query = query.eq("is_processed", true);
+        filteredQuery = (filteredQuery as unknown as { eq: (col: string, val: unknown) => typeof filteredQuery }).eq("is_processed", true);
       } else if (processedFilter === "unprocessed") {
-        query = query.eq("is_processed", false);
+        filteredQuery = (filteredQuery as unknown as { eq: (col: string, val: unknown) => typeof filteredQuery }).eq("is_processed", false);
       }
 
-      const { data, error, count } = await query.range(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage - 1
-      );
+      const { data, error } = await (filteredQuery as unknown as { order: (col: string, opts: { ascending: boolean }) => { range: (start: number, end: number) => Promise<{ data: unknown[]; error: unknown }> } })
+        .order("created_at", { ascending: false })
+        .range((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage - 1);
 
       if (error) throw error;
 
-      // Compter le total
-      let countQuery = supabase
-        .from("bounces")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user?.id);
-
-      if (bounceTypeFilter !== "all") {
-        countQuery = countQuery.eq("bounce_type", bounceTypeFilter);
-      }
-
-      if (processedFilter === "processed") {
-        countQuery = countQuery.eq("is_processed", true);
-      } else if (processedFilter === "unprocessed") {
-        countQuery = countQuery.eq("is_processed", false);
-      }
-
-      const { count: totalCount } = await countQuery;
+      // Count total - simplified approach
+      const countResult = await client.from("bounces").select("*", { count: "exact", head: true }).eq("user_id", user?.id);
 
       return {
-        bounces: (data as Bounce[]) || [],
-        totalCount: totalCount || 0,
+        bounces: (data || []) as Bounce[],
+        totalCount: (countResult as unknown as { count?: number })?.count || 0,
       };
     },
     enabled: !!user,
@@ -151,7 +150,14 @@ const Bounces = () => {
   // Supprimer un bounce
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("bounces").delete().eq("id", id);
+      const client = supabase as unknown as {
+        from: (table: string) => {
+          delete: () => {
+            eq: (col: string, val: string) => Promise<{ error: unknown }>;
+          };
+        };
+      };
+      const { error } = await client.from("bounces").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -160,7 +166,7 @@ const Bounces = () => {
       toast.success(t("bounces.deleteSuccess") || "Bounce supprimé");
       setIsDeleteOpen(false);
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || t("bounces.deleteError") || "Erreur lors de la suppression");
     },
   });
@@ -168,8 +174,14 @@ const Bounces = () => {
   // Marquer comme traité
   const processMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("bounces")
+      const client = supabase as unknown as {
+        from: (table: string) => {
+          update: (data: unknown) => {
+            eq: (col: string, val: string) => Promise<{ error: unknown }>;
+          };
+        };
+      };
+      const { error } = await client.from("bounces")
         .update({
           is_processed: true,
           processed_at: new Date().toISOString(),
@@ -182,7 +194,7 @@ const Bounces = () => {
       queryClient.invalidateQueries({ queryKey: ["bounce-stats"] });
       toast.success(t("bounces.processSuccess") || "Bounce marqué comme traité");
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || t("bounces.processError") || "Erreur");
     },
   });
@@ -235,7 +247,7 @@ const Bounces = () => {
               <CardDescription>{t("bounces.stats.total") || "Total bounces"}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.total_bounces || 0}</div>
+              <div className="text-2xl font-bold">{stats.total || 0}</div>
             </CardContent>
           </Card>
           <Card>
@@ -244,7 +256,7 @@ const Bounces = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-destructive">
-                {stats.hard_bounces || 0}
+                {stats.hard || 0}
               </div>
             </CardContent>
           </Card>
@@ -253,7 +265,7 @@ const Bounces = () => {
               <CardDescription>{t("bounces.stats.soft") || "Soft bounces"}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.soft_bounces || 0}</div>
+              <div className="text-2xl font-bold">{stats.soft || 0}</div>
             </CardContent>
           </Card>
           <Card>
@@ -400,11 +412,7 @@ const Bounces = () => {
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <p className="text-sm text-muted-foreground">
-                {t("bounces.pagination", {
-                  page: currentPage,
-                  total: totalPages,
-                  count: bouncesData?.totalCount || 0,
-                }) || `Page ${currentPage} sur ${totalPages} (${bouncesData?.totalCount || 0} bounces)`}
+                Page {currentPage} sur {totalPages} ({bouncesData?.totalCount || 0} bounces)
               </p>
               <div className="flex gap-2">
                 <Button
@@ -466,4 +474,3 @@ const Bounces = () => {
 };
 
 export default Bounces;
-

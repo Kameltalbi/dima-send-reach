@@ -74,14 +74,14 @@ const Segmentation = () => {
   const { data: segments, isLoading } = useQuery({
     queryKey: ["segments", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as unknown as { from: (table: string) => { select: (q: string) => { eq: (col: string, val: unknown) => { order: (col: string, opts: { ascending: boolean }) => Promise<{ data: unknown[]; error: unknown }> } } } })
         .from("segments")
         .select("*")
         .eq("user_id", user?.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as Segment[];
+      return (data || []) as unknown as Segment[];
     },
     enabled: !!user,
   });
@@ -99,19 +99,20 @@ const Segmentation = () => {
 
       // Appliquer les critères
       for (const criterion of criteria) {
-        if (criterion.field === "pays" && criterion.value) {
-          query = query.eq("pays", criterion.value);
-        } else if (criterion.field === "ville" && criterion.value) {
-          query = query.ilike("ville", `%${criterion.value}%`);
-        } else if (criterion.field === "societe" && criterion.value) {
-          query = query.ilike("societe", `%${criterion.value}%`);
-        } else if (criterion.field === "fonction" && criterion.value) {
-          query = query.ilike("fonction", `%${criterion.value}%`);
-        } else if (criterion.field === "created_at" && criterion.operator === "after") {
-          const date = new Date(criterion.value as string);
+        const value = Array.isArray(criterion.value) ? criterion.value[0] : criterion.value;
+        if (criterion.field === "pays" && value) {
+          query = query.eq("pays", value);
+        } else if (criterion.field === "ville" && value) {
+          query = query.ilike("ville", `%${value}%`);
+        } else if (criterion.field === "societe" && value) {
+          query = query.ilike("societe", `%${value}%`);
+        } else if (criterion.field === "fonction" && value) {
+          query = query.ilike("fonction", `%${value}%`);
+        } else if (criterion.field === "created_at" && criterion.operator === "after" && value) {
+          const date = new Date(value);
           query = query.gte("created_at", date.toISOString());
-        } else if (criterion.field === "created_at" && criterion.operator === "before") {
-          const date = new Date(criterion.value as string);
+        } else if (criterion.field === "created_at" && criterion.operator === "before" && value) {
+          const date = new Date(value);
           query = query.lte("created_at", date.toISOString());
         }
       }
@@ -129,7 +130,7 @@ const Segmentation = () => {
   const createMutation = useMutation({
     mutationFn: async (data: { nom: string; description: string; criteria: SegmentCriteria[] }) => {
       const count = await calculateSegmentCount(data.criteria);
-      const { data: segment, error } = await supabase
+      const { data: segment, error } = await (supabase as unknown as { from: (table: string) => { insert: (data: unknown) => { select: () => { single: () => Promise<{ data: unknown; error: unknown }> } } } })
         .from("segments")
         .insert({
           user_id: user?.id,
@@ -150,7 +151,7 @@ const Segmentation = () => {
       setIsCreateOpen(false);
       resetForm();
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || t("segmentation.createError") || "Erreur lors de la création");
     },
   });
@@ -159,7 +160,7 @@ const Segmentation = () => {
   const updateMutation = useMutation({
     mutationFn: async (data: { id: string; nom: string; description: string; criteria: SegmentCriteria[] }) => {
       const count = await calculateSegmentCount(data.criteria);
-      const { data: segment, error } = await supabase
+      const { data: segment, error } = await (supabase as unknown as { from: (table: string) => { update: (data: unknown) => { eq: (col: string, val: string) => { select: () => { single: () => Promise<{ data: unknown; error: unknown }> } } } } })
         .from("segments")
         .update({
           nom: data.nom,
@@ -180,7 +181,7 @@ const Segmentation = () => {
       setIsEditOpen(false);
       resetForm();
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || t("segmentation.updateError") || "Erreur lors de la mise à jour");
     },
   });
@@ -188,7 +189,10 @@ const Segmentation = () => {
   // Supprimer un segment
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("segments").delete().eq("id", id);
+      const { error } = await (supabase as unknown as { from: (table: string) => { delete: () => { eq: (col: string, val: string) => Promise<{ error: unknown }> } } })
+        .from("segments")
+        .delete()
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -196,7 +200,7 @@ const Segmentation = () => {
       toast.success(t("segmentation.deleteSuccess") || "Segment supprimé");
       setIsDeleteOpen(false);
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || t("segmentation.deleteError") || "Erreur lors de la suppression");
     },
   });
@@ -227,7 +231,7 @@ const Segmentation = () => {
     });
   };
 
-  const handleCriterionChange = (index: number, field: keyof SegmentCriteria, value: any) => {
+  const handleCriterionChange = (index: number, field: keyof SegmentCriteria, value: string | string[]) => {
     const newCriteria = [...formData.criteria];
     newCriteria[index] = { ...newCriteria[index], [field]: value };
     setFormData({ ...formData, criteria: newCriteria });
@@ -476,24 +480,23 @@ const Segmentation = () => {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="pays">
-                                    {t("segmentation.fieldCountry") || "Pays"}
+                                    {t("segmentation.fields.country") || "Pays"}
                                   </SelectItem>
                                   <SelectItem value="ville">
-                                    {t("segmentation.fieldCity") || "Ville"}
+                                    {t("segmentation.fields.city") || "Ville"}
                                   </SelectItem>
                                   <SelectItem value="societe">
-                                    {t("segmentation.fieldCompany") || "Société"}
+                                    {t("segmentation.fields.company") || "Société"}
                                   </SelectItem>
                                   <SelectItem value="fonction">
-                                    {t("segmentation.fieldFunction") || "Fonction"}
+                                    {t("segmentation.fields.function") || "Fonction"}
                                   </SelectItem>
                                   <SelectItem value="created_at">
-                                    {t("segmentation.fieldDate") || "Date d'inscription"}
+                                    {t("segmentation.fields.createdAt") || "Date de création"}
                                   </SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
-
                             <div>
                               <Label className="text-xs text-muted-foreground">
                                 {t("segmentation.operator") || "Opérateur"}
@@ -508,58 +511,40 @@ const Segmentation = () => {
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {criterion.field === "created_at" ? (
+                                  <SelectItem value="equals">
+                                    {t("segmentation.operators.equals") || "Égal à"}
+                                  </SelectItem>
+                                  <SelectItem value="contains">
+                                    {t("segmentation.operators.contains") || "Contient"}
+                                  </SelectItem>
+                                  {criterion.field === "created_at" && (
                                     <>
                                       <SelectItem value="after">
-                                        {t("segmentation.after") || "Après"}
+                                        {t("segmentation.operators.after") || "Après"}
                                       </SelectItem>
                                       <SelectItem value="before">
-                                        {t("segmentation.before") || "Avant"}
-                                      </SelectItem>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <SelectItem value="equals">
-                                        {t("segmentation.equals") || "Égal à"}
-                                      </SelectItem>
-                                      <SelectItem value="contains">
-                                        {t("segmentation.contains") || "Contient"}
-                                      </SelectItem>
-                                      <SelectItem value="starts_with">
-                                        {t("segmentation.startsWith") || "Commence par"}
+                                        {t("segmentation.operators.before") || "Avant"}
                                       </SelectItem>
                                     </>
                                   )}
                                 </SelectContent>
                               </Select>
                             </div>
-
                             <div>
                               <Label className="text-xs text-muted-foreground">
                                 {t("segmentation.value") || "Valeur"}
                               </Label>
-                              {criterion.field === "created_at" ? (
-                                <Input
-                                  type="date"
-                                  value={criterion.value as string}
-                                  onChange={(e) =>
-                                    handleCriterionChange(index, "value", e.target.value)
-                                  }
-                                  className="mt-1"
-                                />
-                              ) : (
-                                <Input
-                                  value={criterion.value as string}
-                                  onChange={(e) =>
-                                    handleCriterionChange(index, "value", e.target.value)
-                                  }
-                                  placeholder={t("segmentation.valuePlaceholder") || "Valeur"}
-                                  className="mt-1"
-                                />
-                              )}
+                              <Input
+                                type={criterion.field === "created_at" ? "date" : "text"}
+                                value={Array.isArray(criterion.value) ? criterion.value[0] || "" : criterion.value}
+                                onChange={(e) =>
+                                  handleCriterionChange(index, "value", e.target.value)
+                                }
+                                placeholder={t("segmentation.valuePlaceholder") || "Valeur..."}
+                                className="mt-1"
+                              />
                             </div>
                           </div>
-
                           <Button
                             type="button"
                             variant="ghost"
@@ -590,10 +575,10 @@ const Segmentation = () => {
             </Button>
             <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending}>
               {createMutation.isPending || updateMutation.isPending
-                ? t("common.loading") || "Chargement..."
+                ? t("common.saving") || "Enregistrement..."
                 : selectedSegment
                 ? t("common.save") || "Enregistrer"
-                : t("segmentation.create") || "Créer"}
+                : t("common.create") || "Créer"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -604,10 +589,10 @@ const Segmentation = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {t("segmentation.confirmDelete") || "Supprimer le segment ?"}
+              {t("segmentation.deleteConfirmTitle") || "Supprimer le segment ?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {t("segmentation.deleteWarning") ||
+              {t("segmentation.deleteConfirmDescription") ||
                 "Cette action est irréversible. Le segment sera supprimé définitivement."}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -617,7 +602,9 @@ const Segmentation = () => {
               onClick={() => selectedSegment && deleteMutation.mutate(selectedSegment.id)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {t("common.delete") || "Supprimer"}
+              {deleteMutation.isPending
+                ? t("common.deleting") || "Suppression..."
+                : t("common.delete") || "Supprimer"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -627,4 +614,3 @@ const Segmentation = () => {
 };
 
 export default Segmentation;
-
