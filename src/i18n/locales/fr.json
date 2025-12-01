@@ -169,7 +169,7 @@
         "business": {
           "name": "Business",
           "description": "Pour les grandes PME et institutions",
-          "price": "330 DT",
+          "price": "270 DT",
           "period": "/mois",
           "features": {
             "emails": "100,000 e-mails / mois",

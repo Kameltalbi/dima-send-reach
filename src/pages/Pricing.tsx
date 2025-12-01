@@ -111,7 +111,7 @@ const plans = [
   },
   {
     name: "Business",
-    price: "330 DT",
+    price: "270 DT",
     period: "/mois",
     description: "Pour les grandes PME et institutions",
     emails: "100,000 e-mails / mois",

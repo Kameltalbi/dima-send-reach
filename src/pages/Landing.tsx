@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, Check, Menu, Send, TrendingUp, Workflow, Eye, FileText, Shield, Languages, DollarSign, Headphones, Users, Gift } from "lucide-react";
+import { ArrowRight, Check, Menu, Send, TrendingUp, Workflow, Eye, FileText, Shield, Languages, DollarSign, Headphones, Users, Gift, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { LogoWithText, LogoLight } from "@/components/Logo";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
@@ -8,6 +8,106 @@ import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
+
+// Données des plans avec toutes les fonctionnalités détaillées
+const plansData = {
+  free: {
+    emails: "3,000 e-mails / mois",
+    dailyLimit: "100 e-mails / jour",
+    contacts: "1,000 contacts",
+    users: "1 utilisateur",
+    domains: "1 domaine",
+    features: [
+      { text: "Éditeur email simple", included: true },
+      { text: "10 modèles email basiques", included: true },
+      { text: "Import contacts (CSV)", included: true },
+      { text: "Liste unique (1 liste)", included: true },
+      { text: "Statistiques simples : ouverture, clic", included: true },
+      { text: "Anti-spam basique", included: true },
+      { text: "Rétention 1 jour", included: true },
+      { text: "Support Ticket uniquement", included: true },
+      { text: "Branding 'Powered by DymaMail'", included: true },
+      { text: "Automations", included: false },
+      { text: "Segmentation", included: false },
+      { text: "Warm-up", included: false },
+    ],
+  },
+  starter: {
+    emails: "10,000 e-mails / mois",
+    contacts: "Contacts illimités",
+    users: "3 utilisateurs",
+    domains: "2 domaines",
+    features: [
+      { text: "Éditeur drag & drop avancé", included: true },
+      { text: "30 modèles de newsletters professionnels", included: true },
+      { text: "3 listes de contacts", included: true },
+      { text: "Suppression du branding (option)", included: true },
+      { text: "Statistiques détaillées (ouvertures, clics, désabonnements)", included: true },
+      { text: "Tests d'envoi", included: true },
+      { text: "Rétention 7 jours", included: true },
+      { text: "Anti-spam amélioré", included: true },
+      { text: "Support email prioritaire", included: true },
+      { text: "A/B testing", included: false },
+      { text: "Automations", included: false },
+      { text: "Segmentation avancée", included: false },
+    ],
+  },
+  essential: {
+    emails: "20,000 e-mails / mois",
+    contacts: "Contacts illimités",
+    users: "10 utilisateurs",
+    domains: "5 domaines",
+    features: [
+      { text: "Tout de Starter, plus:", included: true },
+      { text: "Segmentation simple (tags, engagement, date)", included: true },
+      { text: "10 listes de contacts", included: true },
+      { text: "100 templates email premium", included: true },
+      { text: "Export CSV des campagnes", included: true },
+      { text: "Gestion des rebonds (bounces)", included: true },
+      { text: "Preview mobile + desktop", included: true },
+      { text: "Rétention 15 jours", included: true },
+      { text: "Support prioritaire WhatsApp", included: true },
+      { text: "Tests anti-spam intégrés", included: true },
+    ],
+  },
+  pro: {
+    emails: "50,000 e-mails / mois",
+    contacts: "Contacts illimités",
+    users: "Utilisateurs illimités",
+    domains: "10 domaines",
+    features: [
+      { text: "Tout de Essential, plus:", included: true },
+      { text: "Segmentation avancée (comportement, score)", included: true },
+      { text: "Automations simples (bienvenue, anniversaire, séquences)", included: true },
+      { text: "A/B testing (sujet et contenu)", included: true },
+      { text: "Warm-up automatique pour nouveaux domaines", included: true },
+      { text: "Rétention 30 jours", included: true },
+      { text: "Support WhatsApp + Email rapide", included: true },
+      { text: "Dédoublonnage automatique", included: true },
+      { text: "Importation massive", included: true },
+      { text: "Déclencheurs (CTA triggers)", included: true },
+    ],
+  },
+  business: {
+    emails: "100,000 e-mails / mois",
+    contacts: "Contacts illimités",
+    users: "Multi-équipes (3 utilisateurs)",
+    domains: "20 domaines",
+    features: [
+      { text: "Tout de Pro, plus:", included: true },
+      { text: "Automations avancées (panier abandonné, workflows conditionnels)", included: true },
+      { text: "Scoring avancé des leads", included: true },
+      { text: "Gestion multi-équipes", included: true },
+      { text: "Rétention 90 jours", included: true },
+      { text: "Envoi haute priorité (file séparée)", included: true },
+      { text: "Assistance délivrabilité", included: true },
+      { text: "Planification avancée", included: true },
+      { text: "Export complet (CSV + JSON)", included: true },
+      { text: "Accès API (limité)", included: true },
+      { text: "Suppression totale de branding", included: true },
+    ],
+  },
+};
 
 const Landing = () => {
   const { t } = useTranslation();
@@ -370,20 +470,39 @@ const Landing = () => {
                 <p className="text-2xl md:text-3xl font-bold text-foreground mb-6">
                   {t('landing.pricing.plans.free.price')}<span className="text-sm md:text-base font-normal text-muted-foreground ml-1">{t('landing.pricing.plans.free.period')}</span>
                 </p>
-                <ul className="space-y-3 mb-8">
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{t('landing.pricing.plans.free.features.emails')}</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{t('landing.pricing.plans.free.features.users')}</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{t('landing.pricing.plans.free.features.domains')}</span>
-                  </li>
-                </ul>
+                
+                {/* Capacités */}
+                <div className="space-y-2 pb-6 border-b border-border mb-6">
+                  <p className="font-semibold text-xs text-muted-foreground mb-3">CAPACITÉS</p>
+                  <p className="text-sm font-bold text-foreground">{plansData.free.emails}</p>
+                  {plansData.free.dailyLimit && (
+                    <p className="text-xs text-muted-foreground">{plansData.free.dailyLimit}</p>
+                  )}
+                  <p className="text-sm font-bold text-foreground mt-2">{plansData.free.contacts}</p>
+                  <p className="text-xs text-foreground mt-2">{plansData.free.users}</p>
+                  <p className="text-xs text-foreground">{plansData.free.domains}</p>
+                </div>
+
+                {/* Fonctionnalités */}
+                <div className="space-y-2 mb-8">
+                  <p className="font-semibold text-xs text-foreground mb-3">FONCTIONNALITÉS</p>
+                  {plansData.free.features.slice(0, 6).map((feature, index) => (
+                    <div key={index} className="flex items-start gap-2">
+                      {feature.included ? (
+                        <Check className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" />
+                      ) : (
+                        <X className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      )}
+                      <span className={`text-xs ${feature.included ? 'text-foreground' : 'text-muted-foreground line-through'}`}>
+                        {feature.text}
+                      </span>
+                    </div>
+                  ))}
+                  <Link to="/pricing" className="text-xs text-primary hover:underline mt-2 block">
+                    Voir toutes les fonctionnalités →
+                  </Link>
+                </div>
+                
                 <Link to="/auth" className="block">
                   <Button variant="outline" className="w-full transition-all duration-300 hover:scale-105">{t('landing.pricing.plans.free.cta')}</Button>
                 </Link>
@@ -409,20 +528,36 @@ const Landing = () => {
                     )}
                   </div>
                 </div>
-                <ul className="space-y-3 mb-8">
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{t('landing.pricing.plans.starter.features.emails')}</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{t('landing.pricing.plans.starter.features.users')}</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{t('landing.pricing.plans.starter.features.domains')}</span>
-                  </li>
-                </ul>
+                
+                {/* Capacités */}
+                <div className="space-y-2 pb-6 border-b border-border mb-6">
+                  <p className="font-semibold text-xs text-muted-foreground mb-3">CAPACITÉS</p>
+                  <p className="text-sm font-bold text-foreground">{plansData.starter.emails}</p>
+                  <p className="text-sm font-bold text-foreground mt-2">{plansData.starter.contacts}</p>
+                  <p className="text-xs text-foreground mt-2">{plansData.starter.users}</p>
+                  <p className="text-xs text-foreground">{plansData.starter.domains}</p>
+                </div>
+
+                {/* Fonctionnalités */}
+                <div className="space-y-2 mb-8">
+                  <p className="font-semibold text-xs text-foreground mb-3">FONCTIONNALITÉS</p>
+                  {plansData.starter.features.slice(0, 6).map((feature, index) => (
+                    <div key={index} className="flex items-start gap-2">
+                      {feature.included ? (
+                        <Check className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" />
+                      ) : (
+                        <X className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      )}
+                      <span className={`text-xs ${feature.included ? 'text-foreground' : 'text-muted-foreground line-through'}`}>
+                        {feature.text}
+                      </span>
+                    </div>
+                  ))}
+                  <Link to="/pricing" className="text-xs text-primary hover:underline mt-2 block">
+                    Voir toutes les fonctionnalités →
+                  </Link>
+                </div>
+                
                 <Link to="/checkout?plan=starter" className="block">
                   <Button variant="outline" className="w-full transition-all duration-300 hover:scale-105">{t('landing.pricing.plans.starter.cta')}</Button>
                 </Link>
@@ -453,20 +588,36 @@ const Landing = () => {
                     )}
                   </div>
                 </div>
-                <ul className="space-y-3 mb-8">
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{t('landing.pricing.plans.essential.features.emails')}</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{t('landing.pricing.plans.essential.features.users')}</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{t('landing.pricing.plans.essential.features.domains')}</span>
-                  </li>
-                </ul>
+                
+                {/* Capacités */}
+                <div className="space-y-2 pb-6 border-b border-border mb-6">
+                  <p className="font-semibold text-xs text-muted-foreground mb-3">CAPACITÉS</p>
+                  <p className="text-sm font-bold text-foreground">{plansData.essential.emails}</p>
+                  <p className="text-sm font-bold text-foreground mt-2">{plansData.essential.contacts}</p>
+                  <p className="text-xs text-foreground mt-2">{plansData.essential.users}</p>
+                  <p className="text-xs text-foreground">{plansData.essential.domains}</p>
+                </div>
+
+                {/* Fonctionnalités */}
+                <div className="space-y-2 mb-8">
+                  <p className="font-semibold text-xs text-foreground mb-3">FONCTIONNALITÉS</p>
+                  {plansData.essential.features.slice(0, 6).map((feature, index) => (
+                    <div key={index} className="flex items-start gap-2">
+                      {feature.included ? (
+                        <Check className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" />
+                      ) : (
+                        <X className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      )}
+                      <span className={`text-xs ${feature.included ? 'text-foreground' : 'text-muted-foreground line-through'}`}>
+                        {feature.text}
+                      </span>
+                    </div>
+                  ))}
+                  <Link to="/pricing" className="text-xs text-primary hover:underline mt-2 block">
+                    Voir toutes les fonctionnalités →
+                  </Link>
+                </div>
+                
                 <Link to="/checkout?plan=essential" className="block">
                   <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 hover:scale-105 hover:shadow-xl">
                     {t('landing.pricing.plans.essential.cta')}
@@ -483,20 +634,36 @@ const Landing = () => {
                 <p className="text-2xl md:text-3xl font-bold text-foreground mb-6">
                   {t('landing.pricing.plans.pro.price')}<span className="text-sm md:text-base font-normal text-muted-foreground ml-1">{t('landing.pricing.plans.pro.period')}</span>
                 </p>
-                <ul className="space-y-3 mb-8">
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{t('landing.pricing.plans.pro.features.emails')}</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{t('landing.pricing.plans.pro.features.users')}</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{t('landing.pricing.plans.pro.features.domains')}</span>
-                  </li>
-                </ul>
+                
+                {/* Capacités */}
+                <div className="space-y-2 pb-6 border-b border-border mb-6">
+                  <p className="font-semibold text-xs text-muted-foreground mb-3">CAPACITÉS</p>
+                  <p className="text-sm font-bold text-foreground">{plansData.pro.emails}</p>
+                  <p className="text-sm font-bold text-foreground mt-2">{plansData.pro.contacts}</p>
+                  <p className="text-xs text-foreground mt-2">{plansData.pro.users}</p>
+                  <p className="text-xs text-foreground">{plansData.pro.domains}</p>
+                </div>
+
+                {/* Fonctionnalités */}
+                <div className="space-y-2 mb-8">
+                  <p className="font-semibold text-xs text-foreground mb-3">FONCTIONNALITÉS</p>
+                  {plansData.pro.features.slice(0, 6).map((feature, index) => (
+                    <div key={index} className="flex items-start gap-2">
+                      {feature.included ? (
+                        <Check className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" />
+                      ) : (
+                        <X className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      )}
+                      <span className={`text-xs ${feature.included ? 'text-foreground' : 'text-muted-foreground line-through'}`}>
+                        {feature.text}
+                      </span>
+                    </div>
+                  ))}
+                  <Link to="/pricing" className="text-xs text-primary hover:underline mt-2 block">
+                    Voir toutes les fonctionnalités →
+                  </Link>
+                </div>
+                
                 <Link to="/checkout?plan=pro" className="block">
                   <Button variant="outline" className="w-full transition-all duration-300 hover:scale-105">{t('landing.pricing.plans.pro.cta')}</Button>
                 </Link>
@@ -511,20 +678,36 @@ const Landing = () => {
                 <p className="text-2xl md:text-3xl font-bold text-foreground mb-6">
                   {t('landing.pricing.plans.business.price')}<span className="text-sm md:text-base font-normal text-muted-foreground ml-1">{t('landing.pricing.plans.business.period')}</span>
                 </p>
-                <ul className="space-y-3 mb-8">
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{t('landing.pricing.plans.business.features.emails')}</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{t('landing.pricing.plans.business.features.users')}</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{t('landing.pricing.plans.business.features.domains')}</span>
-                  </li>
-                </ul>
+                
+                {/* Capacités */}
+                <div className="space-y-2 pb-6 border-b border-border mb-6">
+                  <p className="font-semibold text-xs text-muted-foreground mb-3">CAPACITÉS</p>
+                  <p className="text-sm font-bold text-foreground">{plansData.business.emails}</p>
+                  <p className="text-sm font-bold text-foreground mt-2">{plansData.business.contacts}</p>
+                  <p className="text-xs text-foreground mt-2">{plansData.business.users}</p>
+                  <p className="text-xs text-foreground">{plansData.business.domains}</p>
+                </div>
+
+                {/* Fonctionnalités */}
+                <div className="space-y-2 mb-8">
+                  <p className="font-semibold text-xs text-foreground mb-3">FONCTIONNALITÉS</p>
+                  {plansData.business.features.slice(0, 6).map((feature, index) => (
+                    <div key={index} className="flex items-start gap-2">
+                      {feature.included ? (
+                        <Check className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" />
+                      ) : (
+                        <X className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      )}
+                      <span className={`text-xs ${feature.included ? 'text-foreground' : 'text-muted-foreground line-through'}`}>
+                        {feature.text}
+                      </span>
+                    </div>
+                  ))}
+                  <Link to="/pricing" className="text-xs text-primary hover:underline mt-2 block">
+                    Voir toutes les fonctionnalités →
+                  </Link>
+                </div>
+                
                 <Link to="/checkout?plan=business" className="block">
                   <Button variant="outline" className="w-full transition-all duration-300 hover:scale-105">{t('landing.pricing.plans.business.cta')}</Button>
                 </Link>

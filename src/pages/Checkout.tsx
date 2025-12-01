@@ -53,7 +53,7 @@ const plans = {
   },
   business: {
     name: "Business",
-    price: 330,
+    price: 270,
     currency: "DT",
     period: "/mois",
     emails: "100,000 e-mails / mois",
