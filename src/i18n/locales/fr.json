@@ -423,7 +423,13 @@
     "deleteError": "Erreur lors de la suppression",
     "emailExists": "Cet email existe déjà dans vos contacts",
     "name": "Nom",
-    "description": "Description"
+    "description": "Description",
+    "addToList": "Ajouter à une liste (optionnel)",
+    "addToListCheckbox": "Ajouter les contacts à une liste",
+    "selectList": "Sélectionner une liste",
+    "createNewList": "Créer une nouvelle liste",
+    "newListName": "Nom de la nouvelle liste",
+    "importSuccessWithList": "contact(s) importé(s) avec succès et ajouté(s) à la liste"
   },
   "lists": {
     "title": "Listes",

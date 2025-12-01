@@ -116,7 +116,7 @@ const Auth = () => {
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center mb-4">
             <img 
-              src="/logoDymaMail.png" 
+              src="/logo-Dyma-Mail-F.png" 
               alt="DymaMail Logo" 
               className="h-16 w-auto object-contain"
             />

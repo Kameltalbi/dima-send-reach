@@ -12,7 +12,7 @@ export const LogoWithText = ({ className = "h-14" }: { className?: string }) => 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       <img 
-        src="/logoDymaMail.png" 
+        src="/logo-Dyma-Mail-F.png" 
         alt="DymaMail Logo" 
         className="h-12 w-auto object-contain"
       />

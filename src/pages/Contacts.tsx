@@ -75,6 +75,10 @@ const Contacts = () => {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [importProgress, setImportProgress] = useState(0);
   const [isImporting, setIsImporting] = useState(false);
+  const [addToListEnabled, setAddToListEnabled] = useState(false);
+  const [selectedListId, setSelectedListId] = useState<string>("");
+  const [createNewList, setCreateNewList] = useState(false);
+  const [newListName, setNewListName] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(100);
   const [selectAllMode, setSelectAllMode] = useState(false);
@@ -535,11 +539,15 @@ const Contacts = () => {
     }
 
     // Vérifier le quota de contacts (uniquement pour Free)
-    if (!selectedContact && !canAddContacts(1)) {
-      if (contactQuota?.isBlocked) {
-        toast.error(`Limite de contacts atteinte (${contactQuota.limit} contacts). Passez à un plan payant pour des contacts illimités.`);
+    // Si le quota est null (illimité pour plans pro), permettre la création
+    if (!selectedContact && contactQuota && contactQuota.limit !== null && !canAddContacts(1)) {
+      if (contactQuota.isBlocked) {
+        const limitText = `${contactQuota.limit}`;
+        toast.error(`Limite de contacts atteinte (${limitText} contacts). Passez à un plan payant pour des contacts illimités.`);
       } else {
-        toast.error(`Quota de contacts insuffisant. Limite: ${contactQuota?.limit}, Restant: ${contactQuota?.remaining}`);
+        const limitText = `${contactQuota.limit}`;
+        const remainingText = contactQuota.remaining ?? 0;
+        toast.error(`Quota de contacts insuffisant. Limite: ${limitText}, Restant: ${remainingText}`);
       }
       return;
     }
@@ -673,14 +681,43 @@ const Contacts = () => {
       }
 
       // Vérifier le quota de contacts (uniquement pour Free)
-      if (!canAddContacts(contactsToImport.length)) {
-        if (contactQuota?.isBlocked) {
-          toast.error(`Limite de contacts atteinte (${contactQuota.limit} contacts). Vous ne pouvez pas importer ${contactsToImport.length} contacts. Passez à un plan payant pour des contacts illimités.`);
+      // Si le quota est null (illimité pour plans pro), permettre l'import
+      if (contactQuota && contactQuota.limit !== null && !canAddContacts(contactsToImport.length)) {
+        if (contactQuota.isBlocked) {
+          const limitText = `${contactQuota.limit}`;
+          toast.error(`Limite de contacts atteinte (${limitText} contacts). Vous ne pouvez pas importer ${contactsToImport.length} contacts. Passez à un plan payant pour des contacts illimités.`);
         } else {
-          toast.error(`Quota de contacts insuffisant. Limite: ${contactQuota?.limit}, Restant: ${contactQuota?.remaining}, Demandé: ${contactsToImport.length}. Passez à un plan payant pour des contacts illimités.`);
+          const limitText = `${contactQuota.limit}`;
+          const remainingText = contactQuota.remaining ?? 0;
+          toast.error(`Quota de contacts insuffisant. Limite: ${limitText}, Restant: ${remainingText}, Demandé: ${contactsToImport.length}. Passez à un plan payant pour des contacts illimités.`);
         }
         setIsImporting(false);
         return;
+      }
+
+      // Créer une nouvelle liste si demandé
+      let targetListId: string | null = null;
+      if (addToListEnabled) {
+        if (createNewList && newListName.trim()) {
+        const { data: newList, error: listError } = await supabase
+          .from("lists")
+          .insert({
+            user_id: user?.id,
+            nom: newListName.trim(),
+          })
+          .select("id")
+          .single();
+
+        if (listError) {
+          toast.error("Erreur lors de la création de la liste");
+          setIsImporting(false);
+          return;
+        }
+          targetListId = newList.id;
+          queryClient.invalidateQueries({ queryKey: ["lists"] });
+        } else if (selectedListId) {
+          targetListId = selectedListId;
+        }
       }
 
       // Importer par lots de 500 contacts pour éviter les timeouts et limites de taille
@@ -692,25 +729,58 @@ const Contacts = () => {
 
       let totalImported = 0;
       let duplicateCount = 0;
+      const importedContactIds: string[] = [];
 
       for (let i = 0; i < batches.length; i++) {
         const batch = batches[i];
         
         try {
-          const { error } = await supabase.from("contacts").insert(batch);
+          const { data: insertedContacts, error } = await supabase
+            .from("contacts")
+            .insert(batch)
+            .select("id, email");
           
           if (error) {
             if (error.code === "23505") {
               // Certains contacts en doublon dans ce lot
-              duplicateCount += batch.length;
+              // Récupérer les contacts existants pour les ajouter à la liste
+              const emails = batch.map(c => c.email);
+              const { data: existingContacts } = await supabase
+                .from("contacts")
+                .select("id")
+                .eq("user_id", user?.id)
+                .in("email", emails);
+              
+              if (existingContacts) {
+                importedContactIds.push(...existingContacts.map(c => c.id));
+                duplicateCount += existingContacts.length;
+              } else {
+                duplicateCount += batch.length;
+              }
             } else {
               throw error;
             }
           } else {
             totalImported += batch.length;
+            if (insertedContacts) {
+              importedContactIds.push(...insertedContacts.map(c => c.id));
+            }
           }
         } catch (error) {
           console.error(`Erreur lors de l'import du lot ${i + 1}:`, error);
+          // En cas d'erreur, essayer de récupérer les contacts existants pour les ajouter à la liste
+          if (targetListId) {
+            const emails = batch.map(c => c.email);
+            const { data: existingContacts } = await supabase
+              .from("contacts")
+              .select("id")
+              .eq("user_id", user?.id)
+              .in("email", emails);
+            
+            if (existingContacts) {
+              importedContactIds.push(...existingContacts.map(c => c.id));
+            }
+          }
         }
 
         // Mettre à jour la progression
@@ -718,11 +788,44 @@ const Contacts = () => {
         setImportProgress(progress);
       }
 
+      // Ajouter les contacts à la liste si une liste est sélectionnée
+      if (targetListId && importedContactIds.length > 0) {
+        const listContactsBatchSize = 500;
+        const listContactBatches: string[][] = [];
+        for (let i = 0; i < importedContactIds.length; i += listContactsBatchSize) {
+          listContactBatches.push(importedContactIds.slice(i, i + listContactsBatchSize));
+        }
+
+        for (const batch of listContactBatches) {
+          const listContacts = batch.map(contactId => ({
+            list_id: targetListId,
+            contact_id: contactId,
+          }));
+
+          const { error: listContactsError } = await supabase
+            .from("list_contacts")
+            .insert(listContacts);
+
+          if (listContactsError && listContactsError.code !== "23505") {
+            // Ignorer les erreurs de doublons (contact déjà dans la liste)
+            console.error("Erreur lors de l'ajout à la liste:", listContactsError);
+          }
+        }
+      }
+
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
       queryClient.invalidateQueries({ queryKey: ["contact-quota"] });
+      if (targetListId) {
+        queryClient.invalidateQueries({ queryKey: ["list-contacts", targetListId] });
+      }
       
       if (totalImported > 0) {
-        toast.success(`${totalImported} contact(s) importé(s) avec succès`);
+        if (targetListId) {
+          const listName = createNewList ? newListName : lists?.find(l => l.id === targetListId)?.nom || '';
+          toast.success(`${totalImported} ${t('contacts.importSuccessWithList')} "${listName}"`);
+        } else {
+          toast.success(`${totalImported} ${t('contacts.importSuccess')}`);
+        }
       }
       
       if (duplicateCount > 0) {
@@ -736,6 +839,10 @@ const Contacts = () => {
       setIsImportOpen(false);
       setCsvFile(null);
       setImportProgress(0);
+      setAddToListEnabled(false);
+      setSelectedListId("");
+      setCreateNewList(false);
+      setNewListName("");
     } catch (error) {
       toast.error("Erreur lors de l'import");
       console.error("Erreur import:", error);
@@ -1655,6 +1762,10 @@ const Contacts = () => {
           if (!open) {
             setCsvFile(null);
             setImportProgress(0);
+            setAddToListEnabled(false);
+            setSelectedListId("");
+            setCreateNewList(false);
+            setNewListName("");
           }
         }
       }}>
@@ -1681,35 +1792,111 @@ const Contacts = () => {
                   ✓ Fichier sélectionné : {csvFile.name}
                 </p>
               )}
-              {isImporting && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Import en cours...</span>
-                    <span className="font-medium">{importProgress}%</span>
-                  </div>
-                  <Progress value={importProgress} className="h-2" />
-                  <p className="text-xs text-muted-foreground">
-                    Veuillez patienter, l'import peut prendre plusieurs minutes pour des fichiers volumineux.
-                  </p>
-                </div>
-              )}
-              {!isImporting && (
-                <div className="text-xs text-muted-foreground space-y-2">
-                  <p>
-                    <strong>Format accepté :</strong> Le fichier peut utiliser des virgules (,) ou des points-virgules (;) comme séparateurs.
-                  </p>
-                  <p>
-                    <strong>Colonnes requises :</strong> email (obligatoire)
-                  </p>
-                  <p>
-                    <strong>Colonnes optionnelles :</strong> nom, prenom, telephone, fonction, societe, site_web, pays, ville, segment
-                  </p>
-                  <p className="text-amber-600">
-                    Les lignes avec des emails invalides seront ignorées. Les champs manquants seront laissés vides.
-                  </p>
-                </div>
-              )}
             </div>
+
+            {/* Sélection de liste */}
+            <div className="space-y-2">
+              <Label>{t('contacts.addToList')}</Label>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="add-to-list"
+                    checked={addToListEnabled}
+                    onCheckedChange={(checked) => {
+                      setAddToListEnabled(checked);
+                      if (!checked) {
+                        // Si on décoche, réinitialiser tout
+                        setSelectedListId("");
+                        setCreateNewList(false);
+                        setNewListName("");
+                      }
+                    }}
+                    disabled={isImporting}
+                  />
+                  <Label htmlFor="add-to-list" className="cursor-pointer">
+                    {t('contacts.addToListCheckbox')}
+                  </Label>
+                </div>
+
+                {addToListEnabled && (
+                  <div className="space-y-3 pl-6">
+                    <Select
+                      value={createNewList ? "new" : selectedListId}
+                      onValueChange={(value) => {
+                        if (value === "new") {
+                          setCreateNewList(true);
+                          setSelectedListId("");
+                        } else {
+                          setCreateNewList(false);
+                          setSelectedListId(value);
+                          setNewListName("");
+                        }
+                      }}
+                      disabled={isImporting}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('contacts.selectList')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {lists && lists.length > 0 && (
+                          <>
+                            {lists.map((list) => (
+                              <SelectItem key={list.id} value={list.id}>
+                                {list.nom}
+                              </SelectItem>
+                            ))}
+                            <SelectItem value="new">+ {t('contacts.createNewList')}</SelectItem>
+                          </>
+                        )}
+                        {(!lists || lists.length === 0) && (
+                          <SelectItem value="new">+ {t('contacts.createNewList')}</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+
+                    {createNewList && (
+                      <Input
+                        placeholder={t('contacts.newListName')}
+                        value={newListName}
+                        onChange={(e) => setNewListName(e.target.value)}
+                        disabled={isImporting}
+                        required
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {isImporting && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Import en cours...</span>
+                  <span className="font-medium">{importProgress}%</span>
+                </div>
+                <Progress value={importProgress} className="h-2" />
+                <p className="text-xs text-muted-foreground">
+                  Veuillez patienter, l'import peut prendre plusieurs minutes pour des fichiers volumineux.
+                </p>
+              </div>
+            )}
+
+            {!isImporting && (
+              <div className="text-xs text-muted-foreground space-y-2">
+                <p>
+                  <strong>Format accepté :</strong> Le fichier peut utiliser des virgules (,) ou des points-virgules (;) comme séparateurs.
+                </p>
+                <p>
+                  <strong>Colonnes requises :</strong> email (obligatoire)
+                </p>
+                <p>
+                  <strong>Colonnes optionnelles :</strong> nom, prenom, telephone, fonction, societe, site_web, pays, ville, segment
+                </p>
+                <p className="text-amber-600">
+                  Les lignes avec des emails invalides seront ignorées. Les champs manquants seront laissés vides.
+                </p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button 
@@ -1718,6 +1905,10 @@ const Contacts = () => {
                 setIsImportOpen(false);
                 setCsvFile(null);
                 setImportProgress(0);
+                setAddToListEnabled(false);
+                setSelectedListId("");
+                setCreateNewList(false);
+                setNewListName("");
               }}
               disabled={isImporting}
             >
@@ -1725,7 +1916,12 @@ const Contacts = () => {
             </Button>
             <Button 
               onClick={processCSVImport}
-              disabled={!csvFile || isImporting}
+              disabled={
+                !csvFile || 
+                isImporting || 
+                (addToListEnabled && createNewList && !newListName.trim()) ||
+                (addToListEnabled && !createNewList && !selectedListId)
+              }
             >
               {isImporting ? "Import en cours..." : "Importer"}
             </Button>

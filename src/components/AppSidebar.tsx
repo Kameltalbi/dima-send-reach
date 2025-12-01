@@ -73,7 +73,7 @@ export function AppSidebar() {
         <div className="p-4">
           <div className="flex items-center justify-center px-2">
             <img 
-              src="/DymaMail blanc.png" 
+              src="/logo-Dyma-Mail-F.png" 
               alt="DymaMail Logo" 
               className={`${isCollapsed ? "h-8 w-8" : "h-12 w-auto"} object-contain`}
             />

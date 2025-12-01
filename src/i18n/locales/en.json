@@ -342,7 +342,13 @@
     "deleteSuccess": "Contact deleted successfully",
     "createError": "Error creating contact",
     "updateError": "Error updating contact",
-    "deleteError": "Error deleting contact"
+    "deleteError": "Error deleting contact",
+    "addToList": "Add to list (optional)",
+    "addToListCheckbox": "Add contacts to a list",
+    "selectList": "Select a list",
+    "createNewList": "Create a new list",
+    "newListName": "New list name",
+    "importSuccessWithList": "contact(s) imported successfully and added to list"
   },
   "pricing": {
     "title": "Simple and transparent pricing",

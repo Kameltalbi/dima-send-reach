@@ -26,16 +26,41 @@ export const useContactQuota = () => {
         p_user_id: user.id,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erreur lors de la récupération du quota:", error);
+        // Pour les plans pro, retourner un quota illimité par défaut en cas d'erreur
+        return { limit: null, used: 0, remaining: null };
+      }
+      
+      // Si data est null ou undefined, retourner un quota illimité par défaut
+      if (!data) {
+        return { limit: null, used: 0, remaining: null };
+      }
+      
       return data as { limit: number | null; used: number; remaining: number | null };
     },
     enabled: !!user,
     refetchOnWindowFocus: true,
+    retry: 1, // Réessayer une fois en cas d'erreur
   });
 
   // Calculer le quota avec les métriques
   const quota: ContactQuota | null = useMemo(() => {
-    if (!quotaData) return null;
+    // Si les données sont en cours de chargement, retourner null
+    if (isLoading) return null;
+    
+    // Si pas de données après chargement, retourner un quota illimité par défaut (pour les plans pro)
+    if (!quotaData) {
+      return {
+        limit: null, // null = illimité
+        used: 0,
+        remaining: null,
+        percentage: 0,
+        isNearLimit: false,
+        isAtLimit: false,
+        isBlocked: false,
+      };
+    }
 
     const limit = quotaData.limit;
     const used = quotaData.used || 0;
@@ -72,9 +97,13 @@ export const useContactQuota = () => {
 
   // Vérifier si l'utilisateur peut ajouter un nombre donné de contacts
   const canAddContacts = (count: number): boolean => {
-    if (!quota) return false;
-    // Si limit est null, c'est illimité
+    // Si le quota est en cours de chargement, permettre l'ajout (sera vérifié côté serveur)
+    if (isLoading || !quota) return true;
+    
+    // Si limit est null, c'est illimité (plans pro et autres)
     if (quota.limit === null) return true;
+    
+    // Vérifier le quota pour les plans avec limite
     return (quota.remaining ?? 0) >= count && !quota.isBlocked;
   };
 

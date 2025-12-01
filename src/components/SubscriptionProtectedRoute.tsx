@@ -34,10 +34,36 @@ export const SubscriptionProtectedRoute = ({ children }: SubscriptionProtectedRo
         // Vérifier si l'utilisateur est superadmin
         const { data: isSuperadmin } = await supabase.rpc('is_superadmin');
         
-        if (!isSuperadmin) {
-          // Pas d'abonnement actif et pas superadmin, rediriger vers la page de pricing
-          navigate("/pricing", { replace: true });
+        if (isSuperadmin) {
+          // Superadmin peut accéder même sans quota
+          return;
         }
+
+        // Vérifier directement si l'utilisateur a une subscription active
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("organization_id")
+          .eq("id", user.id)
+          .single();
+
+        if (profile?.organization_id) {
+          const { data: subscription } = await supabase
+            .from("subscriptions")
+            .select("*")
+            .eq("organization_id", profile.organization_id)
+            .eq("statut", "active")
+            .order("date_debut", { ascending: false })
+            .limit(1)
+            .single();
+
+          // Si une subscription active existe, ne pas rediriger (le quota sera recalculé)
+          if (subscription) {
+            return;
+          }
+        }
+
+        // Pas d'abonnement actif et pas superadmin, rediriger vers la page de pricing
+        navigate("/pricing", { replace: true });
       }
     };
     
@@ -61,8 +87,10 @@ export const SubscriptionProtectedRoute = ({ children }: SubscriptionProtectedRo
     return null;
   }
 
-  // Si pas d'abonnement et pas superadmin, afficher un message
-  if (!quota) {
+  // Si pas d'abonnement et pas superadmin, vérifier une dernière fois avant d'afficher le message
+  if (!quota && !quotaLoading) {
+    // Attendre un peu pour laisser le temps au quota de se charger
+    // Le useEffect gérera la redirection si nécessaire
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-6">
         <div className="max-w-md w-full">
