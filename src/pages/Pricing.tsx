@@ -283,11 +283,10 @@ const Pricing = () => {
                         <span className="text-muted-foreground ml-1 text-base md:text-lg">{plan.period}</span>
                       )}
                     </div>
-                    {plan.annualPrice && (
-                      <div className="mt-2 text-xs text-muted-foreground">
-                        <span>{t('landing.pricing.payableAnnual')} </span>
-                        <span className={`font-medium ${plan.popular ? 'text-primary' : ''}`}>{plan.annualPrice}/an</span>
-                      </div>
+                    {plan.name !== "Free" && (
+                      <p className="mt-2 text-xs text-muted-foreground italic">
+                        {t('landing.pricing.annualOnlyNote')}
+                      </p>
                     )}
                   </div>
                 </div>

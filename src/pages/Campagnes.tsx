@@ -30,7 +30,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, MoreVertical, Eye, Trash2, Mail, Calendar, Users, Filter, BarChart3 } from "lucide-react";
+import { Plus, Search, MoreVertical, Eye, Trash2, Mail, Calendar, Users, Filter, BarChart3, Send } from "lucide-react";
+import { BatchSendDialog } from "@/components/campaigns/BatchSendDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -44,6 +45,8 @@ const Campagnes = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
+  const [isBatchSendOpen, setIsBatchSendOpen] = useState(false);
+  const [selectedCampaignForBatch, setSelectedCampaignForBatch] = useState<any>(null);
 
   // Charger les campagnes avec leurs stats
   const { data: campaigns, isLoading } = useQuery({
@@ -294,6 +297,17 @@ const Campagnes = () => {
                                   Voir les analytics
                                 </DropdownMenuItem>
                               )}
+                              {campaign.list_id && (
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedCampaignForBatch(campaign);
+                                    setIsBatchSendOpen(true);
+                                  }}
+                                >
+                                  <Send className="h-4 w-4 mr-2" />
+                                  Envoi par lots
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 className="text-destructive"
@@ -314,6 +328,16 @@ const Campagnes = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Batch Send Dialog */}
+      {selectedCampaignForBatch && (
+        <BatchSendDialog
+          open={isBatchSendOpen}
+          onOpenChange={setIsBatchSendOpen}
+          campaignId={selectedCampaignForBatch.id}
+          listId={selectedCampaignForBatch.list_id}
+        />
+      )}
 
       {/* Dialog suppression */}
       <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
