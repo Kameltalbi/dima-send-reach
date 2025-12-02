@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Send, Save, Eye, Loader2, Calendar, Clock, Mail } from "lucide-react";
+import { ArrowLeft, Send, Save, Eye, Loader2, Calendar, Clock, Mail, FlaskConical, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { TemplateEditor } from "@/components/templates/TemplateEditor";
@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { TestEmailDialog } from "@/components/campaigns/TestEmailDialog";
+import { ABTestConfig, ABTestSettings } from "@/components/campaigns/ABTestConfig";
+import { SpamScoreCard } from "@/components/campaigns/SpamScoreCard";
 
 const NouvelleCampagne = () => {
   const { user } = useAuth();
@@ -46,6 +48,19 @@ const NouvelleCampagne = () => {
     scheduledDate: "",
     scheduledTime: "",
     testEmail: "",
+  });
+
+  // État pour A/B Testing
+  const [abTestSettings, setAbTestSettings] = useState<ABTestSettings>({
+    enabled: false,
+    testType: 'subject',
+    variantASubject: '',
+    variantBSubject: '',
+    variantAContent: '',
+    variantBContent: '',
+    testPercentage: 20,
+    winningCriteria: 'open_rate',
+    testDurationHours: 4,
   });
 
   // Charger les listes
@@ -168,6 +183,20 @@ const NouvelleCampagne = () => {
         throw new Error("Veuillez sélectionner une liste de contacts");
       }
 
+      // Validation A/B Test
+      if (abTestSettings.enabled && !isDraft) {
+        if (abTestSettings.testType === 'subject' || abTestSettings.testType === 'both') {
+          if (!abTestSettings.variantASubject || !abTestSettings.variantBSubject) {
+            throw new Error("Veuillez remplir les sujets des deux variantes A/B");
+          }
+        }
+        if (abTestSettings.testType === 'content' || abTestSettings.testType === 'both') {
+          if (!abTestSettings.variantAContent || !abTestSettings.variantBContent) {
+            throw new Error("Veuillez remplir le contenu des deux variantes A/B");
+          }
+        }
+      }
+
       let dateEnvoi = null;
       if (formData.whenToSend === "schedule" && formData.scheduledDate && formData.scheduledTime) {
         dateEnvoi = new Date(`${formData.scheduledDate}T${formData.scheduledTime}`).toISOString();
@@ -178,11 +207,15 @@ const NouvelleCampagne = () => {
       const campaignData = {
         user_id: user?.id,
         nom_campagne: formData.nom_campagne,
-        sujet_email: formData.sujet_email,
+        sujet_email: abTestSettings.enabled && abTestSettings.testType !== 'content' 
+          ? abTestSettings.variantASubject 
+          : formData.sujet_email,
         expediteur_nom: formData.expediteur_nom,
         expediteur_email: formData.expediteur_email,
         list_id: formData.list_id === "all" ? null : formData.list_id,
-        html_contenu: htmlContent,
+        html_contenu: abTestSettings.enabled && abTestSettings.testType !== 'subject'
+          ? abTestSettings.variantAContent
+          : htmlContent,
         statut: isDraft ? "brouillon" : formData.whenToSend === "now" ? "en_cours" : "en_attente",
         date_envoi: dateEnvoi,
       };
@@ -195,9 +228,35 @@ const NouvelleCampagne = () => {
 
       if (error) throw error;
 
+      // Créer le test A/B si activé
+      if (abTestSettings.enabled && !isDraft && data) {
+        const abTestData = {
+          campaign_id: data.id,
+          user_id: user?.id,
+          test_type: abTestSettings.testType,
+          variant_a_subject: abTestSettings.testType !== 'content' ? abTestSettings.variantASubject : null,
+          variant_b_subject: abTestSettings.testType !== 'content' ? abTestSettings.variantBSubject : null,
+          variant_a_content: abTestSettings.testType !== 'subject' ? abTestSettings.variantAContent : null,
+          variant_b_content: abTestSettings.testType !== 'subject' ? abTestSettings.variantBContent : null,
+          test_percentage: abTestSettings.testPercentage,
+          winning_criteria: abTestSettings.winningCriteria,
+          test_duration_hours: abTestSettings.testDurationHours,
+          status: 'pending',
+        };
+
+        const { error: abError } = await supabase
+          .from("ab_tests")
+          .insert(abTestData);
+
+        if (abError) {
+          console.error("Erreur lors de la création du test A/B:", abError);
+          toast.warning("La campagne a été créée mais le test A/B n'a pas pu être configuré");
+        }
+      }
+
       // Si ce n'est pas un brouillon, créer les destinataires
       if (!isDraft && data) {
-        await createRecipients(data.id);
+        await createRecipients(data.id, abTestSettings.enabled ? abTestSettings.testPercentage : null);
         
         // Si envoi immédiat, lancer l'Edge Function
         if (formData.whenToSend === "now") {
@@ -205,6 +264,7 @@ const NouvelleCampagne = () => {
           const { data: sendResult, error: sendError } = await supabase.functions.invoke("send-email", {
             body: {
               campaignId: data.id,
+              abTestEnabled: abTestSettings.enabled,
             },
           });
 
@@ -238,7 +298,7 @@ const NouvelleCampagne = () => {
   });
 
   // Créer les destinataires pour une campagne
-  const createRecipients = async (campaignId: string) => {
+  const createRecipients = async (campaignId: string, abTestPercentage: number | null = null) => {
     let contacts: any[] = [];
 
     if (formData.list_id === "all") {
@@ -262,11 +322,31 @@ const NouvelleCampagne = () => {
 
     // Créer les enregistrements de destinataires
     if (contacts.length > 0) {
-      const recipients = contacts.map((contact) => ({
-        campaign_id: campaignId,
-        contact_id: contact.id,
-        statut_envoi: "en_attente",
-      }));
+      // Mélanger les contacts de manière aléatoire pour le test A/B
+      const shuffledContacts = [...contacts].sort(() => Math.random() - 0.5);
+      
+      const recipients = shuffledContacts.map((contact, index) => {
+        let abVariant = null;
+        
+        if (abTestPercentage !== null) {
+          const testGroupSize = Math.floor(contacts.length * abTestPercentage / 100);
+          const halfTestSize = Math.floor(testGroupSize / 2);
+          
+          if (index < halfTestSize) {
+            abVariant = 'A';
+          } else if (index < testGroupSize) {
+            abVariant = 'B';
+          }
+          // Les autres restent null (recevront le gagnant)
+        }
+        
+        return {
+          campaign_id: campaignId,
+          contact_id: contact.id,
+          statut_envoi: "en_attente",
+          ab_variant: abVariant,
+        };
+      });
 
       const { error } = await supabase.from("campaign_recipients").insert(recipients);
       if (error) throw error;
@@ -485,9 +565,13 @@ const NouvelleCampagne = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full max-w-md grid-cols-3">
+        <TabsList className="grid w-full max-w-lg grid-cols-4">
           <TabsTrigger value="info">Informations</TabsTrigger>
           <TabsTrigger value="design">Design</TabsTrigger>
+          <TabsTrigger value="abtest" className="gap-1">
+            <FlaskConical className="h-3.5 w-3.5" />
+            A/B Test
+          </TabsTrigger>
           <TabsTrigger value="envoi">Envoi</TabsTrigger>
         </TabsList>
 
@@ -639,6 +723,56 @@ const NouvelleCampagne = () => {
           </Card>
         </TabsContent>
 
+        {/* Onglet A/B Testing */}
+        <TabsContent value="abtest" className="space-y-6">
+          <ABTestConfig
+            settings={abTestSettings}
+            onSettingsChange={setAbTestSettings}
+            defaultSubject={formData.sujet_email}
+            defaultContent={htmlContent}
+          />
+
+          {abTestSettings.enabled && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  Vérification avant test
+                </CardTitle>
+                <CardDescription>
+                  Score de spam pour les deux variantes
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                    Variante A
+                  </Badge>
+                  <SpamScoreCard
+                    subject={abTestSettings.testType !== 'content' ? abTestSettings.variantASubject : formData.sujet_email}
+                    htmlContent={abTestSettings.testType !== 'subject' ? abTestSettings.variantAContent : htmlContent}
+                    senderName={formData.expediteur_nom}
+                    senderEmail={formData.expediteur_email}
+                    className="border-blue-200"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                    Variante B
+                  </Badge>
+                  <SpamScoreCard
+                    subject={abTestSettings.testType !== 'content' ? abTestSettings.variantBSubject : formData.sujet_email}
+                    htmlContent={abTestSettings.testType !== 'subject' ? abTestSettings.variantBContent : htmlContent}
+                    senderName={formData.expediteur_nom}
+                    senderEmail={formData.expediteur_email}
+                    className="border-purple-200"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
         <TabsContent value="envoi" className="space-y-6">
           <Card>
             <CardHeader>
@@ -720,6 +854,14 @@ const NouvelleCampagne = () => {
                 </p>
               </div>
 
+              {/* Score de spam */}
+              <SpamScoreCard
+                subject={formData.sujet_email}
+                htmlContent={htmlContent}
+                senderName={formData.expediteur_nom}
+                senderEmail={formData.expediteur_email}
+              />
+
               <div className="pt-4 border-t">
                 <h4 className="font-medium mb-2">Récapitulatif</h4>
                 <dl className="space-y-2 text-sm">
@@ -739,6 +881,17 @@ const NouvelleCampagne = () => {
                         : "Non programmé"}
                     </dd>
                   </div>
+                  {abTestSettings.enabled && (
+                    <div className="flex justify-between">
+                      <dt className="text-muted-foreground">Test A/B :</dt>
+                      <dd className="font-medium">
+                        <Badge variant="secondary" className="gap-1">
+                          <FlaskConical className="h-3 w-3" />
+                          Activé ({abTestSettings.testPercentage}%)
+                        </Badge>
+                      </dd>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <dt className="text-muted-foreground">Contenu :</dt>
                     <dd className="font-medium">
