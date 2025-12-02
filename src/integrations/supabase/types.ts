@@ -14,6 +14,98 @@ export type Database = {
   }
   public: {
     Tables: {
+      ab_tests: {
+        Row: {
+          campaign_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          started_at: string | null
+          status: string
+          test_duration_hours: number
+          test_percentage: number
+          test_type: string
+          updated_at: string
+          user_id: string
+          variant_a_clicks: number | null
+          variant_a_content: string | null
+          variant_a_opens: number | null
+          variant_a_send_time: string | null
+          variant_a_sent: number | null
+          variant_a_subject: string | null
+          variant_b_clicks: number | null
+          variant_b_content: string | null
+          variant_b_opens: number | null
+          variant_b_send_time: string | null
+          variant_b_sent: number | null
+          variant_b_subject: string | null
+          winner: string | null
+          winning_criteria: string
+        }
+        Insert: {
+          campaign_id: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          started_at?: string | null
+          status?: string
+          test_duration_hours?: number
+          test_percentage?: number
+          test_type?: string
+          updated_at?: string
+          user_id: string
+          variant_a_clicks?: number | null
+          variant_a_content?: string | null
+          variant_a_opens?: number | null
+          variant_a_send_time?: string | null
+          variant_a_sent?: number | null
+          variant_a_subject?: string | null
+          variant_b_clicks?: number | null
+          variant_b_content?: string | null
+          variant_b_opens?: number | null
+          variant_b_send_time?: string | null
+          variant_b_sent?: number | null
+          variant_b_subject?: string | null
+          winner?: string | null
+          winning_criteria?: string
+        }
+        Update: {
+          campaign_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          started_at?: string | null
+          status?: string
+          test_duration_hours?: number
+          test_percentage?: number
+          test_type?: string
+          updated_at?: string
+          user_id?: string
+          variant_a_clicks?: number | null
+          variant_a_content?: string | null
+          variant_a_opens?: number | null
+          variant_a_send_time?: string | null
+          variant_a_sent?: number | null
+          variant_a_subject?: string | null
+          variant_b_clicks?: number | null
+          variant_b_content?: string | null
+          variant_b_opens?: number | null
+          variant_b_send_time?: string | null
+          variant_b_sent?: number | null
+          variant_b_subject?: string | null
+          winner?: string | null
+          winning_criteria?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ab_tests_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       automation_executions: {
         Row: {
           automation_id: string
@@ -203,6 +295,7 @@ export type Database = {
       }
       campaign_recipients: {
         Row: {
+          ab_variant: string | null
           campaign_id: string
           clique: boolean
           contact_id: string
@@ -216,6 +309,7 @@ export type Database = {
           statut_envoi: string
         }
         Insert: {
+          ab_variant?: string | null
           campaign_id: string
           clique?: boolean
           contact_id: string
@@ -229,6 +323,7 @@ export type Database = {
           statut_envoi?: string
         }
         Update: {
+          ab_variant?: string | null
           campaign_id?: string
           clique?: boolean
           contact_id?: string
