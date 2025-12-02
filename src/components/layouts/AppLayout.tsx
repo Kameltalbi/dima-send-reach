@@ -1,6 +1,7 @@
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Topbar } from "@/components/Topbar";
+import { SoniaAssistant } from "@/components/SoniaAssistant";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 
@@ -31,6 +32,7 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
           <main className="flex-1 p-4 sm:p-6 overflow-auto">{children}</main>
         </div>
       </div>
+      <SoniaAssistant />
     </SidebarProvider>
   );
 };

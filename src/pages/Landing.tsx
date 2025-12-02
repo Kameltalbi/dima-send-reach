@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, Check, Menu, Send, TrendingUp, Workflow, Eye, FileText, Shield, Languages, DollarSign, Headphones, Users, Gift, X } from "lucide-react";
+import { ArrowRight, Check, Menu, Send, TrendingUp, Workflow, Eye, FileText, Shield, Languages, DollarSign, Headphones, Users, Gift, X, Bot } from "lucide-react";
 import { Link } from "react-router-dom";
 import { LogoWithText, LogoLight } from "@/components/Logo";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { SoniaAssistant } from "@/components/SoniaAssistant";
 import { useState } from "react";
 
 // Données des plans avec toutes les fonctionnalités détaillées
@@ -815,6 +816,7 @@ const Landing = () => {
           </div>
         </div>
       </footer>
+      <SoniaAssistant />
     </div>
   );
 };
