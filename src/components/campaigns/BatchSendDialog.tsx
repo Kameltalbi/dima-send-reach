@@ -53,21 +53,21 @@ export const BatchSendDialog = ({
       }
 
       const [totalResult, sentResult, remainingResult] = await Promise.all([
-        supabase.rpc("get_total_contacts_in_list", { p_list_id: listId }),
-        supabase.rpc("get_sent_contacts_count", {
+        supabase.rpc("get_total_contacts_in_list" as any, { p_list_id: listId }),
+        supabase.rpc("get_sent_contacts_count" as any, {
           p_list_id: listId,
           p_campaign_id: campaignId,
         }),
-        supabase.rpc("get_remaining_contacts_count", {
+        supabase.rpc("get_remaining_contacts_count" as any, {
           p_list_id: listId,
           p_campaign_id: campaignId,
         }),
       ]);
 
       return {
-        total: totalResult.data || 0,
-        alreadySent: sentResult.data || 0,
-        remaining: remainingResult.data || 0,
+        total: (totalResult.data as number) || 0,
+        alreadySent: (sentResult.data as number) || 0,
+        remaining: (remainingResult.data as number) || 0,
       };
     },
     enabled: open && !!listId,
