@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Send, Save, Eye, Loader2, Calendar, Clock, Mail, FlaskConical, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -27,6 +27,8 @@ import { ABTestConfig, ABTestSettings } from "@/components/campaigns/ABTestConfi
 import { SpamScoreCard } from "@/components/campaigns/SpamScoreCard";
 
 const NouvelleCampagne = () => {
+  const { id: campaignId } = useParams<{ id: string }>();
+  const isEditMode = !!campaignId;
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -62,6 +64,43 @@ const NouvelleCampagne = () => {
     winningCriteria: 'open_rate',
     testDurationHours: 4,
   });
+
+  // Charger la campagne existante pour le mode édition
+  const { data: existingCampaign, isLoading: isLoadingCampaign } = useQuery({
+    queryKey: ["campaign-edit", campaignId],
+    queryFn: async () => {
+      if (!campaignId) return null;
+      const { data, error } = await supabase
+        .from("campaigns")
+        .select("*")
+        .eq("id", campaignId)
+        .eq("user_id", user?.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: isEditMode && !!user,
+  });
+
+  // Pré-remplir le formulaire en mode édition
+  useEffect(() => {
+    if (existingCampaign) {
+      setFormData({
+        nom_campagne: existingCampaign.nom_campagne || "",
+        sujet_email: existingCampaign.sujet_email || "",
+        expediteur_nom: existingCampaign.expediteur_nom || "",
+        expediteur_email: existingCampaign.expediteur_email || "",
+        list_id: existingCampaign.list_id || "",
+        whenToSend: "now",
+        scheduledDate: "",
+        scheduledTime: "",
+        testEmail: "",
+      });
+      if (existingCampaign.html_contenu) {
+        setHtmlContent(existingCampaign.html_contenu);
+      }
+    }
+  }, [existingCampaign]);
 
   // Charger les listes
   const { data: lists } = useQuery({
@@ -228,11 +267,28 @@ const NouvelleCampagne = () => {
         date_envoi: dateEnvoi,
       };
 
-      const { data, error } = await supabase
-        .from("campaigns")
-        .insert(campaignData)
-        .select()
-        .single();
+      let data;
+      let error;
+
+      // Mode édition : update, sinon insert
+      if (isEditMode && campaignId) {
+        const result = await supabase
+          .from("campaigns")
+          .update(campaignData)
+          .eq("id", campaignId)
+          .select()
+          .single();
+        data = result.data;
+        error = result.error;
+      } else {
+        const result = await supabase
+          .from("campaigns")
+          .insert(campaignData)
+          .select()
+          .single();
+        data = result.data;
+        error = result.error;
+      }
 
       if (error) throw error;
 
@@ -291,8 +347,9 @@ const NouvelleCampagne = () => {
     },
     onSuccess: (data, isDraft) => {
       queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+      queryClient.invalidateQueries({ queryKey: ["campaign", campaignId] });
       if (isDraft) {
-        toast.success("Campagne enregistrée en brouillon");
+        toast.success(isEditMode ? "Campagne modifiée et enregistrée en brouillon" : "Campagne enregistrée en brouillon");
       } else if (formData.whenToSend === "now") {
         toast.success("Campagne envoyée avec succès ! Consultez les statistiques pour suivre les résultats.");
       } else {
@@ -534,9 +591,11 @@ const NouvelleCampagne = () => {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-3xl font-heading font-bold text-foreground">Nouvelle campagne</h1>
+          <h1 className="text-3xl font-heading font-bold text-foreground">
+            {isEditMode ? "Éditer la campagne" : "Nouvelle campagne"}
+          </h1>
           <p className="text-muted-foreground mt-1">
-            Créez et configurez votre campagne d'e-mailing
+            {isEditMode ? "Modifiez votre campagne" : "Créez et configurez votre campagne d'e-mailing"}
           </p>
         </div>
         <div className="flex gap-2">
