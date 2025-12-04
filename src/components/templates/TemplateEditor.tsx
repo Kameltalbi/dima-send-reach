@@ -297,15 +297,27 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
           },
         ],
       },
-      // Keep default panels for toolbar functionality
-      panels: {
-        defaults: [],
-      },
       // Enable selection and move
       selectorManager: {
         appendTo: "#styles",
       },
     });
+    
+    // IMPORTANT: Set defaults for components to be editable and have toolbar
+    editor.DomComponents.getType('default').model.prototype.defaults.editable = true;
+    editor.DomComponents.getType('default').model.prototype.defaults.draggable = true;
+    editor.DomComponents.getType('default').model.prototype.defaults.droppable = true;
+    editor.DomComponents.getType('default').model.prototype.defaults.selectable = true;
+    editor.DomComponents.getType('default').model.prototype.defaults.hoverable = true;
+    
+    // Add default toolbar to all component types
+    const defaultToolbar = [
+      { attributes: { class: 'fa fa-arrows', draggable: true, title: 'Déplacer' }, command: 'tlb-move' },
+      { attributes: { class: 'fa fa-clone', title: 'Dupliquer' }, command: 'tlb-clone' },
+      { attributes: { class: 'fa fa-trash-o', title: 'Supprimer' }, command: 'tlb-delete' },
+    ];
+    
+    editor.DomComponents.getType('default').model.prototype.defaults.toolbar = defaultToolbar;
 
     editorRef.current = editor;
 
@@ -327,19 +339,52 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
       }
     });
 
-    // Single click on image to select and show toolbar
+    // Ensure all components have toolbar when selected
     editor.on('component:selected', (component: any) => {
-      // Refresh toolbar visibility
-      const toolbar = component.get('toolbar');
-      if (toolbar && toolbar.length === 0) {
-        // Add default toolbar items if missing
+      // Always ensure toolbar is present
+      const currentToolbar = component.get('toolbar');
+      if (!currentToolbar || currentToolbar.length === 0) {
         component.set('toolbar', [
-          { attributes: { class: 'fa fa-arrows gjs-no-touch-actions', draggable: true }, command: 'tlb-move' },
-          { attributes: { class: 'fa fa-clone' }, command: 'tlb-clone' },
-          { attributes: { class: 'fa fa-trash-o' }, command: 'tlb-delete' },
+          { attributes: { class: 'fa fa-arrows', draggable: true, title: 'Déplacer' }, command: 'tlb-move' },
+          { attributes: { class: 'fa fa-clone', title: 'Dupliquer' }, command: 'tlb-clone' },
+          { attributes: { class: 'fa fa-trash-o', title: 'Supprimer' }, command: 'tlb-delete' },
         ]);
       }
+      
+      // Ensure component is editable
+      component.set('editable', true);
+      component.set('selectable', true);
+      component.set('hoverable', true);
     });
+    
+    // Make all loaded components editable
+    editor.on('load', () => {
+      editor.getComponents().each((component: any) => {
+        makeComponentEditable(component);
+      });
+    });
+    
+    // Helper to recursively make components editable
+    function makeComponentEditable(component: any) {
+      component.set({
+        editable: true,
+        selectable: true,
+        hoverable: true,
+        draggable: true,
+        droppable: true,
+        toolbar: [
+          { attributes: { class: 'fa fa-arrows', draggable: true, title: 'Déplacer' }, command: 'tlb-move' },
+          { attributes: { class: 'fa fa-clone', title: 'Dupliquer' }, command: 'tlb-clone' },
+          { attributes: { class: 'fa fa-trash-o', title: 'Supprimer' }, command: 'tlb-delete' },
+        ],
+      });
+      
+      // Recursively apply to children
+      const children = component.get('components');
+      if (children && children.length) {
+        children.each((child: any) => makeComponentEditable(child));
+      }
+    }
 
     // Configuration de l'upload d'images
     editor.on('asset:upload:start', () => {
@@ -444,6 +489,12 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
         try {
           editor.loadProjectData(template.content_json as any);
           console.log("Template loaded from content_json");
+          // Rendre tous les composants éditables après chargement
+          setTimeout(() => {
+            editor.getComponents().each((component: any) => {
+              makeComponentEditable(component);
+            });
+          }, 100);
         } catch (error) {
           console.error("Error loading project data:", error);
           // Si échec, charger depuis HTML
@@ -500,9 +551,13 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
         // Utiliser setComponents avec le HTML nettoyé
         editorInstance.setComponents(htmlContent);
         
-        // Forcer le rendu
+        // Forcer le rendu et rendre éditables
         setTimeout(() => {
           editorInstance.refresh();
+          // Rendre tous les composants éditables
+          editorInstance.getComponents().each((component: any) => {
+            makeComponentEditable(component);
+          });
         }, 100);
       } catch (error) {
         console.error("Error loading HTML:", error);
@@ -534,6 +589,13 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
           </div>
         </div>
       `);
+      
+      // Rendre tous les composants éditables
+      setTimeout(() => {
+        editorInstance.getComponents().each((component: any) => {
+          makeComponentEditable(component);
+        });
+      }, 100);
     }
 
     // Écouter les changements de device
