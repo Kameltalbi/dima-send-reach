@@ -128,6 +128,7 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
       canvas: {
         styles: [
           "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap",
+          "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css",
         ],
       },
       // Asset manager for images with custom upload
