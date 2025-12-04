@@ -171,28 +171,36 @@ const NouvelleCampagne = () => {
   // Mutation pour sauvegarder la campagne
   const saveMutation = useMutation({
     mutationFn: async (isDraft: boolean) => {
-      if (!formData.nom_campagne || !formData.sujet_email || !formData.expediteur_nom || !formData.expediteur_email) {
-        throw new Error("Veuillez remplir tous les champs obligatoires");
-      }
-
-      if (!htmlContent.trim()) {
-        throw new Error("Veuillez créer ou sélectionner un contenu pour votre email");
-      }
-
-      if (!formData.list_id) {
-        throw new Error("Veuillez sélectionner une liste de contacts");
-      }
-
-      // Validation A/B Test
-      if (abTestSettings.enabled && !isDraft) {
-        if (abTestSettings.testType === 'subject' || abTestSettings.testType === 'both') {
-          if (!abTestSettings.variantASubject || !abTestSettings.variantBSubject) {
-            throw new Error("Veuillez remplir les sujets des deux variantes A/B");
-          }
+      // Pour un brouillon, seul le nom de la campagne est requis
+      if (isDraft) {
+        if (!formData.nom_campagne.trim()) {
+          throw new Error("Veuillez saisir un nom pour la campagne");
         }
-        if (abTestSettings.testType === 'content' || abTestSettings.testType === 'both') {
-          if (!abTestSettings.variantAContent || !abTestSettings.variantBContent) {
-            throw new Error("Veuillez remplir le contenu des deux variantes A/B");
+      } else {
+        // Pour l'envoi, tous les champs sont obligatoires
+        if (!formData.nom_campagne || !formData.sujet_email || !formData.expediteur_nom || !formData.expediteur_email) {
+          throw new Error("Veuillez remplir tous les champs obligatoires");
+        }
+
+        if (!htmlContent.trim()) {
+          throw new Error("Veuillez créer ou sélectionner un contenu pour votre email");
+        }
+
+        if (!formData.list_id) {
+          throw new Error("Veuillez sélectionner une liste de contacts");
+        }
+
+        // Validation A/B Test uniquement pour l'envoi
+        if (abTestSettings.enabled) {
+          if (abTestSettings.testType === 'subject' || abTestSettings.testType === 'both') {
+            if (!abTestSettings.variantASubject || !abTestSettings.variantBSubject) {
+              throw new Error("Veuillez remplir les sujets des deux variantes A/B");
+            }
+          }
+          if (abTestSettings.testType === 'content' || abTestSettings.testType === 'both') {
+            if (!abTestSettings.variantAContent || !abTestSettings.variantBContent) {
+              throw new Error("Veuillez remplir le contenu des deux variantes A/B");
+            }
           }
         }
       }
@@ -206,16 +214,16 @@ const NouvelleCampagne = () => {
 
       const campaignData = {
         user_id: user?.id,
-        nom_campagne: formData.nom_campagne,
+        nom_campagne: formData.nom_campagne || "Campagne sans nom",
         sujet_email: abTestSettings.enabled && abTestSettings.testType !== 'content' 
-          ? abTestSettings.variantASubject 
-          : formData.sujet_email,
-        expediteur_nom: formData.expediteur_nom,
-        expediteur_email: formData.expediteur_email,
-        list_id: formData.list_id === "all" ? null : formData.list_id,
+          ? (abTestSettings.variantASubject || formData.sujet_email || "")
+          : (formData.sujet_email || ""),
+        expediteur_nom: formData.expediteur_nom || "",
+        expediteur_email: formData.expediteur_email || user?.email || "",
+        list_id: formData.list_id === "all" ? null : (formData.list_id || null),
         html_contenu: abTestSettings.enabled && abTestSettings.testType !== 'subject'
-          ? abTestSettings.variantAContent
-          : htmlContent,
+          ? (abTestSettings.variantAContent || htmlContent || null)
+          : (htmlContent || null),
         statut: isDraft ? "brouillon" : formData.whenToSend === "now" ? "en_cours" : "en_attente",
         date_envoi: dateEnvoi,
       };
