@@ -1118,66 +1118,60 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
 
       {/* Zone d'édition - Layout moderne */}
       <div className="flex-1 flex overflow-hidden bg-muted/30">
-        {/* Panneau gauche - Blocs (toujours dans le DOM pour GrapesJS) */}
+        {/* Panneau gauche - Blocs (structure fixe, jamais démontée) */}
         <div className={`border-r-2 bg-white overflow-hidden flex flex-col shadow-sm transition-all duration-300 ${blocksPanelOpen ? 'w-72' : 'w-10'}`}>
-          {blocksPanelOpen ? (
-            <>
-              <div className="px-5 py-4 border-b-2 bg-gradient-to-r from-muted/50 to-muted/30">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex-1">
-                    <h3 className="text-xs font-bold text-foreground uppercase tracking-wider mb-0.5">Blocs</h3>
-                    <p className="text-xs text-muted-foreground font-medium">Glissez-déposez pour ajouter</p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        if (!editorRef.current) return;
-                        if (confirm("Tout supprimer ?")) {
-                          editorRef.current.setComponents("");
-                        }
-                      }}
-                      className="h-7 w-7 hover:bg-destructive/10 hover:text-destructive"
-                      title="Tout supprimer"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setBlocksPanelOpen(false)}
-                      className="h-7 w-7 hover:bg-muted"
-                      title="Fermer le panneau"
-                    >
-                      <ChevronLeft className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
+          {/* Header - caché quand fermé */}
+          <div className={`px-5 py-4 border-b-2 bg-gradient-to-r from-muted/50 to-muted/30 ${blocksPanelOpen ? '' : 'hidden'}`}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex-1">
+                <h3 className="text-xs font-bold text-foreground uppercase tracking-wider mb-0.5">Blocs</h3>
+                <p className="text-xs text-muted-foreground font-medium">Glissez-déposez pour ajouter</p>
               </div>
-              <div className="flex-1 overflow-y-auto p-4 bg-gradient-to-b from-white to-muted/10">
-                <div id="blocks"></div>
-              </div>
-            </>
-          ) : (
-            <>
-              {/* Div caché pour garder les blocs dans le DOM */}
-              <div className="hidden">
-                <div id="blocks"></div>
-              </div>
-              <div className="flex items-center justify-center h-full">
+              <div className="flex items-center gap-1">
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setBlocksPanelOpen(true)}
-                  className="h-10 w-10 hover:bg-primary/10 hover:text-primary rounded-none"
-                  title="Ouvrir le panneau de blocs"
+                  onClick={() => {
+                    if (!editorRef.current) return;
+                    if (confirm("Tout supprimer ?")) {
+                      editorRef.current.setComponents("");
+                    }
+                  }}
+                  className="h-7 w-7 hover:bg-destructive/10 hover:text-destructive"
+                  title="Tout supprimer"
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setBlocksPanelOpen(false)}
+                  className="h-7 w-7 hover:bg-muted"
+                  title="Fermer le panneau"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
                 </Button>
               </div>
-            </>
-          )}
+            </div>
+          </div>
+          
+          {/* Contenu des blocs - TOUJOURS monté, juste caché */}
+          <div className={`flex-1 overflow-y-auto p-4 bg-gradient-to-b from-white to-muted/10 ${blocksPanelOpen ? '' : 'hidden'}`}>
+            <div id="blocks"></div>
+          </div>
+          
+          {/* Bouton ouvrir - affiché quand fermé */}
+          <div className={`flex items-center justify-center h-full ${blocksPanelOpen ? 'hidden' : ''}`}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setBlocksPanelOpen(true)}
+              className="h-10 w-10 hover:bg-primary/10 hover:text-primary rounded-none"
+              title="Ouvrir le panneau de blocs"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Canvas central - Design épuré */}
