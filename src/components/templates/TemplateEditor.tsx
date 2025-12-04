@@ -857,14 +857,37 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
           
           const imageComponent = {
             type: 'image',
-            attributes: { src: publicUrl },
-            style: { 'max-width': '100%', height: 'auto' }
+            attributes: { src: publicUrl, alt: file.name },
+            style: { 
+              'max-width': '100%', 
+              'height': 'auto',
+              'display': 'block',
+              'margin': '10px auto'
+            }
           };
 
-          if (selected) {
-            selected.append(imageComponent);
+          let targetComponent;
+          
+          if (selected && selected.get('type') !== 'wrapper') {
+            // Ajouter après le composant sélectionné
+            const parent = selected.parent();
+            if (parent) {
+              const index = parent.components().indexOf(selected);
+              parent.components().add(imageComponent, { at: index + 1 });
+              targetComponent = parent.components().at(index + 1);
+            } else {
+              wrapper.components().add(imageComponent, { at: 0 });
+              targetComponent = wrapper.components().at(0);
+            }
           } else {
-            wrapper.append(imageComponent);
+            // Ajouter au début du wrapper pour être visible
+            wrapper.components().add(imageComponent, { at: 0 });
+            targetComponent = wrapper.components().at(0);
+          }
+          
+          // Sélectionner l'image ajoutée pour la rendre visible
+          if (targetComponent) {
+            editorRef.current.select(targetComponent);
           }
           
           toast.success(`Image "${file.name}" ajoutée!`);
