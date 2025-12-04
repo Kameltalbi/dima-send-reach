@@ -71,6 +71,7 @@ interface TemplateEditorProps {
 export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorProps) {
   const editorRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const [settingsOpen, setSettingsOpen] = useState(!templateId);
   const [importOpen, setImportOpen] = useState(false);
@@ -83,6 +84,7 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
   const [blocksPanelOpen, setBlocksPanelOpen] = useState(true);
   const [stylesPanelOpen, setStylesPanelOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const isMobile = useIsMobile();
 
   const { data: template } = useQuery({
@@ -810,11 +812,74 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
   };
 
   const handleAddImage = () => {
-    if (!editorRef.current) return;
-    editorRef.current.runCommand('open-assets', {
-      types: ['image'],
-      accept: 'image/*',
-    });
+    imageInputRef.current?.click();
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+    toast.info('Téléchargement en cours...');
+
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        toast.error('Vous devez être connecté pour uploader des images');
+        setIsUploading(false);
+        return;
+      }
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `${userData.user.id}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('template-images')
+          .upload(filePath, file);
+
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          toast.error(`Erreur: ${file.name}`);
+          continue;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('template-images')
+          .getPublicUrl(filePath);
+
+        // Insérer l'image directement dans l'éditeur
+        if (editorRef.current) {
+          const selected = editorRef.current.getSelected();
+          const wrapper = editorRef.current.getWrapper();
+          
+          const imageComponent = {
+            type: 'image',
+            attributes: { src: publicUrl },
+            style: { 'max-width': '100%', height: 'auto' }
+          };
+
+          if (selected) {
+            selected.append(imageComponent);
+          } else {
+            wrapper.append(imageComponent);
+          }
+          
+          toast.success(`Image "${file.name}" ajoutée!`);
+        }
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Erreur lors du téléchargement');
+    } finally {
+      setIsUploading(false);
+      // Reset input pour permettre de re-sélectionner le même fichier
+      if (imageInputRef.current) {
+        imageInputRef.current.value = '';
+      }
+    }
   };
 
   const toggleCodeView = () => {
@@ -928,13 +993,18 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
                 variant="outline" 
                 size="sm" 
                 onClick={handleAddImage}
+                disabled={isUploading}
                 className="h-8 px-2 text-xs border-primary/30 text-primary hover:bg-primary/10"
                 title="Ajouter une image"
               >
-                <ImagePlus className="h-3.5 w-3.5 mr-1.5" />
-                Ajouter image
+                {isUploading ? (
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <ImagePlus className="h-3.5 w-3.5 mr-1.5" />
+                )}
+                {isUploading ? 'Upload...' : 'Ajouter image'}
               </Button>
-              <Button 
+              <Button
                 variant="ghost" 
                 size="sm" 
                 onClick={handleImport}
@@ -1382,6 +1452,16 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Hidden file input for image upload */}
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={handleImageUpload}
+      />
     </div>
   );
 }
