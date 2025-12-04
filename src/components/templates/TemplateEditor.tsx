@@ -117,6 +117,23 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
       width: "auto",
       storageManager: false,
       plugins: [newsletterPreset],
+      pluginsOpts: {
+        [newsletterPreset as any]: {
+          modalTitleImport: 'Importer un template',
+          modalBtnImport: 'Importer',
+        }
+      },
+      // Enable canvas toolbar for element manipulation
+      canvas: {
+        styles: [
+          "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap",
+        ],
+      },
+      // Asset manager for images
+      assetManager: {
+        embedAsBase64: false,
+        autoAdd: true,
+      },
       blockManager: {
         appendTo: "#blocks",
         blocks: [
@@ -145,7 +162,8 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
             id: 'image',
             label: 'Image',
             category: 'Contenu',
-            content: '<img src="https://via.placeholder.com/350x250" data-gjs-type="image"/>',
+            content: { type: 'image' },
+            activate: true,
             media: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>',
           },
           {
@@ -261,11 +279,6 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
           },
         ],
       },
-      canvas: {
-        styles: [
-          "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap",
-        ],
-      },
       deviceManager: {
         devices: [
           {
@@ -284,12 +297,49 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
           },
         ],
       },
+      // Keep default panels for toolbar functionality
       panels: {
         defaults: [],
+      },
+      // Enable selection and move
+      selectorManager: {
+        appendTo: "#styles",
       },
     });
 
     editorRef.current = editor;
+
+    // Enable toolbar commands for component manipulation
+    editor.Commands.add('tlb-move', {
+      run(ed: any) {
+        ed.runCommand('core:component-drag');
+      }
+    });
+
+    // Double-click on image opens asset manager
+    editor.on('component:dblclick', (component: any) => {
+      if (component.get('type') === 'image') {
+        editor.runCommand('open-assets', {
+          target: component,
+          types: ['image'],
+          accept: 'image/*',
+        });
+      }
+    });
+
+    // Single click on image to select and show toolbar
+    editor.on('component:selected', (component: any) => {
+      // Refresh toolbar visibility
+      const toolbar = component.get('toolbar');
+      if (toolbar && toolbar.length === 0) {
+        // Add default toolbar items if missing
+        component.set('toolbar', [
+          { attributes: { class: 'fa fa-arrows gjs-no-touch-actions', draggable: true }, command: 'tlb-move' },
+          { attributes: { class: 'fa fa-clone' }, command: 'tlb-clone' },
+          { attributes: { class: 'fa fa-trash-o' }, command: 'tlb-delete' },
+        ]);
+      }
+    });
 
     // Configuration de l'upload d'images
     editor.on('asset:upload:start', () => {
@@ -311,16 +361,6 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
 
     // Personnaliser l'upload d'images
     const assetManager = editor.AssetManager;
-    assetManager.addType('image', {
-      view: {
-        getPreview() {
-          return this.model.get('src');
-        },
-        getInfo() {
-          return this.model.get('name');
-        },
-      },
-    });
 
     // Gérer l'upload via input file
     const uploadInput = document.createElement('input');
