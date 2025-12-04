@@ -47,7 +47,10 @@ import {
   PanelLeftOpen,
   PanelRightOpen,
   Menu,
-  ImagePlus
+  ImagePlus,
+  FolderOpen,
+  Plus,
+  Image as ImageIcon
 } from "lucide-react";
 import {
   Sheet,
@@ -84,6 +87,9 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
   const [blocksPanelOpen, setBlocksPanelOpen] = useState(true);
   const [stylesPanelOpen, setStylesPanelOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [leftPanelTab, setLeftPanelTab] = useState<"blocks" | "images">("blocks");
+  const [userImages, setUserImages] = useState<{name: string, url: string}[]>([]);
+  const [loadingImages, setLoadingImages] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const isMobile = useIsMobile();
 
@@ -110,6 +116,106 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
       setTemplateType(template.type);
     }
   }, [template]);
+
+  // Charger les images existantes de l'utilisateur
+  const loadUserImages = async () => {
+    setLoadingImages(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) return;
+
+      const { data: files, error } = await supabase.storage
+        .from('template-images')
+        .list(userData.user.id, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
+
+      if (error) {
+        console.error('Error loading images:', error);
+        return;
+      }
+
+      if (files && files.length > 0) {
+        const images = files
+          .filter(file => file.name !== '.emptyFolderPlaceholder')
+          .map(file => ({
+            name: file.name,
+            url: supabase.storage.from('template-images').getPublicUrl(`${userData.user.id}/${file.name}`).data.publicUrl
+          }));
+        setUserImages(images);
+      }
+    } catch (error) {
+      console.error('Error loading images:', error);
+    } finally {
+      setLoadingImages(false);
+    }
+  };
+
+  useEffect(() => {
+    loadUserImages();
+  }, []);
+
+  // Insérer une image de la galerie dans l'éditeur
+  const insertImageFromGallery = (imageUrl: string, imageName: string) => {
+    if (!editorRef.current) return;
+
+    const wrapper = editorRef.current.getWrapper();
+    const selected = editorRef.current.getSelected();
+
+    const imageComponent = {
+      type: 'image',
+      attributes: { src: imageUrl, alt: imageName },
+      style: { 
+        'max-width': '100%', 
+        'height': 'auto',
+        'display': 'block',
+        'margin': '10px auto'
+      }
+    };
+
+    let targetComponent;
+    
+    if (selected && selected.get('type') !== 'wrapper') {
+      const parent = selected.parent();
+      if (parent) {
+        const index = parent.components().indexOf(selected);
+        parent.components().add(imageComponent, { at: index + 1 });
+        targetComponent = parent.components().at(index + 1);
+      } else {
+        wrapper.components().add(imageComponent, { at: 0 });
+        targetComponent = wrapper.components().at(0);
+      }
+    } else {
+      wrapper.components().add(imageComponent, { at: 0 });
+      targetComponent = wrapper.components().at(0);
+    }
+    
+    if (targetComponent) {
+      editorRef.current.select(targetComponent);
+    }
+    
+    toast.success(`Image "${imageName}" ajoutée!`);
+  };
+
+  // Supprimer une image de la galerie
+  const deleteImageFromGallery = async (imageName: string) => {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) return;
+
+      const { error } = await supabase.storage
+        .from('template-images')
+        .remove([`${userData.user.id}/${imageName}`]);
+
+      if (error) {
+        toast.error('Erreur lors de la suppression');
+        return;
+      }
+
+      setUserImages(prev => prev.filter(img => img.name !== imageName));
+      toast.success('Image supprimée');
+    } catch (error) {
+      toast.error('Erreur lors de la suppression');
+    }
+  };
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -893,6 +999,8 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
           toast.success(`Image "${file.name}" ajoutée!`);
         }
       }
+      // Rafraîchir la galerie d'images
+      await loadUserImages();
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('Erreur lors du téléchargement');
@@ -1225,30 +1333,53 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
 
       {/* Zone d'édition - Layout moderne */}
       <div className="flex-1 flex overflow-hidden bg-muted/30">
-        {/* Panneau gauche - Blocs (structure fixe, jamais démontée) */}
-        <div className={`border-r-2 bg-white overflow-hidden flex flex-col shadow-sm transition-all duration-300 ${blocksPanelOpen ? 'w-72' : 'w-10'}`}>
-          {/* Header - caché quand fermé */}
-          <div className={`px-5 py-4 border-b-2 bg-gradient-to-r from-muted/50 to-muted/30 ${blocksPanelOpen ? '' : 'hidden'}`}>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex-1">
-                <h3 className="text-xs font-bold text-foreground uppercase tracking-wider mb-0.5">Blocs</h3>
-                <p className="text-xs text-muted-foreground font-medium">Glissez-déposez pour ajouter</p>
+        {/* Panneau gauche - Blocs & Images */}
+        <div className={`border-r-2 bg-white overflow-hidden flex flex-col shadow-sm transition-all duration-300 ${blocksPanelOpen ? 'w-80' : 'w-10'}`}>
+          {/* Header avec onglets - caché quand fermé */}
+          <div className={`border-b-2 bg-gradient-to-r from-muted/50 to-muted/30 ${blocksPanelOpen ? '' : 'hidden'}`}>
+            <div className="flex items-center justify-between px-3 py-2">
+              <div className="flex gap-1">
+                <Button
+                  variant={leftPanelTab === "blocks" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setLeftPanelTab("blocks")}
+                  className="h-8 px-3 text-xs gap-1.5"
+                >
+                  <Layers className="h-3.5 w-3.5" />
+                  Blocs
+                </Button>
+                <Button
+                  variant={leftPanelTab === "images" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setLeftPanelTab("images")}
+                  className="h-8 px-3 text-xs gap-1.5"
+                >
+                  <FolderOpen className="h-3.5 w-3.5" />
+                  Mes Images
+                  {userImages.length > 0 && (
+                    <span className="ml-1 bg-primary/20 text-primary text-[10px] px-1.5 py-0.5 rounded-full">
+                      {userImages.length}
+                    </span>
+                  )}
+                </Button>
               </div>
               <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    if (!editorRef.current) return;
-                    if (confirm("Tout supprimer ?")) {
-                      editorRef.current.setComponents("");
-                    }
-                  }}
-                  className="h-7 w-7 hover:bg-destructive/10 hover:text-destructive"
-                  title="Tout supprimer"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
+                {leftPanelTab === "blocks" && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      if (!editorRef.current) return;
+                      if (confirm("Tout supprimer ?")) {
+                        editorRef.current.setComponents("");
+                      }
+                    }}
+                    className="h-7 w-7 hover:bg-destructive/10 hover:text-destructive"
+                    title="Tout supprimer"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="icon"
@@ -1262,9 +1393,99 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
             </div>
           </div>
           
-          {/* Contenu des blocs - TOUJOURS monté, juste caché */}
-          <div className={`flex-1 overflow-y-auto p-4 bg-gradient-to-b from-white to-muted/10 ${blocksPanelOpen ? '' : 'hidden'}`}>
+          {/* Contenu des blocs */}
+          <div className={`flex-1 overflow-y-auto p-4 bg-gradient-to-b from-white to-muted/10 ${blocksPanelOpen && leftPanelTab === "blocks" ? '' : 'hidden'}`}>
             <div id="blocks"></div>
+          </div>
+
+          {/* Contenu de la galerie d'images */}
+          <div className={`flex-1 overflow-y-auto bg-gradient-to-b from-white to-muted/10 ${blocksPanelOpen && leftPanelTab === "images" ? 'flex flex-col' : 'hidden'}`}>
+            {/* Bouton ajouter une image */}
+            <div className="p-3 border-b">
+              <Button
+                onClick={handleAddImage}
+                disabled={isUploading}
+                className="w-full gap-2"
+                size="sm"
+              >
+                {isUploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
+                Ajouter une image
+              </Button>
+            </div>
+
+            {/* Liste des images */}
+            <div className="flex-1 overflow-y-auto p-3">
+              {loadingImages ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : userImages.length === 0 ? (
+                <div className="text-center py-8 px-4">
+                  <ImageIcon className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+                  <p className="text-sm text-muted-foreground mb-1">Aucune image</p>
+                  <p className="text-xs text-muted-foreground/70">
+                    Téléchargez des images pour les utiliser dans vos templates
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  {userImages.map((image) => (
+                    <div 
+                      key={image.name} 
+                      className="group relative aspect-square rounded-lg overflow-hidden border bg-muted/30 hover:ring-2 hover:ring-primary/50 cursor-pointer transition-all"
+                      onClick={() => insertImageFromGallery(image.url, image.name)}
+                    >
+                      <img 
+                        src={image.url} 
+                        alt={image.name}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                        <span className="opacity-0 group-hover:opacity-100 text-white text-xs font-medium transition-opacity">
+                          Cliquez pour ajouter
+                        </span>
+                      </div>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm('Supprimer cette image ?')) {
+                            deleteImageFromGallery(image.name);
+                          }
+                        }}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Actualiser */}
+            {userImages.length > 0 && (
+              <div className="p-3 border-t">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={loadUserImages}
+                  disabled={loadingImages}
+                  className="w-full text-xs"
+                >
+                  {loadingImages ? (
+                    <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  ) : null}
+                  Actualiser la galerie
+                </Button>
+              </div>
+            )}
           </div>
           
           {/* Bouton ouvrir - affiché quand fermé */}
@@ -1274,7 +1495,7 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
               size="icon"
               onClick={() => setBlocksPanelOpen(true)}
               className="h-10 w-10 hover:bg-primary/10 hover:text-primary rounded-none"
-              title="Ouvrir le panneau de blocs"
+              title="Ouvrir le panneau"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
