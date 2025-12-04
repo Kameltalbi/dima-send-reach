@@ -63,7 +63,7 @@ const App = () => (
             <Route path="/campagnes" element={<AppLayout><SubscriptionProtectedRoute><Campagnes /></SubscriptionProtectedRoute></AppLayout>} />
             <Route path="/campagnes/nouvelle" element={<AppLayout><SubscriptionProtectedRoute><NouvelleCampagne /></SubscriptionProtectedRoute></AppLayout>} />
             <Route path="/campagnes/:id" element={<AppLayout><SubscriptionProtectedRoute><CampaignDetails /></SubscriptionProtectedRoute></AppLayout>} />
-            <Route path="/campagnes/:id/edit" element={<AppLayout><SubscriptionProtectedRoute><NouvelleCampagne /></SubscriptionProtectedRoute></AppLayout>} />
+            <Route path="/campagnes/:id/edit" element={<SubscriptionProtectedRoute><NouvelleCampagne /></SubscriptionProtectedRoute>} />
             <Route path="/campagnes/:id/analytics" element={<AppLayout><SubscriptionProtectedRoute><CampaignAnalytics /></SubscriptionProtectedRoute></AppLayout>} />
             <Route path="/statistiques" element={<AppLayout><SubscriptionProtectedRoute><Statistiques /></SubscriptionProtectedRoute></AppLayout>} />
             <Route path="/templates" element={<AppLayout><SubscriptionProtectedRoute><Templates /></SubscriptionProtectedRoute></AppLayout>} />
