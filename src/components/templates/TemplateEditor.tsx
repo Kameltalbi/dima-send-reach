@@ -135,9 +135,18 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
       assetManager: {
         embedAsBase64: false,
         autoAdd: true,
-        uploadFile: async (e: any) => {
+        dropzone: true,
+        openAssetsOnDrop: true,
+        dropzoneContent: 'Glissez vos images ici ou cliquez pour sélectionner',
+        upload: false, // We handle upload manually
+        uploadFile: async function(e: any) {
           const files = e.dataTransfer ? e.dataTransfer.files : e.target.files;
-          if (!files || files.length === 0) return;
+          if (!files || files.length === 0) {
+            console.log('No files to upload');
+            return;
+          }
+
+          console.log('Uploading', files.length, 'files');
 
           try {
             const { data: userData } = await supabase.auth.getUser();
@@ -155,6 +164,8 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
               const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
               const filePath = `${userData.user.id}/${fileName}`;
 
+              console.log('Uploading file:', file.name, 'to', filePath);
+
               const { error: uploadError } = await supabase.storage
                 .from('template-images')
                 .upload(filePath, file);
@@ -169,6 +180,8 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
                 .from('template-images')
                 .getPublicUrl(filePath);
 
+              console.log('Uploaded successfully:', publicUrl);
+
               uploadedAssets.push({
                 src: publicUrl,
                 name: file.name,
@@ -176,7 +189,7 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
               });
             }
 
-            if (uploadedAssets.length > 0) {
+            if (uploadedAssets.length > 0 && editor) {
               editor.AssetManager.add(uploadedAssets);
               toast.success('Images téléchargées!');
             }
