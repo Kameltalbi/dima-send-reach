@@ -875,29 +875,37 @@ All colors MUST be HSL.
   display: flex !important;
   visibility: visible !important;
   opacity: 1 !important;
-  background: white !important;
-  border: 1px solid hsl(var(--border)) !important;
+  background: hsl(220 15% 15%) !important;
+  border: none !important;
   border-radius: 8px !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-  padding: 4px !important;
-  gap: 2px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+  padding: 6px !important;
+  gap: 4px !important;
 }
 
 .gjs-toolbar-item {
   display: flex !important;
   align-items: center;
   justify-content: center;
-  width: 28px !important;
-  height: 28px !important;
+  width: 32px !important;
+  height: 32px !important;
   border-radius: 6px !important;
   cursor: pointer !important;
   transition: all 0.2s !important;
-  color: hsl(var(--foreground)) !important;
+  color: white !important;
+  background: transparent !important;
+  font-size: 14px !important;
 }
 
 .gjs-toolbar-item:hover {
-  background: hsl(var(--primary) / 0.1) !important;
-  color: hsl(var(--primary)) !important;
+  background: hsl(var(--primary)) !important;
+  color: white !important;
+  transform: scale(1.1);
+}
+
+.gjs-toolbar-item .fa {
+  font-size: 14px !important;
+  color: inherit !important;
 }
 
 /* Component resizer */
