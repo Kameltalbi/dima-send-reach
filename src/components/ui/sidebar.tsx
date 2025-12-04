@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { VariantProps, cva } from "class-variance-authority";
-import { PanelLeft } from "lucide-react";
+import { PanelLeft, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -218,7 +218,8 @@ Sidebar.displayName = "Sidebar";
 
 const SidebarTrigger = React.forwardRef<React.ElementRef<typeof Button>, React.ComponentProps<typeof Button>>(
   ({ className, onClick, ...props }, ref) => {
-    const { toggleSidebar } = useSidebar();
+    const { toggleSidebar, state } = useSidebar();
+    const isExpanded = state === "expanded";
 
     return (
       <Button
@@ -231,9 +232,10 @@ const SidebarTrigger = React.forwardRef<React.ElementRef<typeof Button>, React.C
           onClick?.(event);
           toggleSidebar();
         }}
+        title={isExpanded ? "Fermer la sidebar" : "Ouvrir la sidebar"}
         {...props}
       >
-        <PanelLeft />
+        {isExpanded ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         <span className="sr-only">Toggle Sidebar</span>
       </Button>
     );
