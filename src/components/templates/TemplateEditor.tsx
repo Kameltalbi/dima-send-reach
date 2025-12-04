@@ -46,7 +46,8 @@ import {
   PanelRightClose,
   PanelLeftOpen,
   PanelRightOpen,
-  Menu
+  Menu,
+  ImagePlus
 } from "lucide-react";
 import {
   Sheet,
@@ -129,10 +130,60 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
           "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap",
         ],
       },
-      // Asset manager for images
+      // Asset manager for images with custom upload
       assetManager: {
         embedAsBase64: false,
         autoAdd: true,
+        uploadFile: async (e: any) => {
+          const files = e.dataTransfer ? e.dataTransfer.files : e.target.files;
+          if (!files || files.length === 0) return;
+
+          try {
+            const { data: userData } = await supabase.auth.getUser();
+            if (!userData.user) {
+              toast.error('Vous devez être connecté pour uploader des images');
+              return;
+            }
+
+            toast.info('Téléchargement en cours...');
+            const uploadedAssets: any[] = [];
+
+            for (let i = 0; i < files.length; i++) {
+              const file = files[i];
+              const fileExt = file.name.split('.').pop();
+              const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+              const filePath = `${userData.user.id}/${fileName}`;
+
+              const { error: uploadError } = await supabase.storage
+                .from('template-images')
+                .upload(filePath, file);
+
+              if (uploadError) {
+                console.error('Upload error:', uploadError);
+                toast.error(`Erreur: ${file.name}`);
+                continue;
+              }
+
+              const { data: { publicUrl } } = supabase.storage
+                .from('template-images')
+                .getPublicUrl(filePath);
+
+              uploadedAssets.push({
+                src: publicUrl,
+                name: file.name,
+                type: 'image',
+              });
+            }
+
+            if (uploadedAssets.length > 0) {
+              editor.AssetManager.add(uploadedAssets);
+              toast.success('Images téléchargées!');
+            }
+          } catch (error) {
+            console.error('Upload error:', error);
+            toast.error('Erreur lors du téléchargement');
+          }
+        },
       },
       blockManager: {
         appendTo: "#blocks",
@@ -387,92 +438,9 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
     }
 
     // Configuration de l'upload d'images
-    editor.on('asset:upload:start', () => {
-      console.log('Upload started');
-    });
-
-    editor.on('asset:upload:end', () => {
-      console.log('Upload ended');
-    });
-
     editor.on('asset:upload:error', (err: any) => {
       console.error('Upload error:', err);
       toast.error('Erreur lors du téléchargement de l\'image');
-    });
-
-    editor.on('asset:upload:response', async (response: any) => {
-      console.log('Upload response:', response);
-    });
-
-    // Personnaliser l'upload d'images
-    const assetManager = editor.AssetManager;
-
-    // Gérer l'upload via input file
-    const uploadInput = document.createElement('input');
-    uploadInput.type = 'file';
-    uploadInput.accept = 'image/*';
-    uploadInput.style.display = 'none';
-    uploadInput.multiple = true;
-    
-    uploadInput.addEventListener('change', async (e) => {
-      const target = e.target as HTMLInputElement;
-      const files = target.files;
-      if (!files || files.length === 0) return;
-
-      try {
-        const { data: userData } = await supabase.auth.getUser();
-        if (!userData.user) {
-          toast.error('Vous devez être connecté pour uploader des images');
-          return;
-        }
-
-        toast.info('Téléchargement des images en cours...');
-
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i];
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${Math.random()}.${fileExt}`;
-          const filePath = `${userData.user.id}/${fileName}`;
-
-          const { error: uploadError } = await supabase.storage
-            .from('template-images')
-            .upload(filePath, file);
-
-          if (uploadError) {
-            console.error('Upload error:', uploadError);
-            toast.error(`Erreur lors du téléchargement de ${file.name}`);
-            continue;
-          }
-
-          const { data: { publicUrl } } = supabase.storage
-            .from('template-images')
-            .getPublicUrl(filePath);
-
-          // Ajouter l'image à l'asset manager
-          assetManager.add({
-            src: publicUrl,
-            name: file.name,
-            type: 'image',
-          });
-        }
-
-        toast.success('Images téléchargées avec succès');
-        uploadInput.value = ''; // Reset input
-      } catch (error) {
-        console.error('Upload error:', error);
-        toast.error('Erreur lors du téléchargement des images');
-      }
-    });
-
-    // Ajouter un bouton d'upload personnalisé
-    const panelsManager = editor.Panels;
-    panelsManager.addButton('options', {
-      id: 'upload-images',
-      className: 'fa fa-upload',
-      command: () => {
-        uploadInput.click();
-      },
-      attributes: { title: 'Télécharger des images' },
     });
 
 
@@ -827,6 +795,14 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
     editorRef.current.UndoManager.redo();
   };
 
+  const handleAddImage = () => {
+    if (!editorRef.current) return;
+    editorRef.current.runCommand('open-assets', {
+      types: ['image'],
+      accept: 'image/*',
+    });
+  };
+
   const toggleCodeView = () => {
     if (!editorRef.current) return;
     setShowCode(!showCode);
@@ -934,6 +910,16 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
                 Aperçu
               </Button>
               <Separator orientation="vertical" className="h-6 mx-1" />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleAddImage}
+                className="h-8 px-2 text-xs border-primary/30 text-primary hover:bg-primary/10"
+                title="Ajouter une image"
+              >
+                <ImagePlus className="h-3.5 w-3.5 mr-1.5" />
+                Ajouter image
+              </Button>
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -1087,6 +1073,17 @@ export function TemplateEditor({ templateId, onClose, onSave }: TemplateEditorPr
                       >
                         <Eye className="h-4 w-4" />
                         Aperçu
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          handleAddImage();
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full justify-start gap-2 border-primary/30 text-primary"
+                      >
+                        <ImagePlus className="h-4 w-4" />
+                        Ajouter image
                       </Button>
                       <Button
                         variant="outline"
