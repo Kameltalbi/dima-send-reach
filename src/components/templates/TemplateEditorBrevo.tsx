@@ -145,7 +145,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
 
     const editor = grapesjs.init({
       container: containerRef.current,
-      height: "auto",
+      height: "600px",
       width: "100%",
       storageManager: false,
       plugins: [newsletterPreset],
