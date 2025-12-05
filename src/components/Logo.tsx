@@ -1,8 +1,8 @@
 export const Logo = ({ className = "h-12 w-12" }: { className?: string }) => {
   return (
     <img 
-      src="/logoDymaMail.png" 
-      alt="DymaMail Logo" 
+      src="/logoDimaMail.png" 
+      alt="DimaMail Logo" 
       className={`${className} object-contain`}
     />
   );
@@ -13,7 +13,7 @@ export const LogoWithText = ({ className = "h-14" }: { className?: string }) => 
     <div className={`flex items-center gap-2 ${className}`}>
       <img 
         src="/logo-Dyma-Mail-F.png" 
-        alt="DymaMail Logo" 
+        alt="DimaMail Logo" 
         className="h-12 w-auto object-contain"
       />
     </div>
@@ -23,10 +23,9 @@ export const LogoWithText = ({ className = "h-14" }: { className?: string }) => 
 export const LogoLight = ({ className = "h-12 w-12" }: { className?: string }) => {
   return (
     <img 
-      src="/logoDymaMail.png" 
-      alt="DymaMail Logo" 
+      src="/logoDimaMail.png" 
+      alt="DimaMail Logo" 
       className={`${className} object-contain`}
     />
   );
 };
-
