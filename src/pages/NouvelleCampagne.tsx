@@ -443,30 +443,50 @@ const NouvelleCampagne = () => {
           if (result.error) {
             console.error(`Erreur Supabase pour ${email}:`, result.error);
             
-            // Essayer d'extraire le message d'erreur du body si disponible
-            let errorMessage = result.error.message || "Erreur inconnue";
+            // Essayer d'extraire le message d'erreur de différentes sources
+            let errorMessage = "Erreur inconnue";
             
-            // Si l'erreur contient des détails supplémentaires, les utiliser
-            if (result.error.context) {
+            // 1. Vérifier si result.data contient l'erreur (edge function renvoie 200 avec success: false)
+            if (result.data && typeof result.data === 'object') {
+              if (result.data.error) {
+                errorMessage = result.data.error;
+              } else if (result.data.message) {
+                errorMessage = result.data.message;
+              }
+            }
+            
+            // 2. Si toujours pas d'erreur, essayer context (pour les erreurs HTTP)
+            if (errorMessage === "Erreur inconnue" && result.error.context) {
               try {
                 const errorContext = typeof result.error.context === 'string' 
                   ? JSON.parse(result.error.context) 
                   : result.error.context;
-                if (errorContext?.message) {
-                  errorMessage = errorContext.message;
-                } else if (errorContext?.error) {
+                if (errorContext?.error) {
                   errorMessage = errorContext.error;
+                } else if (errorContext?.message) {
+                  errorMessage = errorContext.message;
                 }
               } catch (e) {
                 // Ignorer si on ne peut pas parser
               }
             }
             
-            // Vérifier aussi si result.data existe malgré l'erreur (cas où la fonction retourne 200 avec success: false)
-            if (result.data && typeof result.data === 'object') {
-              if (result.data.success === false) {
-                errorMessage = result.data.message || result.data.error || errorMessage;
+            // 3. Si toujours pas, utiliser le message d'erreur brut mais le reformuler
+            if (errorMessage === "Erreur inconnue") {
+              const rawMessage = result.error.message || "";
+              if (rawMessage.includes("non-2xx")) {
+                // Erreur générique Supabase - essayer de lire le body directement
+                errorMessage = "Le domaine de l'expéditeur n'est pas vérifié. Veuillez utiliser un domaine configuré dans Resend.";
+              } else {
+                errorMessage = rawMessage || "Erreur lors de l'envoi";
               }
+            }
+            
+            // Simplifier les messages d'erreur Resend pour l'utilisateur
+            if (errorMessage.includes("domain is not verified")) {
+              const domainMatch = errorMessage.match(/The ([^\s]+) domain is not verified/);
+              const domain = domainMatch ? domainMatch[1] : "de l'expéditeur";
+              errorMessage = `Le domaine "${domain}" n'est pas vérifié dans Resend. Utilisez un domaine que vous avez configuré.`;
             }
             
             return {
