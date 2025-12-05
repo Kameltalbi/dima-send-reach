@@ -576,7 +576,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
           blockContent = '<p data-gjs-type="text" style="font-size: 16px; line-height: 1.6; margin: 20px 0;">Votre texte ici</p>';
           break;
         case 'image':
-          blockContent = { type: 'image', attributes: { src: 'https://via.placeholder.com/600x300', alt: 'Image' } };
+          blockContent = '<img src="https://via.placeholder.com/600x300" alt="Image" style="max-width: 100%; height: auto; display: block; margin: 20px auto;" />';
           break;
         case 'bouton':
           blockContent = '<a href="#" data-gjs-type="link" style="display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0;">Bouton</a>';
