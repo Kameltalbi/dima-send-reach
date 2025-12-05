@@ -204,8 +204,8 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       panels: {
         defaults: []
       },
-      // Configurer le TraitsManager pour afficher les propriétés (href, etc.)
-      traitsManager: {
+      // Configurer le TraitManager pour afficher les propriétés (href, etc.)
+      traitManager: {
         appendTo: "#grapesjs-traits-panel",
       },
       // Configurer le styleManager
@@ -405,13 +405,13 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
               name: 'href',
               label: 'Lien (URL)',
               placeholder: 'https://exemple.com',
-              changeProp: 1,
+              changeProp: true,
             },
             {
               type: 'checkbox',
               name: 'target',
               label: 'Ouvrir dans un nouvel onglet',
-              changeProp: 1,
+              changeProp: true,
             },
           ],
         },
@@ -432,13 +432,13 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
               name: 'href',
               label: 'Lien (URL)',
               placeholder: 'https://exemple.com',
-              changeProp: 1,
+              changeProp: true,
             },
             {
               type: 'checkbox',
               name: 'target',
               label: 'Ouvrir dans un nouvel onglet',
-              changeProp: 1,
+              changeProp: true,
             },
           ]);
         }
@@ -942,14 +942,12 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       // Ajouter l'icône de lien si on trouve un lien
       if (linkComponent) {
         console.log('Lien trouvé dans le composant:', linkComponent.get('tagName'), linkComponent.get('type'));
-        toolbarConfig.unshift({
+        (toolbarConfig as any[]).unshift({
           attributes: { 
             class: 'gjs-link-btn fa fa-link', 
-            title: 'Modifier le lien',
-            style: 'cursor: pointer;'
+            title: 'Modifier le lien'
           }, 
-          command: 'open-link-dialog',
-          commandOptions: { component: linkComponent }
+          command: 'open-link-dialog'
         });
       } else {
         console.log('Aucun lien trouvé. tagName:', component.get('tagName'), 'type:', component.get('type'));
@@ -1213,11 +1211,18 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
             // Ajouter une section complète
             console.log("Ajout d'une section complète");
             const wrapper = editor.getWrapper();
-            const newComponent = wrapper.components().add(sectionHtml);
+            const addedComponents = wrapper.components().add(sectionHtml);
             
             // Si on a une position cible, déplacer le composant avant cette position
-            if (targetComponent && insertIndex >= 0) {
-              newComponent.moveBefore(targetComponent);
+            if (targetComponent && insertIndex >= 0 && addedComponents) {
+              const component = Array.isArray(addedComponents) ? addedComponents[0] : addedComponents;
+              if (component && typeof component.move === 'function') {
+                try {
+                  component.move(wrapper, { at: insertIndex });
+                } catch (e) {
+                  console.warn("Impossible de déplacer le composant:", e);
+                }
+              }
             }
             
             editor.refresh();
