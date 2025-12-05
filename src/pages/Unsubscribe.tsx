@@ -7,8 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle2, XCircle, Loader2, Mail, Settings } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, Mail } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useTranslation } from "react-i18next";
 
@@ -42,15 +41,6 @@ const Unsubscribe = () => {
       }
 
       try {
-        const { data, error: functionError } = await supabase.functions.invoke("unsubscribe", {
-          body: {},
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        // Construire l'URL manuellement avec le paramètre
         const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/unsubscribe?r=${recipientId}`;
         const response = await fetch(url, {
           method: "GET",
