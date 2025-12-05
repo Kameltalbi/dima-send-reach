@@ -413,12 +413,14 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       console.log("Événement 'load' de GrapesJS déclenché");
       
       // Rendre le StyleManager dans le panneau personnalisé
-      const stylePanel = document.getElementById("grapesjs-style-panel");
+      const stylePanel = document.getElementById("grapesjs-style-panel-content");
       if (stylePanel) {
         const sm = editor.StyleManager;
         stylePanel.innerHTML = '';
         stylePanel.appendChild(sm.render());
         console.log("StyleManager rendu dans le panneau");
+      } else {
+        console.warn("Panneau grapesjs-style-panel-content non trouvé");
       }
       
       // Utiliser la ref pour avoir la dernière valeur de initialContent
