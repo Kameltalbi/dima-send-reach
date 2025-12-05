@@ -548,6 +548,14 @@ All colors MUST be HSL.
   background: white !important;
 }
 
+/* Fix pour les images - max-width par défaut */
+.gjs-frame img,
+.gjs-cv-canvas img {
+  max-width: 100% !important;
+  height: auto !important;
+  display: block;
+}
+
 /* Container avec fond à points */
 .grapesjs-dotted-bg .gjs-cv-canvas {
   background: #f8f9fa !important;

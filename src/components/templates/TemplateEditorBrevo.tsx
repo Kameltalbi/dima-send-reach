@@ -279,6 +279,8 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
         styles: [
           "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap",
           "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css",
+          // Styles inline pour forcer max-width sur les images
+          `data:text/css,img { max-width: 100% !important; height: auto !important; display: block; }`,
         ],
       },
       // Ajouter des styles personnalisés pour le canvas avec fond à points
@@ -307,7 +309,11 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
             id: 'image',
             label: 'Image',
             category: 'Contenu',
-            content: { type: 'image' },
+            content: {
+              type: 'image',
+              style: { 'max-width': '100%', 'height': 'auto', 'display': 'block' },
+              resizable: true,
+            },
             activate: true,
           },
           {
@@ -369,6 +375,18 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
           types: ['image'],
           accept: 'image/*',
         });
+      }
+    });
+
+    // Appliquer des styles par défaut aux images ajoutées
+    editor.on('component:add', (component: any) => {
+      if (component.get('type') === 'image') {
+        component.addStyle({
+          'max-width': '100%',
+          'height': 'auto',
+          'display': 'block',
+        });
+        component.set('resizable', true);
       }
     });
 
