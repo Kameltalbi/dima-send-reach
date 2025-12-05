@@ -89,6 +89,7 @@ const NouvelleCampagne = () => {
   const [uploadedMedia, setUploadedMedia] = useState<Array<{ name: string; url: string; type: 'image' | 'video'; path: string }>>([]);
   const [isLoadingMedia, setIsLoadingMedia] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const [editorVersion, setEditorVersion] = useState(0);
   const mediaInputRef = useRef<HTMLInputElement>(null);
   
   // États pour les sections Style (repliables)
@@ -205,8 +206,8 @@ const NouvelleCampagne = () => {
         setHtmlContent(existingCampaign.html_contenu);
       }
       // Initialiser la dernière sauvegarde si la campagne existe déjà
-      if (existingCampaign.updated_at) {
-        setLastSaved(new Date(existingCampaign.updated_at));
+      if (existingCampaign.created_at) {
+        setLastSaved(new Date(existingCampaign.created_at));
       }
     }
   }, [existingCampaign]);
@@ -229,6 +230,7 @@ const NouvelleCampagne = () => {
         console.log("Chargement du template:", template.nom);
         console.log("Contenu HTML:", template.content_html.substring(0, 200) + "...");
         setHtmlContent(template.content_html);
+        setEditorVersion(v => v + 1); // Force le remontage de l'éditeur
         setHasUnsavedChanges(true);
         toast.success(`Template "${template.nom}" chargé avec succès`);
         setIsTemplateDialogOpen(false);
@@ -1942,7 +1944,7 @@ const NouvelleCampagne = () => {
               deviceView === "mobile" ? "max-w-sm" : "max-w-4xl"
             }`}>
               <TemplateEditorBrevo
-                key={htmlContent ? `editor-${htmlContent.substring(0, 50)}` : 'editor-empty'}
+                key={`editor-v${editorVersion}`}
                 initialContent={htmlContent}
                 onSave={handleEditorSave}
                 deviceView={deviceView}
