@@ -1201,6 +1201,7 @@ const NouvelleCampagne = () => {
                             draggable
                             onDragStart={(e) => {
                               e.dataTransfer.setData("block-type", block.id);
+                              e.dataTransfer.effectAllowed = "copy";
                             }}
                           >
                             <div className="flex flex-col items-center gap-2">

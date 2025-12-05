@@ -878,12 +878,18 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       setTimeout(() => {
         const allComponents = editor.getComponents();
         const findImages = (comp: any) => {
+          if (!comp || typeof comp.get !== 'function') {
+            return;
+          }
           if (comp.get('type') === 'image') {
             addImageOverlay(comp);
           }
-          const children = comp.components();
-          if (children && children.length) {
-            children.each((child: any) => findImages(child));
+          // Vérifier si comp.components existe et est une fonction avant de l'appeler
+          if (comp.components && typeof comp.components === 'function') {
+            const children = comp.components();
+            if (children && children.length && typeof children.each === 'function') {
+              children.each((child: any) => findImages(child));
+            }
           }
         };
         findImages(allComponents);
@@ -917,16 +923,8 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
         
         console.log('Traits appliqués au bouton:', component.get('traits'));
         
-        // Forcer la mise à jour du TraitsManager
-        setTimeout(() => {
-          const traitsManager = editor.Traits;
-          if (traitsManager) {
-            console.log('Mise à jour du TraitsManager');
-            traitsManager.update();
-          } else {
-            console.warn('TraitsManager non trouvé');
-          }
-        }, 100);
+        // Le TraitsManager se met à jour automatiquement quand un composant est sélectionné
+        // Pas besoin d'appeler update() manuellement
       }
       
       // Utiliser la fonction helper définie plus haut
@@ -1132,18 +1130,27 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
     let isProcessingDrop = false; // Flag pour éviter les doubles drops
     
     const handleDrop = (e: DragEvent) => {
+      console.log("=== DROP EVENT DÉTECTÉ ===");
+      console.log("Event target:", e.target);
+      console.log("Event currentTarget:", e.currentTarget);
+      console.log("DataTransfer types:", e.dataTransfer?.types);
+      
       // Vérifier si c'est un drop depuis notre sidebar (avec nos données personnalisées)
       const blockType = e.dataTransfer?.getData("block-type");
       const sectionHtml = e.dataTransfer?.getData("text/html");
       const sectionType = e.dataTransfer?.getData("section-type");
       
+      console.log("Drop détecté - blockType:", blockType, "sectionHtml:", sectionHtml?.substring(0, 100), "sectionType:", sectionType);
+      
       // Si ce n'est pas un drop depuis notre sidebar, laisser GrapesJS gérer
       if (!blockType && !sectionHtml && !sectionType) {
+        console.log("Pas de données personnalisées, laisser GrapesJS gérer");
         return;
       }
       
       // Si on est déjà en train de traiter un drop, ignorer
       if (isProcessingDrop) {
+        console.log("Drop déjà en cours de traitement, ignorer");
         e.preventDefault();
         e.stopPropagation();
         return;
@@ -1153,68 +1160,82 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       e.stopPropagation();
       isProcessingDrop = true;
       
-      console.log("Drop détecté depuis sidebar - blockType:", blockType, "sectionHtml:", sectionHtml?.substring(0, 100));
+      // Cacher l'indicateur visuel
+      hideDropIndicator();
       
       // Trouver le composant cible à la position du drop
-      let targetComponent = null;
+      let targetComponent: any = null;
       let insertIndex = -1;
       
       try {
-        const frame = editor.Canvas?.getFrameEl();
-        if (frame && frame.contentDocument) {
-          const dropX = e.clientX;
-          const dropY = e.clientY;
-          
-          // Obtenir la position relative à l'iframe
-          const frameRect = frame.getBoundingClientRect();
-          const relX = dropX - frameRect.left;
-          const relY = dropY - frameRect.top;
-          
-          // Trouver l'élément à cette position dans l'iframe
-          const elementAtPoint = frame.contentDocument.elementFromPoint(relX, relY);
-          
-          if (elementAtPoint) {
-            // Trouver le composant GrapesJS correspondant
-            const allComponents = editor.getWrapper().find('*');
-            for (let i = 0; i < allComponents.length; i++) {
-              const comp = allComponents[i];
-              if (comp.getEl() === elementAtPoint || comp.getEl()?.contains(elementAtPoint)) {
-                targetComponent = comp;
-                // Calculer si on doit insérer avant ou après
-                const compRect = comp.getEl()?.getBoundingClientRect();
-                if (compRect) {
-                  const compMiddle = compRect.top + compRect.height / 2 - frameRect.top;
-                  insertIndex = relY < compMiddle ? i : i + 1;
-                }
-                break;
+        const target = e.target as HTMLElement;
+        if (target) {
+          // Trouver le composant GrapesJS le plus proche
+          const canvas = editor.Canvas;
+          if (canvas) {
+            const frame = canvas.getFrameEl();
+            if (frame && frame.contentDocument) {
+              // Obtenir l'élément sous le curseur dans le frame
+              const frameTarget = frame.contentDocument.elementFromPoint(e.clientX, e.clientY);
+              if (frameTarget) {
+                // Trouver le composant GrapesJS correspondant
+                const comps = editor.getComponents();
+                comps.each((comp: any) => {
+                  const compEl = comp.getEl();
+                  if (compEl && (compEl === frameTarget || compEl.contains(frameTarget))) {
+                    targetComponent = comp;
+                    // Trouver l'index du composant dans le wrapper
+                    const wrapper = editor.getWrapper();
+                    const wrapperComps = wrapper.components();
+                    wrapperComps.each((child: any, index: number) => {
+                      if (child === comp) {
+                        insertIndex = index;
+                      }
+                    });
+                  }
+                });
               }
             }
           }
         }
       } catch (err) {
-        console.warn("Erreur lors de la détection de position:", err);
+        console.warn("Erreur lors de la détection de la position:", err);
       }
+      
+      console.log("Position du drop - targetComponent:", targetComponent, "insertIndex:", insertIndex);
+      
+      console.log("Traitement du drop - blockType:", blockType, "sectionHtml:", sectionHtml?.substring(0, 100));
       
       // Utiliser setTimeout pour s'assurer que le drop n'est traité qu'une fois
       setTimeout(() => {
-        if (sectionHtml && editor) {
-          // Ajouter une section complète
-          try {
+        try {
+          if (sectionHtml && editor) {
+            // Ajouter une section complète
+            console.log("Ajout d'une section complète");
             const wrapper = editor.getWrapper();
-            if (insertIndex >= 0) {
-              wrapper.components().add(sectionHtml, { at: insertIndex });
-            } else {
-              wrapper.components().add(sectionHtml);
+            const newComponent = wrapper.components().add(sectionHtml);
+            
+            // Si on a une position cible, déplacer le composant avant cette position
+            if (targetComponent && insertIndex >= 0) {
+              newComponent.moveBefore(targetComponent);
             }
+            
             editor.refresh();
+            editor.trigger('update');
             toast.success("Section ajoutée avec succès");
-          } catch (error) {
-            console.error("Error adding section:", error);
-            toast.error("Erreur lors de l'ajout de la section");
+          } else if (blockType && editor) {
+            // Ajouter un bloc simple à la position du drop
+            console.log("Ajout d'un bloc:", blockType, "à l'index:", insertIndex);
+            // Utiliser setTimeout pour s'assurer que l'éditeur est prêt
+            setTimeout(() => {
+              addBlockToEditor(editor, blockType, insertIndex, targetComponent);
+            }, 50);
+          } else {
+            console.warn("Aucun contenu à ajouter ou éditeur non disponible");
           }
-        } else if (blockType && editor) {
-          // Ajouter un bloc simple à la position détectée
-          addBlockToEditor(editor, blockType, insertIndex);
+        } catch (error) {
+          console.error("Erreur lors de l'ajout:", error);
+          toast.error("Erreur lors de l'ajout du bloc");
         }
         
         // Réinitialiser le flag après un court délai
@@ -1224,25 +1245,157 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       }, 10);
     };
 
+    // Créer un indicateur visuel pour montrer où le bloc sera inséré
+    let dropIndicator: HTMLElement | null = null;
+    
+    const createDropIndicator = () => {
+      if (dropIndicator) return dropIndicator;
+      
+      const indicator = document.createElement('div');
+      indicator.id = 'gjs-drop-indicator';
+      indicator.style.cssText = `
+        position: absolute;
+        height: 3px;
+        background: #667eea;
+        width: 100%;
+        z-index: 10000;
+        pointer-events: none;
+        box-shadow: 0 0 4px rgba(102, 126, 234, 0.5);
+        display: none;
+      `;
+      
+      const canvas = editor.Canvas;
+      if (canvas) {
+        const frame = canvas.getFrameEl();
+        if (frame && frame.contentDocument) {
+          frame.contentDocument.body.appendChild(indicator);
+          dropIndicator = indicator;
+        }
+      }
+      
+      return indicator;
+    };
+    
+    const showDropIndicator = (e: DragEvent) => {
+      const indicator = createDropIndicator();
+      if (!indicator) return;
+      
+      const canvas = editor.Canvas;
+      if (!canvas) return;
+      
+      const frame = canvas.getFrameEl();
+      if (!frame || !frame.contentDocument) return;
+      
+      try {
+        // Obtenir l'élément sous le curseur
+        const frameTarget = frame.contentDocument.elementFromPoint(e.clientX, e.clientY);
+        if (!frameTarget) {
+          indicator.style.display = 'none';
+          return;
+        }
+        
+        // Trouver le composant GrapesJS correspondant
+        let targetComponent: any = null;
+        const wrapper = editor.getWrapper();
+        const wrapperComps = wrapper.components();
+        
+        wrapperComps.each((comp: any) => {
+          const compEl = comp.getEl();
+          if (compEl && (compEl === frameTarget || compEl.contains(frameTarget))) {
+            targetComponent = comp;
+          }
+        });
+        
+        if (targetComponent) {
+          const compEl = targetComponent.getEl();
+          if (compEl) {
+            const rect = compEl.getBoundingClientRect();
+            const frameRect = frame.getBoundingClientRect();
+            
+            // Positionner l'indicateur au-dessus du composant cible
+            indicator.style.top = `${rect.top - frameRect.top + frame.contentWindow.scrollY}px`;
+            indicator.style.left = `${rect.left - frameRect.left}px`;
+            indicator.style.width = `${rect.width}px`;
+            indicator.style.display = 'block';
+          }
+        } else {
+          // Si aucun composant trouvé, positionner à la fin
+          const wrapperEl = wrapper.getEl();
+          if (wrapperEl) {
+            const rect = wrapperEl.getBoundingClientRect();
+            const frameRect = frame.getBoundingClientRect();
+            indicator.style.top = `${rect.bottom - frameRect.top + frame.contentWindow.scrollY}px`;
+            indicator.style.left = `${rect.left - frameRect.left}px`;
+            indicator.style.width = `${rect.width}px`;
+            indicator.style.display = 'block';
+          }
+        }
+      } catch (err) {
+        console.warn("Erreur lors de l'affichage de l'indicateur:", err);
+      }
+    };
+    
+    const hideDropIndicator = () => {
+      if (dropIndicator) {
+        dropIndicator.style.display = 'none';
+      }
+    };
+    
     const handleDragOver = (e: DragEvent) => {
       // Vérifier si c'est un drag depuis notre sidebar
       const types = e.dataTransfer?.types || [];
-      const hasCustomData = types.includes("text/html") || types.includes("text/plain");
+      const hasCustomData = types.includes("block-type") || types.includes("text/html") || types.includes("section-type");
       
-      // Si c'est notre drag, empêcher le comportement par défaut
+      console.log("DragOver détecté - types:", types, "hasCustomData:", hasCustomData);
+      
+      // Si c'est notre drag, empêcher le comportement par défaut et permettre le drop
       if (hasCustomData) {
         e.preventDefault();
         e.stopPropagation();
+        if (e.dataTransfer) {
+          e.dataTransfer.dropEffect = 'copy';
+        }
+        
+        // Afficher l'indicateur visuel
+        showDropIndicator(e);
+        
+        return false;
       }
     };
+    
+    const handleDragLeave = (e: DragEvent) => {
+      // Cacher l'indicateur quand on quitte la zone de drop
+      hideDropIndicator();
+    };
 
-    // Attacher les événements uniquement au conteneur principal avec useCapture
-    // Cela permet d'intercepter avant que GrapesJS ne traite l'événement
+    // Attacher les événements au conteneur principal ET à l'iframe
     containerRef.current?.addEventListener('drop', handleDrop, true);
     containerRef.current?.addEventListener('dragover', handleDragOver, true);
+    containerRef.current?.addEventListener('dragleave', handleDragLeave, true);
     
-    // NE PAS attacher à l'iframe pour éviter les conflits avec GrapesJS
-    // GrapesJS gère déjà le drop dans son canvas
+    // Attacher aussi sur l'iframe une fois qu'elle est chargée
+    const attachIframeEvents = () => {
+      const frame = editor.Canvas?.getFrameEl();
+      if (frame && frame.contentDocument) {
+        console.log("Attachement des événements sur l'iframe");
+        frame.contentDocument.addEventListener('drop', handleDrop, true);
+        frame.contentDocument.addEventListener('dragover', handleDragOver, true);
+        frame.contentDocument.addEventListener('dragleave', handleDragLeave, true);
+        frame.contentDocument.addEventListener('dragenter', (e) => {
+          const types = e.dataTransfer?.types || [];
+          if (types.includes("block-type") || types.includes("text/html") || types.includes("section-type")) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }, true);
+      }
+    };
+    
+    // Attendre que l'iframe soit chargée
+    editor.on('canvas:frame:load', attachIframeEvents);
+    
+    // Essayer immédiatement aussi
+    setTimeout(attachIframeEvents, 1000);
 
     function setDefaultTemplate(editorInstance: any) {
       // Vérifier que l'éditeur est prêt avant d'appeler getComponents
@@ -1289,7 +1442,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       }, 200);
     }
 
-    function addBlockToEditor(editorInstance: any, blockType: string, insertIndex: number = -1) {
+    function addBlockToEditor(editorInstance: any, blockType: string, insertIndex: number = -1, targetComponent: any = null) {
       const wrapper = editorInstance.getWrapper();
       let blockContent = '';
 
@@ -1324,18 +1477,106 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
         case 'paiement':
           blockContent = '<a href="#" data-gjs-type="link" style="display: inline-block; padding: 14px 28px; background: #28a745; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: bold;">💳 Payer maintenant</a>';
           break;
+        case 'produit':
+          blockContent = '<div data-gjs-type="section" style="padding: 20px; background: #ffffff;"><div data-gjs-type="row" style="display: flex; gap: 20px;"><div data-gjs-type="column" style="flex: 1;"><img src="https://via.placeholder.com/300x200" alt="Produit" style="width: 100%; height: auto; border-radius: 8px;" /></div><div data-gjs-type="column" style="flex: 1;"><h3 data-gjs-type="text" style="font-size: 24px; font-weight: 700; margin: 0 0 12px 0;">Nom du produit</h3><p data-gjs-type="text" style="font-size: 18px; font-weight: 700; color: #667eea; margin: 0 0 16px 0;">49,99€</p><a href="#" data-gjs-type="link" style="display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 6px;">Acheter</a></div></div></div>';
+          break;
+        case 'navigation':
+          blockContent = '<nav data-gjs-type="default" style="background: #f8f9fa; padding: 15px 20px; text-align: center;"><a href="#" data-gjs-type="link" style="margin: 0 15px; color: #333; text-decoration: none;">Accueil</a><a href="#" data-gjs-type="link" style="margin: 0 15px; color: #333; text-decoration: none;">Produits</a><a href="#" data-gjs-type="link" style="margin: 0 15px; color: #333; text-decoration: none;">Contact</a></nav>';
+          break;
+        case 'bloc-vide':
+          blockContent = '<div data-gjs-type="default" style="padding: 20px; min-height: 50px;"></div>';
+          break;
         default:
           blockContent = '<div data-gjs-type="text" style="padding: 20px;">Nouveau bloc</div>';
       }
 
-      if (insertIndex >= 0) {
-        wrapper.components().add(blockContent, { at: insertIndex });
-      } else {
-        wrapper.components().add(blockContent);
+      try {
+        console.log("Ajout du contenu:", blockContent.substring(0, 100));
+        
+        // Vérifier que le wrapper existe
+        if (!wrapper) {
+          console.error("Wrapper non trouvé");
+          toast.error("Erreur: wrapper non trouvé");
+          return;
+        }
+        
+        // Ajouter le composant au wrapper
+        const component = wrapper.components().add(blockContent);
+        
+        console.log("Composant créé:", component);
+        console.log("Type du composant:", component?.get('type'));
+        console.log("Wrapper components count avant:", wrapper.components().length);
+        console.log("InsertIndex:", insertIndex, "targetComponent:", targetComponent);
+        
+        // Si on a une position cible, déplacer le composant avant cette position
+        if (targetComponent && insertIndex >= 0) {
+          try {
+            component.moveBefore(targetComponent);
+            console.log("Composant déplacé avant targetComponent");
+          } catch (moveError) {
+            console.warn("Erreur lors du déplacement:", moveError);
+            // Fallback: utiliser l'index
+            if (insertIndex >= 0) {
+              const wrapperComps = wrapper.components();
+              const targetAtIndex = wrapperComps.at(insertIndex);
+              if (targetAtIndex && targetAtIndex !== component) {
+                component.moveBefore(targetAtIndex);
+              }
+            }
+          }
+        }
+        
+        // Attendre que le composant soit ajouté
+        setTimeout(() => {
+          console.log("Wrapper components count après:", wrapper.components().length);
+          
+          // Vérifier que le composant a bien un élément DOM
+          const el = component?.getEl();
+          console.log("Élément DOM du composant:", el);
+          
+          if (component && el) {
+            // Sélectionner le composant pour le rendre visible
+            editorInstance.select(component);
+            
+            // Forcer le refresh et le rendu
+            editorInstance.refresh();
+            editorInstance.trigger('update');
+            
+            // Forcer le rendu du canvas
+            const canvas = editorInstance.Canvas;
+            if (canvas) {
+              canvas.render();
+              
+              // Forcer le rendu de la frame
+              const frame = canvas.getFrameEl();
+              if (frame && frame.contentWindow) {
+                // Déclencher un événement de resize pour forcer le rendu
+                frame.contentWindow.dispatchEvent(new Event('resize'));
+              }
+            }
+            
+            // Forcer le scroll vers le composant après un court délai
+            setTimeout(() => {
+              const el2 = component.getEl();
+              if (el2) {
+                el2.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+            }, 200);
+            
+            toast.success(`Bloc "${blockType}" ajouté`);
+            console.log("Bloc ajouté avec succès:", blockType);
+          } else {
+            console.error("Composant ou élément DOM non trouvé");
+            toast.error(`Erreur: le composant n'a pas pu être rendu`);
+          }
+        }, 100);
+        
+        toast.success(`Bloc "${blockType}" ajouté`);
+        console.log("Bloc ajouté avec succès:", blockType, "composant:", component);
+      } catch (error) {
+        console.error("Erreur lors de l'ajout du bloc:", error);
+        toast.error(`Erreur lors de l'ajout du bloc "${blockType}"`);
       }
-      editorInstance.refresh();
-      toast.success(`Bloc "${blockType}" ajouté`);
-      console.log("Bloc ajouté:", blockType, "à l'index:", insertIndex);
     }
 
     // Ajuster la largeur selon le device view
@@ -1351,6 +1592,21 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       }
       containerRef.current?.removeEventListener('drop', handleDrop, true);
       containerRef.current?.removeEventListener('dragover', handleDragOver, true);
+      containerRef.current?.removeEventListener('dragleave', handleDragLeave, true);
+      
+      // Nettoyer l'indicateur visuel
+      if (dropIndicator && dropIndicator.parentNode) {
+        dropIndicator.parentNode.removeChild(dropIndicator);
+      }
+      
+      // Nettoyer les événements de l'iframe
+      const frame = editor.Canvas?.getFrameEl();
+      if (frame && frame.contentDocument) {
+        frame.contentDocument.removeEventListener('drop', handleDrop, true);
+        frame.contentDocument.removeEventListener('dragover', handleDragOver, true);
+        frame.contentDocument.removeEventListener('dragleave', handleDragLeave, true);
+      }
+      
       if (editorRef.current) {
         editorRef.current.destroy();
       }
