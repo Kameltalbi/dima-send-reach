@@ -554,6 +554,78 @@ All colors MUST be HSL.
   max-width: 100% !important;
   height: auto !important;
   display: block;
+  cursor: pointer !important;
+  user-select: none;
+  pointer-events: auto !important;
+}
+
+.gjs-frame img:hover,
+.gjs-cv-canvas img:hover {
+  outline: 2px solid rgba(102, 126, 234, 0.6) !important;
+  outline-offset: 2px;
+}
+
+.gjs-selected img,
+.gjs-frame .gjs-selected img,
+.gjs-cv-canvas .gjs-selected img {
+  outline: 3px solid #667eea !important;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.3) !important;
+}
+
+/* Case de sélection visible pour les images */
+.gjs-frame .gjs-image-wrapper,
+.gjs-cv-canvas .gjs-image-wrapper {
+  position: relative;
+}
+
+.gjs-frame .gjs-image-wrapper::before,
+.gjs-cv-canvas .gjs-image-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 24px;
+  height: 24px;
+  background: rgba(102, 126, 234, 0.9);
+  border: 2px solid white;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 20;
+  pointer-events: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.gjs-frame .gjs-image-wrapper:hover::before,
+.gjs-cv-canvas .gjs-image-wrapper:hover::before {
+  opacity: 1;
+}
+
+.gjs-frame .gjs-selected .gjs-image-wrapper::before,
+.gjs-cv-canvas .gjs-selected .gjs-image-wrapper::before {
+  opacity: 1;
+  background: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Marqueur de sélection dans la case */
+.gjs-frame .gjs-selected .gjs-image-wrapper::after,
+.gjs-cv-canvas .gjs-selected .gjs-image-wrapper::after {
+  content: '✓';
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  z-index: 21;
+  pointer-events: none;
 }
 
 /* Container avec fond à points */
@@ -778,6 +850,7 @@ All colors MUST be HSL.
   position: absolute;
   inset: 0;
   z-index: 10;
+  pointer-events: none;
 }
 
 .gjs-image-overlay > div {
@@ -802,6 +875,55 @@ All colors MUST be HSL.
   background: #f0f0f0 !important;
   transform: scale(1.05);
   transition: all 0.2s ease;
+}
+
+/* Améliorer la sélection des images dans GrapesJS */
+.gjs-frame img {
+  cursor: pointer !important;
+  user-select: none;
+}
+
+.gjs-frame img:hover {
+  outline: 2px solid rgba(102, 126, 234, 0.5) !important;
+  outline-offset: 2px;
+}
+
+.gjs-selected img,
+.gjs-frame .gjs-selected img {
+  outline: 3px solid #667eea !important;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
+}
+
+/* Case de sélection visible pour les images */
+.gjs-frame .gjs-image-wrapper {
+  position: relative;
+}
+
+.gjs-frame .gjs-image-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 20px;
+  height: 20px;
+  background: rgba(102, 126, 234, 0.9);
+  border: 2px solid white;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.gjs-frame .gjs-image-wrapper:hover::before,
+.gjs-frame .gjs-selected .gjs-image-wrapper::before {
+  opacity: 1;
+}
+
+.gjs-frame .gjs-selected .gjs-image-wrapper::before {
+  background: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.3);
 }
 
 /* Masquer les panneaux GrapesJS par défaut */

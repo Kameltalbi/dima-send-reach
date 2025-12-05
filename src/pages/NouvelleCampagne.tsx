@@ -89,7 +89,7 @@ const NouvelleCampagne = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const getCurrentHtmlRef = useRef<(() => string) | null>(null);
   const [sidebarTab, setSidebarTab] = useState<"blocs" | "sections" | "enregistres">("blocs");
-  const [sidebarIcon, setSidebarIcon] = useState<"contenu" | "style" | "sonia">("contenu");
+  const [sidebarIcon, setSidebarIcon] = useState<"contenu" | "bibliotheque" | "sonia">("contenu");
   const [deviceView, setDeviceView] = useState<"desktop" | "mobile">("desktop");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -98,8 +98,13 @@ const NouvelleCampagne = () => {
   const [uploadedMedia, setUploadedMedia] = useState<Array<{ name: string; url: string; type: 'image' | 'video'; path: string }>>([]);
   const [isLoadingMedia, setIsLoadingMedia] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const [savedSections, setSavedSections] = useState<Array<{ id: string; nom: string; description: string | null; html_content: string; category: string; created_at: string }>>([]);
+  const [isLoadingSections, setIsLoadingSections] = useState(false);
+  const [isSaveSectionDialogOpen, setIsSaveSectionDialogOpen] = useState(false);
+  const [sectionToSave, setSectionToSave] = useState<{ html: string; name: string; description: string; category: string } | null>(null);
   const [editorVersion, setEditorVersion] = useState(0);
   const mediaInputRef = useRef<HTMLInputElement>(null);
+  const mediaLibraryInputRef = useRef<HTMLInputElement>(null);
   const [selectedTextComponent, setSelectedTextComponent] = useState<boolean>(false);
   const selectedComponentRef = useRef<any>(null);
   const [textStyles, setTextStyles] = useState({
@@ -1124,16 +1129,18 @@ const NouvelleCampagne = () => {
                 <span className="text-[10px] font-medium">Contenu</span>
               </button>
               <button
-                onClick={() => setSidebarIcon("style")}
-                className={`flex flex-col items-center gap-1 p-3 transition-colors ${
-                  sidebarIcon === "style"
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                }`}
-                title="Style"
+                onClick={() => {
+                  setIsMediaLibraryOpen(true);
+                  // Charger les médias si nécessaire
+                  if (uploadedMedia.length === 0 && user?.id) {
+                    loadUserMedia();
+                  }
+                }}
+                className="flex flex-col items-center gap-1 p-3 transition-colors text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                title="Bibliothèque"
               >
-                <Palette className="h-5 w-5" />
-                <span className="text-[10px] font-medium">Style</span>
+                <ImageIcon className="h-5 w-5" />
+                <span className="text-[10px] font-medium">Bibliothèque</span>
               </button>
               <button
                 onClick={() => setSidebarIcon("sonia")}
@@ -1151,22 +1158,20 @@ const NouvelleCampagne = () => {
 
             {/* Zone de contenu */}
             <div className="flex-1 overflow-y-auto bg-white">
-              {/* Panneaux GrapesJS - toujours présents dans le DOM mais cachés quand l'onglet Style n'est pas sélectionné */}
-              {sidebarIcon !== "style" && (
-                <>
-                  <div 
-                    id="grapesjs-style-panel" 
-                    className="hidden"
-                    style={{ position: "absolute", left: "-9999px" }}
-                  ></div>
-                  
-                  <div 
-                    id="grapesjs-traits-panel" 
-                    className="hidden"
-                    style={{ position: "absolute", left: "-9999px" }}
-                  ></div>
-                </>
-              )}
+              {/* Panneaux GrapesJS - toujours présents dans le DOM mais cachés */}
+              <div>
+                <div 
+                  id="grapesjs-style-panel" 
+                  className="hidden"
+                  style={{ position: "absolute", left: "-9999px" }}
+                ></div>
+                
+                <div 
+                  id="grapesjs-traits-panel" 
+                  className="hidden"
+                  style={{ position: "absolute", left: "-9999px" }}
+                ></div>
+              </div>
               
               {sidebarIcon === "contenu" && sidebarTab === "blocs" && (
                 <div className="p-4 space-y-4">
@@ -1221,31 +1226,8 @@ const NouvelleCampagne = () => {
                 </div>
               )}
               
-              {sidebarIcon === "style" && (
-                <div className="h-full flex flex-col overflow-hidden bg-white">
-                  {/* Panneau de traits (Propriétés) - pour les liens/boutons */}
-                  <div className="p-4 border-b bg-white flex-shrink-0">
-                    <h3 className="text-xs font-semibold text-foreground mb-3">Propriétés</h3>
-                    <div 
-                      id="grapesjs-traits-panel" 
-                      className="block"
-                      style={{ display: 'block' }}
-                    ></div>
-                  </div>
-                  
-                  {/* Panneau de styles GrapesJS - s'adapte automatiquement à l'élément sélectionné */}
-                  <div className="flex-1 overflow-y-auto p-4">
-                    <div 
-                      id="grapesjs-style-panel" 
-                      className="block"
-                      style={{ display: 'block' }}
-                    ></div>
-                  </div>
-                </div>
-              )}
-              
               {/* Ancienne section Style complexe - SUPPRIMÉE */}
-              {false && sidebarIcon === "style" && (
+              {false && (
                 <div className="p-4 space-y-4 overflow-y-auto">
                   {/* Template - Section repliable */}
                   <div className="space-y-3 border-t pt-3">
@@ -2139,111 +2121,109 @@ const NouvelleCampagne = () => {
               
               {sidebarTab === "enregistres" && (
                 <div className="p-4 space-y-4 overflow-y-auto">
-                  {/* Bouton de téléchargement */}
+                  {/* Bouton pour sauvegarder la section sélectionnée */}
                   <div className="space-y-2">
                     <Button
-                      onClick={() => mediaInputRef.current?.click()}
-                      disabled={isUploadingMedia}
+                      onClick={async () => {
+                        if (getCurrentHtmlRef.current) {
+                          const html = getCurrentHtmlRef.current();
+                          if (html && html.trim()) {
+                            setSectionToSave({ html, name: '', description: '', category: 'general' });
+                            setIsSaveSectionDialogOpen(true);
+                          } else {
+                            toast.error('Aucun contenu à sauvegarder');
+                          }
+                        }
+                      }}
                       className="w-full gap-2"
-                      variant="outline"
+                      variant="default"
                     >
-                      {isUploadingMedia ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Téléchargement...
-                        </>
-                      ) : (
-                        <>
-                          <ImagePlus className="h-4 w-4" />
-                          Télécharger des médias
-                        </>
-                      )}
+                      <Save className="h-4 w-4" />
+                      Enregistrer cette section
                     </Button>
-                    <input
-                      ref={mediaInputRef}
-                      type="file"
-                      accept="image/*,video/*"
-                      multiple
-                      className="hidden"
-                      onChange={handleMediaUpload}
-                    />
                     <p className="text-xs text-muted-foreground text-center">
-                      Formats supportés : Images (JPG, PNG, GIF, WebP) et Vidéos (MP4, WebM)
+                      Sélectionnez une section dans l'éditeur puis cliquez pour l'enregistrer
                     </p>
                   </div>
 
-                  {/* Liste des médias */}
-                  {isLoadingMedia ? (
+                  {/* Liste des sections sauvegardées */}
+                  {isLoadingSections ? (
                     <div className="flex items-center justify-center py-8">
                       <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     </div>
-                  ) : uploadedMedia.length > 0 ? (
+                  ) : savedSections.length > 0 ? (
                     <div className="space-y-2">
                       <h3 className="text-sm font-semibold text-foreground">
-                        Médias téléchargés ({uploadedMedia.length})
+                        Sections enregistrées ({savedSections.length})
                       </h3>
-                      <div className="grid grid-cols-2 gap-2">
-                        {uploadedMedia.map((media, index) => (
-                          <div
-                            key={`${media.path}-${index}`}
-                            className="group relative aspect-square rounded-lg overflow-hidden border border-border hover:border-primary transition-colors bg-muted/30"
+                      <div className="space-y-2">
+                        {savedSections.map((section) => (
+                          <Card
+                            key={section.id}
+                            className="group cursor-pointer hover:border-primary transition-colors"
+                            onClick={() => {
+                              // Insérer la section dans l'éditeur via TemplateEditorBrevo
+                              if (getCurrentHtmlRef.current) {
+                                const editor = (window as any).grapesjsEditor;
+                                if (editor) {
+                                  editor.setComponents(section.html_content);
+                                  toast.success('Section insérée');
+                                }
+                              }
+                            }}
                           >
-                            {media.type === 'image' ? (
-                              <img
-                                src={media.url}
-                                alt={media.name}
-                                className="w-full h-full object-cover cursor-pointer"
-                                onClick={() => handleInsertMedia(media)}
-                              />
-                            ) : (
-                              <div 
-                                className="w-full h-full flex items-center justify-center bg-muted cursor-pointer"
-                                onClick={() => handleInsertMedia(media)}
-                              >
-                                <Play className="h-8 w-8 text-muted-foreground" />
+                            <CardHeader className="p-3">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <CardTitle className="text-sm font-semibold truncate">{section.nom}</CardTitle>
+                                  {section.description && (
+                                    <CardDescription className="text-xs mt-1 line-clamp-2">
+                                      {section.description}
+                                    </CardDescription>
+                                  )}
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 shrink-0 ml-2"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Supprimer la section
+                                    supabase
+                                      .from('saved_sections')
+                                      .delete()
+                                      .eq('id', section.id)
+                                      .then(() => {
+                                        loadSavedSections();
+                                        toast.success('Section supprimée');
+                                      });
+                                  }}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
                               </div>
-                            )}
-                            {/* Overlay au survol */}
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                              <div className="text-center text-white">
-                                <p className="text-xs font-medium mb-1 truncate px-2">{media.name}</p>
-                                <Badge variant="secondary" className="text-xs">
-                                  {media.type === 'image' ? 'Image' : 'Vidéo'}
+                            </CardHeader>
+                            <CardContent className="p-3 pt-0">
+                              <div className="flex items-center justify-between">
+                                <Badge variant="outline" className="text-xs">
+                                  {section.category}
                                 </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {new Date(section.created_at).toLocaleDateString('fr-FR')}
+                                </span>
                               </div>
-                            </div>
-                            {/* Bouton supprimer - toujours visible */}
-                            <Button
-                              variant="destructive"
-                              size="icon"
-                              className="absolute top-2 right-2 h-7 w-7 bg-destructive/90 hover:bg-destructive shadow-md z-10"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteMedia(media.path);
-                              }}
-                              title="Supprimer"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                            {/* Nom du fichier en bas */}
-                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                              <p className="text-xs text-white truncate font-medium">{media.name}</p>
-                            </div>
-                          </div>
+                            </CardContent>
+                          </Card>
                         ))}
                       </div>
                     </div>
                   ) : (
                     <div className="text-center py-8">
                       <div className="p-4 rounded-lg bg-muted/50 inline-block mb-3">
-                        <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                        <FileText className="h-8 w-8 text-muted-foreground" />
                       </div>
-                      <p className="text-sm text-muted-foreground mb-1">
-                        Aucun média téléchargé
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Téléchargez vos images et vidéos pour les utiliser dans vos emails
-                      </p>
+                      <p className="text-sm text-muted-foreground mb-1">Aucune section enregistrée</p>
+                      <p className="text-xs text-muted-foreground">Enregistrez des sections de mail pour les réutiliser dans vos campagnes</p>
                     </div>
                   )}
                 </div>
@@ -2357,20 +2337,53 @@ const NouvelleCampagne = () => {
                   
                   {/* Boutons d'action */}
                   <div className="flex items-center gap-2 px-4 py-3 border-b">
+                    <input
+                      ref={mediaLibraryInputRef}
+                      type="file"
+                      accept="image/*,video/*"
+                      multiple
+                      className="hidden"
+                      onChange={handleMediaUpload}
+                    />
                     <Button
-                      onClick={() => {
-                        mediaInputRef.current?.click();
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (mediaLibraryInputRef.current) {
+                          mediaLibraryInputRef.current.click();
+                        } else {
+                          toast.error('Erreur: input file non trouvé');
+                        }
                       }}
                       className="bg-gray-800 text-white hover:bg-gray-700"
+                      type="button"
                     >
                       <ImagePlus className="h-4 w-4 mr-2" />
                       Importer
                     </Button>
-                    <Button variant="outline" className="border-gray-300">
+                    <Button 
+                      variant="outline" 
+                      className="border-gray-300"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toast.info('Fonctionnalité "Créer une image" à venir');
+                      }}
+                      type="button"
+                    >
                       <Plus className="h-4 w-4 mr-2" />
                       Créer une image
                     </Button>
-                    <Button variant="ghost" className="text-primary">
+                    <Button 
+                      variant="ghost" 
+                      className="text-primary"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toast.info('Fonctionnalité "Dossiers" à venir');
+                      }}
+                      type="button"
+                    >
                       <Folder className="h-4 w-4 mr-2" />
                       Dossiers
                       <ChevronDown className="h-4 w-4 ml-1" />

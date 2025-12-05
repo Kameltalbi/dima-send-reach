@@ -447,6 +447,31 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
 
     editorRef.current = editor;
 
+    // Commandes de la toolbar
+    editor.Commands.add('tlb-move', {
+      run(ed: any) {
+        ed.runCommand('core:component-drag');
+      }
+    });
+
+    editor.Commands.add('tlb-clone', {
+      run(ed: any) {
+        const selected = ed.getSelected();
+        if (selected) {
+          selected.clone();
+        }
+      }
+    });
+
+    editor.Commands.add('tlb-delete', {
+      run(ed: any) {
+        const selected = ed.getSelected();
+        if (selected) {
+          selected.remove();
+        }
+      }
+    });
+
     // Configurer le Rich Text Editor (RTE) après le chargement
     editor.on('load', () => {
       setTimeout(() => {
@@ -711,14 +736,32 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
           return;
         }
         
-        // Créer un wrapper
-        const wrapper = frameDoc.createElement('div');
-        wrapper.className = 'gjs-image-wrapper';
-        wrapper.style.cssText = 'position: relative; display: inline-block; width: 100%;';
+        // Ne pas créer de wrapper si l'image est déjà dans un wrapper GrapesJS
+        // Créer un wrapper uniquement pour l'overlay
+        let wrapper = el.parentElement;
+        if (!wrapper || !wrapper.classList.contains('gjs-image-wrapper')) {
+          wrapper = frameDoc.createElement('div');
+          wrapper.className = 'gjs-image-wrapper';
+          wrapper.style.cssText = 'position: relative; display: inline-block; width: 100%;';
+          // Le wrapper doit permettre la sélection de l'image
+          wrapper.setAttribute('data-gjs-selectable', 'false');
+          wrapper.setAttribute('data-gjs-hoverable', 'false');
+          
+          // Insérer le wrapper avant l'image
+          el.parentNode?.insertBefore(wrapper, el);
+          wrapper.appendChild(el);
+        }
         
-        // Insérer le wrapper avant l'image
-        el.parentNode?.insertBefore(wrapper, el);
-        wrapper.appendChild(el);
+        // S'assurer que l'image reste sélectionnable et interactive
+        el.style.pointerEvents = 'auto';
+        el.style.cursor = 'pointer';
+        el.setAttribute('data-gjs-selectable', 'true');
+        el.setAttribute('data-gjs-hoverable', 'true');
+        
+        // S'assurer que le composant GrapesJS est bien configuré
+        component.set('selectable', true);
+        component.set('hoverable', true);
+        component.set('editable', true);
         
         // Créer l'overlay
         const overlay = frameDoc.createElement('div');
@@ -792,6 +835,9 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
           'display': 'block',
         });
         component.set('resizable', true);
+        component.set('selectable', true);
+        component.set('hoverable', true);
+        component.set('editable', true);
         addImageOverlay(component);
       }
     });
@@ -799,7 +845,31 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
     // Ajouter l'overlay aux images existantes lors de la sélection
     editor.on('component:selected', (component: any) => {
       if (component.get('type') === 'image') {
+        // S'assurer que l'image est bien sélectionnable
+        component.set('selectable', true);
+        component.set('hoverable', true);
+        component.set('editable', true);
+        
+        const el = component.getEl();
+        if (el) {
+          el.style.cursor = 'pointer';
+          el.style.pointerEvents = 'auto';
+        }
+        
         addImageOverlay(component);
+      }
+    });
+    
+    // S'assurer que les images sont toujours sélectionnables
+    editor.on('component:update', (component: any) => {
+      if (component.get('type') === 'image') {
+        component.set('selectable', true);
+        component.set('hoverable', true);
+        const el = component.getEl();
+        if (el) {
+          el.style.pointerEvents = 'auto';
+          el.style.cursor = 'pointer';
+        }
       }
     });
     
