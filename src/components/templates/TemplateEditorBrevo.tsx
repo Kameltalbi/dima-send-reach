@@ -205,7 +205,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
         defaults: []
       },
       // Configurer le TraitsManager pour afficher les propriétés (href, etc.)
-      traitsManager: {
+      traitManager: {
         appendTo: "#grapesjs-traits-panel",
       },
       // Configurer le styleManager
@@ -405,13 +405,13 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
               name: 'href',
               label: 'Lien (URL)',
               placeholder: 'https://exemple.com',
-              changeProp: 1,
+              changeProp: true,
             },
             {
               type: 'checkbox',
               name: 'target',
               label: 'Ouvrir dans un nouvel onglet',
-              changeProp: 1,
+              changeProp: true,
             },
           ],
         },
@@ -922,7 +922,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
           const traitsManager = editor.Traits;
           if (traitsManager) {
             console.log('Mise à jour du TraitsManager');
-            traitsManager.update();
+            traitsManager.render();
           } else {
             console.warn('TraitsManager non trouvé');
           }
@@ -947,12 +947,11 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
         toolbarConfig.unshift({
           attributes: { 
             class: 'gjs-link-btn fa fa-link', 
-            title: 'Modifier le lien',
-            style: 'cursor: pointer;'
+            title: 'Modifier le lien'
           }, 
           command: 'open-link-dialog',
           commandOptions: { component: linkComponent }
-        });
+        } as any);
       } else {
         console.log('Aucun lien trouvé. tagName:', component.get('tagName'), 'type:', component.get('type'));
       }
