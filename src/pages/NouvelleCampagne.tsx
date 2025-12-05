@@ -1857,22 +1857,25 @@ const NouvelleCampagne = () => {
                         {uploadedMedia.map((media, index) => (
                           <div
                             key={`${media.path}-${index}`}
-                            className="group relative aspect-square rounded-lg overflow-hidden border border-border hover:border-primary transition-colors cursor-pointer bg-muted/30"
-                            onClick={() => handleInsertMedia(media)}
+                            className="group relative aspect-square rounded-lg overflow-hidden border border-border hover:border-primary transition-colors bg-muted/30"
                           >
                             {media.type === 'image' ? (
                               <img
                                 src={media.url}
                                 alt={media.name}
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-cover cursor-pointer"
+                                onClick={() => handleInsertMedia(media)}
                               />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-muted">
+                              <div 
+                                className="w-full h-full flex items-center justify-center bg-muted cursor-pointer"
+                                onClick={() => handleInsertMedia(media)}
+                              >
                                 <Play className="h-8 w-8 text-muted-foreground" />
                               </div>
                             )}
                             {/* Overlay au survol */}
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
                               <div className="text-center text-white">
                                 <p className="text-xs font-medium mb-1 truncate px-2">{media.name}</p>
                                 <Badge variant="secondary" className="text-xs">
@@ -1880,18 +1883,23 @@ const NouvelleCampagne = () => {
                                 </Badge>
                               </div>
                             </div>
-                            {/* Bouton supprimer */}
+                            {/* Bouton supprimer - toujours visible */}
                             <Button
                               variant="destructive"
                               size="icon"
-                              className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="absolute top-2 right-2 h-7 w-7 bg-destructive/90 hover:bg-destructive shadow-md z-10"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeleteMedia(media.path);
                               }}
+                              title="Supprimer"
                             >
-                              <X className="h-3 w-3" />
+                              <X className="h-4 w-4" />
                             </Button>
+                            {/* Nom du fichier en bas */}
+                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                              <p className="text-xs text-white truncate font-medium">{media.name}</p>
+                            </div>
                           </div>
                         ))}
                       </div>
