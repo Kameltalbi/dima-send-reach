@@ -52,10 +52,12 @@ import {
   HelpCircle,
   GripVertical,
   X as XIcon,
-  RectangleHorizontal
+  RectangleHorizontal,
+  Folder
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Toggle } from "@/components/ui/toggle";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useEmailQuota } from "@/hooks/useEmailQuota";
@@ -110,6 +112,17 @@ const NouvelleCampagne = () => {
     textDecoration: 'none',
     lineHeight: '1.5',
   });
+  const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false);
+  const mediaSelectCallbackRef = useRef<((url: string) => void) | null>(null);
+  const [mediaLibraryTab, setMediaLibraryTab] = useState<'mes-fichiers' | 'images-libres' | 'images-gif'>('mes-fichiers');
+  const [freeImages, setFreeImages] = useState<Array<{ id: string; url: string; thumbnail: string; author: string }>>([]);
+  const [gifImages, setGifImages] = useState<Array<{ id: string; url: string; thumbnail: string; title: string }>>([]);
+  const [isLoadingFreeImages, setIsLoadingFreeImages] = useState(false);
+  const [isLoadingGifs, setIsLoadingGifs] = useState(false);
+  const [freeImagesSearch, setFreeImagesSearch] = useState('');
+  const [gifSearch, setGifSearch] = useState('');
+  const [selectedMediaPaths, setSelectedMediaPaths] = useState<Set<string>>(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
   
   
   const [formData, setFormData] = useState({
@@ -882,6 +895,45 @@ const NouvelleCampagne = () => {
       console.error('Erreur lors de la suppression:', error);
       toast.error('Erreur lors de la suppression');
     }
+  };
+
+  // Supprimer plusieurs médias
+  const handleDeleteSelectedMedia = async () => {
+    if (selectedMediaPaths.size === 0) return;
+    
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${selectedMediaPaths.size} média(s) ?`)) {
+      return;
+    }
+
+    try {
+      const pathsToDelete = Array.from(selectedMediaPaths);
+      const { error } = await supabase.storage
+        .from('template-images')
+        .remove(pathsToDelete);
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success(`${pathsToDelete.length} média(s) supprimé(s) avec succès`);
+      setSelectedMediaPaths(new Set());
+      setIsSelectionMode(false);
+      await loadUserMedia();
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      toast.error('Erreur lors de la suppression des médias');
+    }
+  };
+
+  // Toggle sélection d'un média
+  const toggleMediaSelection = (path: string) => {
+    const newSelection = new Set(selectedMediaPaths);
+    if (newSelection.has(path)) {
+      newSelection.delete(path);
+    } else {
+      newSelection.add(path);
+    }
+    setSelectedMediaPaths(newSelection);
   };
   
   const handleSaveAndQuit = () => {
@@ -2253,8 +2305,369 @@ const NouvelleCampagne = () => {
                     setSelectedTextComponent(false);
                   }
                 }}
+                onOpenMediaLibrary={(onSelect) => {
+                  mediaSelectCallbackRef.current = onSelect;
+                  setIsMediaLibraryOpen(true);
+                  // Charger les médias si nécessaire
+                  if (uploadedMedia.length === 0 && user?.id) {
+                    loadUserMedia();
+                  }
+                }}
               />
             </div>
+            
+            {/* Dialog Bibliothèque de contenu */}
+            <Dialog 
+              open={isMediaLibraryOpen} 
+              onOpenChange={(open) => {
+                setIsMediaLibraryOpen(open);
+                if (!open) {
+                  // Réinitialiser le mode de sélection à la fermeture
+                  setIsSelectionMode(false);
+                  setSelectedMediaPaths(new Set());
+                }
+              }}
+            >
+              <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-bold">Bibliothèque de contenu</DialogTitle>
+                </DialogHeader>
+                
+                <Tabs value={mediaLibraryTab} onValueChange={(value) => setMediaLibraryTab(value as any)} className="flex-1 flex flex-col overflow-hidden">
+                  <TabsList className="w-full justify-start bg-transparent border-b rounded-none h-auto p-0">
+                    <TabsTrigger 
+                      value="mes-fichiers" 
+                      className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none px-4 py-3"
+                    >
+                      Mes fichiers
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="images-libres" 
+                      className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none px-4 py-3"
+                    >
+                      Images libres de droits
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="images-gif" 
+                      className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none px-4 py-3"
+                    >
+                      Images GIF
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  {/* Boutons d'action */}
+                  <div className="flex items-center gap-2 px-4 py-3 border-b">
+                    <Button
+                      onClick={() => {
+                        mediaInputRef.current?.click();
+                      }}
+                      className="bg-gray-800 text-white hover:bg-gray-700"
+                    >
+                      <ImagePlus className="h-4 w-4 mr-2" />
+                      Importer
+                    </Button>
+                    <Button variant="outline" className="border-gray-300">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Créer une image
+                    </Button>
+                    <Button variant="ghost" className="text-primary">
+                      <Folder className="h-4 w-4 mr-2" />
+                      Dossiers
+                      <ChevronDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                  
+                  <TabsContent value="mes-fichiers" className="flex-1 overflow-y-auto mt-0">
+                    {isLoadingMedia ? (
+                      <div className="flex items-center justify-center py-12">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : uploadedMedia.filter(media => media.type === 'image').length > 0 ? (
+                      <div className="grid grid-cols-4 gap-4 p-4">
+                        {uploadedMedia
+                          .filter(media => media.type === 'image')
+                          .map((media, index) => {
+                            const isSelected = selectedMediaPaths.has(media.path);
+                            return (
+                              <div
+                                key={`${media.path}-${index}`}
+                                className={`group relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                                  isSelected 
+                                    ? 'border-primary ring-2 ring-primary ring-offset-2' 
+                                    : 'border-border hover:border-primary'
+                                } ${isSelectionMode ? 'cursor-pointer' : 'cursor-pointer'}`}
+                                onClick={(e) => {
+                                  if (isSelectionMode) {
+                                    e.stopPropagation();
+                                    toggleMediaSelection(media.path);
+                                  } else if (mediaSelectCallbackRef.current) {
+                                    mediaSelectCallbackRef.current(media.url);
+                                    setIsMediaLibraryOpen(false);
+                                    mediaSelectCallbackRef.current = null;
+                                  }
+                                }}
+                              >
+                                <img
+                                  src={media.url}
+                                  alt={media.name}
+                                  className="w-full h-full object-cover"
+                                />
+                                {isSelectionMode && (
+                                  <div className="absolute top-2 left-2 z-10">
+                                    <div className={`w-6 h-6 rounded border-2 flex items-center justify-center ${
+                                      isSelected 
+                                        ? 'bg-primary border-primary' 
+                                        : 'bg-white border-gray-300'
+                                    }`}>
+                                      {isSelected && (
+                                        <CheckCircle2 className="h-4 w-4 text-white" />
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                                <div className={`absolute inset-0 transition-colors flex items-center justify-center ${
+                                  isSelectionMode 
+                                    ? isSelected 
+                                      ? 'bg-primary/20' 
+                                      : 'bg-black/0 group-hover:bg-black/20'
+                                    : 'bg-black/0 group-hover:bg-black/40'
+                                }`}>
+                                  <div className={`transition-opacity text-white text-center p-2 ${
+                                    isSelectionMode ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                                  }`}>
+                                    <p className="text-xs font-medium truncate">{media.name}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <div className="p-4 rounded-lg bg-muted/50 inline-block mb-3">
+                          <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Aucune image disponible
+                        </p>
+                        <Button
+                          onClick={() => {
+                            mediaInputRef.current?.click();
+                          }}
+                          variant="outline"
+                        >
+                          <ImagePlus className="h-4 w-4 mr-2" />
+                          Télécharger des images
+                        </Button>
+                      </div>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="images-libres" className="flex-1 overflow-y-auto mt-0">
+                    <div className="p-4 space-y-4">
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <Input
+                            placeholder="Rechercher des images..."
+                            value={freeImagesSearch}
+                            onChange={(e) => setFreeImagesSearch(e.target.value)}
+                            className="pl-10"
+                          />
+                          <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <Button
+                          onClick={async () => {
+                            setIsLoadingFreeImages(true);
+                            try {
+                              // Utiliser Unsplash API (gratuite, nécessite une clé API)
+                              // Pour l'instant, on utilise des images placeholder
+                              const query = freeImagesSearch || 'business';
+                              // Note: Vous devrez ajouter votre clé API Unsplash dans les variables d'environnement
+                              const unsplashKey = import.meta.env.VITE_UNSPLASH_ACCESS_KEY || '';
+                              
+                              if (unsplashKey) {
+                                const response = await fetch(`https://api.unsplash.com/search/photos?query=${query}&per_page=20&client_id=${unsplashKey}`);
+                                if (response.ok) {
+                                  const data = await response.json();
+                                  setFreeImages(data.results.map((img: any) => ({
+                                    id: img.id,
+                                    url: img.urls.regular,
+                                    thumbnail: img.urls.thumb,
+                                    author: img.user.name
+                                  })));
+                                }
+                              } else {
+                                // Fallback: utiliser des images placeholder
+                                setFreeImages([
+                                  { id: '1', url: 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=400', thumbnail: 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=200', author: 'Unsplash' },
+                                  { id: '2', url: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400', thumbnail: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=200', author: 'Unsplash' },
+                                  { id: '3', url: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=400', thumbnail: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=200', author: 'Unsplash' },
+                                ]);
+                              }
+                            } catch (error) {
+                              console.error('Erreur lors du chargement des images libres:', error);
+                              toast.error('Erreur lors du chargement des images');
+                            } finally {
+                              setIsLoadingFreeImages(false);
+                            }
+                          }}
+                          disabled={isLoadingFreeImages}
+                        >
+                          {isLoadingFreeImages ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            'Rechercher'
+                          )}
+                        </Button>
+                      </div>
+                      
+                      {isLoadingFreeImages ? (
+                        <div className="flex items-center justify-center py-12">
+                          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                        </div>
+                      ) : freeImages.length > 0 ? (
+                        <div className="grid grid-cols-4 gap-4">
+                          {freeImages.map((img) => (
+                            <div
+                              key={img.id}
+                              className="group relative aspect-square rounded-lg overflow-hidden border-2 border-border hover:border-primary cursor-pointer transition-all"
+                              onClick={() => {
+                                if (mediaSelectCallbackRef.current) {
+                                  mediaSelectCallbackRef.current(img.url);
+                                  setIsMediaLibraryOpen(false);
+                                  mediaSelectCallbackRef.current = null;
+                                }
+                              }}
+                            >
+                              <img
+                                src={img.thumbnail}
+                                alt={img.author}
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                                <div className="opacity-0 group-hover:opacity-100 transition-opacity text-white text-center p-2">
+                                  <p className="text-xs font-medium">{img.author}</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-12">
+                          <p className="text-sm text-muted-foreground">
+                            Recherchez des images libres de droits
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="images-gif" className="flex-1 overflow-y-auto mt-0">
+                    <div className="p-4 space-y-4">
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <Input
+                            placeholder="Rechercher des GIFs..."
+                            value={gifSearch}
+                            onChange={(e) => setGifSearch(e.target.value)}
+                            className="pl-10"
+                          />
+                          <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <Button
+                          onClick={async () => {
+                            setIsLoadingGifs(true);
+                            try {
+                              // Utiliser Giphy API (gratuite, nécessite une clé API)
+                              const query = gifSearch || 'business';
+                              const giphyKey = import.meta.env.VITE_GIPHY_API_KEY || '';
+                              
+                              if (giphyKey) {
+                                const response = await fetch(`https://api.giphy.com/v1/gifs/search?q=${query}&limit=20&api_key=${giphyKey}`);
+                                if (response.ok) {
+                                  const data = await response.json();
+                                  setGifImages(data.data.map((gif: any) => ({
+                                    id: gif.id,
+                                    url: gif.images.original.url,
+                                    thumbnail: gif.images.fixed_height_small.url,
+                                    title: gif.title
+                                  })));
+                                }
+                              } else {
+                                toast.info('Clé API Giphy non configurée. Configurez VITE_GIPHY_API_KEY dans votre fichier .env');
+                              }
+                            } catch (error) {
+                              console.error('Erreur lors du chargement des GIFs:', error);
+                              toast.error('Erreur lors du chargement des GIFs');
+                            } finally {
+                              setIsLoadingGifs(false);
+                            }
+                          }}
+                          disabled={isLoadingGifs}
+                        >
+                          {isLoadingGifs ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            'Rechercher'
+                          )}
+                        </Button>
+                      </div>
+                      
+                      {isLoadingGifs ? (
+                        <div className="flex items-center justify-center py-12">
+                          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                        </div>
+                      ) : gifImages.length > 0 ? (
+                        <div className="grid grid-cols-4 gap-4">
+                          {gifImages.map((gif) => (
+                            <div
+                              key={gif.id}
+                              className="group relative aspect-square rounded-lg overflow-hidden border-2 border-border hover:border-primary cursor-pointer transition-all"
+                              onClick={() => {
+                                if (mediaSelectCallbackRef.current) {
+                                  mediaSelectCallbackRef.current(gif.url);
+                                  setIsMediaLibraryOpen(false);
+                                  mediaSelectCallbackRef.current = null;
+                                }
+                              }}
+                            >
+                              <img
+                                src={gif.thumbnail}
+                                alt={gif.title}
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                                <div className="opacity-0 group-hover:opacity-100 transition-opacity text-white text-center p-2">
+                                  <p className="text-xs font-medium truncate">{gif.title}</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-12">
+                          <p className="text-sm text-muted-foreground">
+                            Recherchez des GIFs
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+                
+                <div className="border-t p-4 flex items-center justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsMediaLibraryOpen(false);
+                      mediaSelectCallbackRef.current = null;
+                    }}
+                  >
+                    Annuler
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
             
             {/* Panneau de configuration texte à droite - style Brevo */}
             {selectedTextComponent && selectedComponentRef.current && (

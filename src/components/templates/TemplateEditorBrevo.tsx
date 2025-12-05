@@ -21,9 +21,10 @@ interface TemplateEditorBrevoProps {
   deviceView?: "desktop" | "mobile";
   onGetCurrentHtml?: (getHtml: () => string) => void;
   onComponentSelected?: (component: any) => void;
+  onOpenMediaLibrary?: (onSelect: (mediaUrl: string) => void) => void;
 }
 
-export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desktop", onGetCurrentHtml, onComponentSelected }: TemplateEditorBrevoProps) {
+export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desktop", onGetCurrentHtml, onComponentSelected, onOpenMediaLibrary }: TemplateEditorBrevoProps) {
   const editorRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -693,6 +694,95 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       }
     });
 
+    // Fonction pour ajouter l'overlay à une image
+    const addImageOverlay = (component: any) => {
+      if (component.get('type') !== 'image') return;
+      
+      setTimeout(() => {
+        const el = component.getEl();
+        if (!el) return;
+        
+        const frame = editor.Canvas.getFrameEl();
+        const frameDoc = frame?.contentDocument || frame?.contentWindow?.document;
+        if (!frameDoc) return;
+        
+        // Vérifier si l'overlay existe déjà
+        if (el.parentElement?.classList.contains('gjs-image-wrapper')) {
+          return;
+        }
+        
+        // Créer un wrapper
+        const wrapper = frameDoc.createElement('div');
+        wrapper.className = 'gjs-image-wrapper';
+        wrapper.style.cssText = 'position: relative; display: inline-block; width: 100%;';
+        
+        // Insérer le wrapper avant l'image
+        el.parentNode?.insertBefore(wrapper, el);
+        wrapper.appendChild(el);
+        
+        // Créer l'overlay
+        const overlay = frameDoc.createElement('div');
+        overlay.className = 'gjs-image-overlay';
+        overlay.style.cssText = 'position: absolute; inset: 0; z-index: 10; pointer-events: none;';
+        overlay.innerHTML = `
+          <div class="gjs-image-overlay-content" style="position: absolute; inset: 0; background: rgba(102, 126, 234, 0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease; border-radius: 4px;">
+            <div style="color: white; text-align: center; padding: 20px;">
+              <button class="gjs-replace-image-btn" style="background: white; color: #667eea; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; margin-bottom: 12px; pointer-events: auto; transition: transform 0.2s;">Remplacer</button>
+              <p style="font-size: 12px; margin: 0; color: white; opacity: 0.9;">Sélectionnez une image ou faites un glisser-déposer depuis votre bureau</p>
+            </div>
+          </div>
+        `;
+        wrapper.appendChild(overlay);
+        
+        const overlayContent = overlay.querySelector('.gjs-image-overlay-content') as HTMLElement;
+        const replaceBtn = overlay.querySelector('.gjs-replace-image-btn') as HTMLElement;
+        
+        // Événements hover
+        wrapper.addEventListener('mouseenter', () => {
+          if (overlayContent) {
+            overlayContent.style.opacity = '1';
+            overlay.style.pointerEvents = 'auto';
+          }
+        });
+        
+        wrapper.addEventListener('mouseleave', () => {
+          if (overlayContent) {
+            overlayContent.style.opacity = '0';
+            overlay.style.pointerEvents = 'none';
+          }
+        });
+        
+        // Bouton remplacer
+        if (replaceBtn) {
+          replaceBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            
+            // Si onOpenMediaLibrary est fourni, l'utiliser
+            if (onOpenMediaLibrary) {
+              onOpenMediaLibrary((mediaUrl: string) => {
+                // Remplacer l'image
+                component.addAttributes({ src: mediaUrl });
+                component.set('src', mediaUrl);
+                const el = component.getEl();
+                if (el && el.tagName === 'IMG') {
+                  (el as HTMLImageElement).src = mediaUrl;
+                }
+                editor.refresh();
+              });
+            } else {
+              // Fallback: utiliser le gestionnaire d'assets par défaut
+              editor.runCommand('open-assets', {
+                target: component,
+                types: ['image'],
+                accept: 'image/*',
+              });
+            }
+          });
+        }
+      }, 100);
+    };
+
     // Appliquer des styles par défaut aux images ajoutées
     editor.on('component:add', (component: any) => {
       if (component.get('type') === 'image') {
@@ -702,7 +792,32 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
           'display': 'block',
         });
         component.set('resizable', true);
+        addImageOverlay(component);
       }
+    });
+    
+    // Ajouter l'overlay aux images existantes lors de la sélection
+    editor.on('component:selected', (component: any) => {
+      if (component.get('type') === 'image') {
+        addImageOverlay(component);
+      }
+    });
+    
+    // Ajouter l'overlay après le chargement du contenu
+    editor.on('load', () => {
+      setTimeout(() => {
+        const allComponents = editor.getComponents();
+        const findImages = (comp: any) => {
+          if (comp.get('type') === 'image') {
+            addImageOverlay(comp);
+          }
+          const children = comp.components();
+          if (children && children.length) {
+            children.each((child: any) => findImages(child));
+          }
+        };
+        findImages(allComponents);
+      }, 500);
     });
 
     // S'assurer que tous les composants ont une toolbar
