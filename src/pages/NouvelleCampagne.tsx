@@ -88,6 +88,7 @@ const NouvelleCampagne = () => {
   const [htmlContent, setHtmlContent] = useState("");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const getCurrentHtmlRef = useRef<(() => string) | null>(null);
+  const addBlockRef = useRef<((blockType: string) => void) | null>(null);
   const [sidebarTab, setSidebarTab] = useState<"blocs" | "sections" | "enregistres">("blocs");
   const [sidebarIcon, setSidebarIcon] = useState<"contenu" | "bibliotheque" | "sonia">("contenu");
   const [deviceView, setDeviceView] = useState<"desktop" | "mobile">("desktop");
@@ -1151,10 +1152,17 @@ const NouvelleCampagne = () => {
                         return (
                           <div
                             key={block.id}
-                            className="group relative bg-white border rounded-lg p-4 cursor-move hover:border-primary hover:shadow-md transition-all"
+                            className="group relative bg-white border rounded-lg p-4 cursor-pointer hover:border-primary hover:shadow-md transition-all"
                             draggable
                             onDragStart={(e) => {
                               e.dataTransfer.setData("block-type", block.id);
+                            }}
+                            onClick={() => {
+                              if (addBlockRef.current) {
+                                addBlockRef.current(block.id);
+                              } else {
+                                toast.error("L'éditeur n'est pas encore prêt");
+                              }
                             }}
                           >
                             <div className="flex flex-col items-center gap-2">
@@ -1627,6 +1635,9 @@ const NouvelleCampagne = () => {
                   if (uploadedMedia.length === 0 && user?.id) {
                     loadUserMedia();
                   }
+                }}
+                onRegisterAddBlock={(addBlock) => {
+                  addBlockRef.current = addBlock;
                 }}
               />
             </div>
