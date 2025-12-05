@@ -127,11 +127,33 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       // Forcer le rendu après un délai
       setTimeout(() => {
         try {
-          // Vérifier si le contenu est chargé
+          // S'assurer que le wrapper reste droppable
           const wrapper = editorInstance.getWrapper();
+          if (wrapper) {
+            wrapper.set({
+              droppable: true,
+              selectable: false,
+              hoverable: false,
+            });
+          }
+          
+          // Vérifier si le contenu est chargé
           const components = wrapper?.components();
           const count = components?.length || 0;
           console.log("Nombre de composants:", count);
+          
+          // Rendre tous les composants droppables et éditables
+          if (components && typeof components.each === 'function') {
+            components.each((comp: any) => {
+              comp.set({
+                droppable: true,
+                draggable: true,
+                selectable: true,
+                hoverable: true,
+                editable: true,
+              });
+            });
+          }
           
           // Forcer le refresh
           editorInstance.refresh();
@@ -822,8 +844,19 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       }, 100);
     };
 
-    // Appliquer des styles par défaut aux images ajoutées
+    // Appliquer des styles par défaut aux images ajoutées et rendre tous les composants droppables
     editor.on('component:add', (component: any) => {
+      console.log("Composant ajouté:", component.get('type'), component.get('tagName'));
+      
+      // Rendre tous les composants ajoutés droppables et éditables
+      component.set({
+        droppable: true,
+        draggable: true,
+        selectable: true,
+        hoverable: true,
+        editable: true,
+      });
+      
       if (component.get('type') === 'image') {
         component.addStyle({
           'max-width': '100%',
@@ -1057,6 +1090,18 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
     editor.on('load', () => {
       console.log("Événement 'load' de GrapesJS déclenché");
       
+      // S'assurer que le wrapper est droppable
+      const wrapper = editor.getWrapper();
+      if (wrapper) {
+        wrapper.set({
+          droppable: true,
+          draggable: false,
+          selectable: false,
+          hoverable: false,
+        });
+        console.log("Wrapper configuré comme droppable");
+      }
+      
       // Utiliser la ref pour avoir la dernière valeur de initialContent
       const contentToLoad = initialContentRef.current;
       console.log("Contenu à charger:", contentToLoad ? `${contentToLoad.length} caractères` : "aucun");
@@ -1068,6 +1113,13 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       } else {
         console.log("Pas de contenu initial, chargement du template par défaut");
         setDefaultTemplate(editor);
+      }
+      
+      // Rendre le BlockManager visible après le chargement
+      const bm = editor.BlockManager;
+      if (bm) {
+        bm.render();
+        console.log("BlockManager rendu");
       }
     });
 
@@ -1278,10 +1330,21 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       
       setTimeout(() => {
         try {
+          // S'assurer que le wrapper reste droppable
+          const wrapper = editorInstance.getWrapper();
+          if (wrapper) {
+            wrapper.set({
+              droppable: true,
+              selectable: false,
+              hoverable: false,
+            });
+          }
+          
           const components = editorInstance.getComponents();
           if (components && typeof components.each === 'function') {
             components.each((component: any) => {
               makeComponentEditable(component);
+              component.set('droppable', true);
             });
           }
         } catch (error) {
