@@ -30,6 +30,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
   const containerRef = useRef<HTMLDivElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const initialContentRef = useRef<string | undefined>(initialContent);
+  const loadedRef = useRef<boolean>(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewHtml, setPreviewHtml] = useState("");
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
@@ -79,7 +80,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       console.log("loadHtmlIntoEditor appelé avec HTML de longueur:", html.length);
       
       if (!html || !html.trim()) {
-        console.error("Le contenu HTML est vide");
+        console.warn("Le contenu HTML est vide, chargement du template par défaut");
         return;
       }
       
@@ -107,23 +108,33 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
         console.log("Contenu body extrait");
       }
       
-      // Supprimer les balises inutiles
-      bodyContent = bodyContent.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
-      bodyContent = bodyContent.replace(/<!DOCTYPE[^>]*>/gi, '');
-      bodyContent = bodyContent.replace(/<\/?html[^>]*>/gi, '');
-      bodyContent = bodyContent.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '');
-      bodyContent = bodyContent.replace(/<\/?body[^>]*>/gi, '');
-      bodyContent = bodyContent.trim();
+      // Nettoyage strict du HTML pour éviter les erreurs React #418
+      bodyContent = bodyContent
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/<!DOCTYPE[^>]*>/gi, '')
+        .replace(/<\/?html[^>]*>/gi, '')
+        .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
+        .replace(/<\/?body[^>]*>/gi, '')
+        .replace(/<script[\s\S]*?<\/script>/gi, '')
+        .replace(/<meta[^>]*>/gi, '')
+        .replace(/<link[^>]*>/gi, '')
+        .replace(/<!--[\s\S]*?-->/g, '')
+        .trim();
       
       console.log("Contenu nettoyé, longueur:", bodyContent.length);
       console.log("Aperçu:", bodyContent.substring(0, 300));
       
-      // Charger le contenu
+      // Étape 1: Charger le HTML d'abord (sans CSS)
       editorInstance.setComponents(bodyContent);
-      if (css) {
-        editorInstance.setStyle(css);
-      }
-      console.log("setComponents et setStyle appelés");
+      console.log("setComponents appelé");
+      
+      // Étape 2: Injecter le CSS après un délai pour éviter les problèmes d'affichage
+      setTimeout(() => {
+        if (css) {
+          editorInstance.setStyle(css);
+          console.log("setStyle appelé avec délai");
+        }
+      }, 50);
       
       // Forcer le rendu après un délai
       setTimeout(() => {
@@ -492,7 +503,9 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
     });
 
     // Configurer le Rich Text Editor (RTE) après le chargement
+    // NOTE: Ce handler s'exécute sur load mais est indépendant du flag loadedRef
     editor.on('load', () => {
+      // Configuration RTE (s'exécute toujours)
       setTimeout(() => {
         const rte = editor.RichTextEditor;
         if (rte && typeof rte.add === 'function') {
@@ -985,7 +998,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       }
     });
     
-    // Ajouter l'overlay après le chargement du contenu
+    // Ajouter l'overlay après le chargement du contenu (indépendant du flag)
     editor.on('load', () => {
       setTimeout(() => {
         const allComponents = editor.getComponents();
@@ -1170,8 +1183,15 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
     }
 
     // Attendre que l'éditeur soit complètement chargé avant de charger le contenu
+    // IMPORTANT: Flag pour éviter les exécutions multiples
     editor.on('load', () => {
-      console.log("Événement 'load' de GrapesJS déclenché");
+      // Vérifier le flag anti-doublon
+      if (loadedRef.current) {
+        console.log("Événement 'load' ignoré (déjà chargé)");
+        return;
+      }
+      loadedRef.current = true;
+      console.log("Événement 'load' de GrapesJS déclenché (premier chargement)");
       
       // S'assurer que le wrapper est droppable
       const wrapper = editor.getWrapper();
