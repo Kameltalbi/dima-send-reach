@@ -754,6 +754,98 @@ All colors MUST be HSL.
   display: none !important;
 }
 
+/* Style pour le panneau de propriétés dans la sidebar */
+#grapesjs-style-panel {
+  width: 100%;
+}
+
+#grapesjs-style-panel .gjs-sm-sector {
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  background: hsl(var(--card));
+}
+
+#grapesjs-style-panel .gjs-sm-title {
+  background: hsl(var(--muted));
+  padding: 12px 16px;
+  font-weight: 600;
+  font-size: 13px;
+  color: hsl(var(--foreground));
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 0.2s;
+}
+
+#grapesjs-style-panel .gjs-sm-title:hover {
+  background: hsl(var(--muted) / 0.8);
+}
+
+#grapesjs-style-panel .gjs-sm-properties {
+  padding: 12px;
+  display: none;
+}
+
+#grapesjs-style-panel .gjs-sm-sector.gjs-sm-open .gjs-sm-properties {
+  display: block;
+}
+
+#grapesjs-style-panel .gjs-sm-property {
+  margin-bottom: 12px;
+}
+
+#grapesjs-style-panel .gjs-sm-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: hsl(var(--foreground));
+  margin-bottom: 6px;
+  display: block;
+}
+
+#grapesjs-style-panel .gjs-sm-field {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  font-size: 13px;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  transition: border-color 0.2s;
+}
+
+#grapesjs-style-panel .gjs-sm-field:focus {
+  outline: none;
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+}
+
+#grapesjs-style-panel .gjs-sm-field-color {
+  height: 40px;
+  cursor: pointer;
+}
+
+#grapesjs-style-panel .gjs-sm-composite {
+  display: flex;
+  gap: 8px;
+}
+
+#grapesjs-style-panel .gjs-sm-composite .gjs-sm-property {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+#grapesjs-style-panel .gjs-sm-arrow {
+  transition: transform 0.2s;
+}
+
+#grapesjs-style-panel .gjs-sm-sector.gjs-sm-open .gjs-sm-arrow {
+  transform: rotate(180deg);
+}
+
 .gjs-pn-devices-c {
   display: none !important;
 }
