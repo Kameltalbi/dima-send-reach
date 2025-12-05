@@ -240,6 +240,8 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
           "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css",
         ],
       },
+      // Ajouter des styles personnalisés pour le canvas avec fond à points
+      cssIcons: '',
       blockManager: {
         blocks: [
           {
@@ -759,9 +761,11 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
   return (
     <div 
       ref={containerRef}
-      className="w-full min-h-[600px]"
+      className="w-full min-h-[600px] grapesjs-dotted-bg"
       style={{ 
-        backgroundColor: '#ffffff',
+        backgroundColor: '#f8f9fa',
+        backgroundImage: 'radial-gradient(circle, #cbd5e1 1px, transparent 1px)',
+        backgroundSize: '20px 20px',
       }}
     />
   );

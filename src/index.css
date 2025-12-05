@@ -519,21 +519,23 @@ All colors MUST be HSL.
   background: hsl(var(--card)) !important;
 }
 
-/* Canvas - Design épuré */
+/* Canvas - Design épuré avec fond à points comme Brevo */
 .gjs-cv-canvas {
-  background: transparent !important;
+  background: #f8f9fa !important;
+  background-image: radial-gradient(circle, #94a3b8 1px, transparent 1px) !important;
+  background-size: 16px 16px !important;
   border: none !important;
 }
 
 .gjs-frame {
   border-radius: 0;
   border: none;
-  box-shadow: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   background: white !important;
 }
 
 .gjs-cv-canvas__frames {
-  padding: 0;
+  padding: 20px;
   background: transparent !important;
 }
 
@@ -544,6 +546,13 @@ All colors MUST be HSL.
 
 .gjs-cv-canvas__frames > iframe body {
   background: white !important;
+}
+
+/* Container avec fond à points */
+.grapesjs-dotted-bg .gjs-cv-canvas {
+  background: #f8f9fa !important;
+  background-image: radial-gradient(circle, #94a3b8 1px, transparent 1px) !important;
+  background-size: 16px 16px !important;
 }
 
 /* Style Manager - Design moderne et professionnel */
