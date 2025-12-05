@@ -666,6 +666,15 @@ const NouvelleCampagne = () => {
       {/* Header style Brevo */}
       <div className="h-12 bg-[#f5f5f5] border-b border-gray-200 px-4 flex items-center justify-between z-20">
         <div className="flex items-center gap-3 flex-1 min-w-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/campagnes")}
+            className="h-8 w-8 p-0 hover:bg-muted"
+            title="Retour aux campagnes"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
           <Logo className="h-6 w-6" />
           <h1 className="text-sm font-medium text-foreground truncate">
             {formData.nom_campagne || "Nouvelle campagne"}
