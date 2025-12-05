@@ -416,36 +416,7 @@ const NouvelleCampagne = () => {
 
       if (error) throw error;
 
-      // Créer les variantes A/B si activé
-      if (isAbTestEnabled && data) {
-        // Supprimer les anciennes variantes si en mode édition
-        if (isEditMode) {
-          await supabase
-            .from("campaign_variants")
-            .delete()
-            .eq("campaign_id", data.id);
-        }
-
-        // Créer les nouvelles variantes
-        const variantsToInsert = abVariants.map((variant, index) => {
-          const variantData: any = {
-            campaign_id: data.id,
-            variant_name: variant.name,
-            sujet_email: variant.sujet || formData.sujet_email,
-            html_contenu: variant.html || htmlContent,
-          };
-          return variantData;
-        });
-
-        const { error: variantsError } = await supabase
-          .from("campaign_variants")
-          .insert(variantsToInsert);
-
-        if (variantsError) {
-          console.error("Erreur lors de la création des variantes:", variantsError);
-          throw new Error("Erreur lors de la création des variantes A/B");
-        }
-      }
+      // Note: A/B test functionality uses ab_tests table directly, not campaign_variants
 
       if (!isDraft && data) {
         await createRecipients(data.id, isAbTestEnabled);
@@ -528,66 +499,12 @@ const NouvelleCampagne = () => {
     if (contacts.length > 0) {
       let recipients: any[] = [];
 
-      if (isAbTest) {
-        // Récupérer les variantes
-        const { data: variants, error: variantsError } = await supabase
-          .from("campaign_variants")
-          .select("id, variant_name")
-          .eq("campaign_id", campaignId)
-          .order("variant_name");
-
-        if (variantsError) throw variantsError;
-
-        if (variants && variants.length >= 2) {
-          // Calculer le nombre de contacts pour chaque variante (basé sur le pourcentage)
-          const testContactsCount = Math.floor((contacts.length * abTestPercentage) / 100);
-          const contactsPerVariant = Math.floor(testContactsCount / variants.length);
-
-          // Mélanger les contacts pour une distribution aléatoire
-          const shuffledContacts = [...contacts].sort(() => Math.random() - 0.5);
-
-          // Assigner les variantes aux contacts de test
-          let contactIndex = 0;
-          variants.forEach((variant, variantIndex) => {
-            const startIndex = contactIndex;
-            const endIndex = Math.min(startIndex + contactsPerVariant, testContactsCount);
-            
-            for (let i = startIndex; i < endIndex && i < shuffledContacts.length; i++) {
-              recipients.push({
-                campaign_id: campaignId,
-                contact_id: shuffledContacts[i].id,
-                statut_envoi: "en_attente",
-                variant_id: variant.id,
-              });
-            }
-            contactIndex = endIndex;
-          });
-
-          // Les contacts restants seront assignés après la sélection du gagnant
-          for (let i = contactIndex; i < shuffledContacts.length; i++) {
-            recipients.push({
-              campaign_id: campaignId,
-              contact_id: shuffledContacts[i].id,
-              statut_envoi: "en_attente",
-              variant_id: null, // Sera assigné après sélection du gagnant
-            });
-          }
-        } else {
-          // Fallback si pas assez de variantes
-          recipients = contacts.map((contact) => ({
-            campaign_id: campaignId,
-            contact_id: contact.id,
-            statut_envoi: "en_attente",
-          }));
-        }
-      } else {
-        // Pas de test A/B, assigner tous les contacts normalement
-        recipients = contacts.map((contact) => ({
-          campaign_id: campaignId,
-          contact_id: contact.id,
-          statut_envoi: "en_attente",
-        }));
-      }
+      // Assign all contacts to campaign (A/B test variants stored in ab_tests table)
+      recipients = contacts.map((contact) => ({
+        campaign_id: campaignId,
+        contact_id: contact.id,
+        statut_envoi: "en_attente",
+      }));
 
       const { error } = await supabase.from("campaign_recipients").insert(recipients);
       if (error) throw error;
@@ -1227,136 +1144,15 @@ const NouvelleCampagne = () => {
                 </div>
               )}
               
-              {/* Ancienne section Style complexe - SUPPRIMÉE */}
-              {false && (
-                <div className="p-4 space-y-4 overflow-y-auto">
-                  {/* Template - Section repliable */}
-                  <div className="space-y-3 border-t pt-3">
-                    <button 
-                      onClick={() => setTemplateExpanded(!templateExpanded)}
-                      className="w-full flex items-center justify-between text-sm font-medium text-foreground hover:text-primary transition-colors"
-                    >
-                      <span>Template</span>
-                      {templateExpanded ? (
-                        <ChevronUp className="h-4 w-4" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4" />
-                      )}
-                    </button>
-                    
-                    {templateExpanded && (
-                      <div className="space-y-3 pt-2">
-                        <div className="space-y-2">
-                          <Label className="text-xs">Couleur d'arrière-plan</Label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="color"
-                              value={templateStyles.backgroundColor}
-                              onChange={(e) => setTemplateStyles({ ...templateStyles, backgroundColor: e.target.value })}
-                              className="w-10 h-10 rounded border-2 border-gray-300 cursor-pointer"
-                            />
-                            <Input 
-                              value={templateStyles.backgroundColor}
-                              onChange={(e) => setTemplateStyles({ ...templateStyles, backgroundColor: e.target.value })}
-                              className="h-8 text-xs flex-1"
-                            />
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label className="text-xs">Image d'arrière-plan</Label>
-                          <Button variant="outline" size="sm" className="w-full text-xs h-8 gap-2">
-                            <ImagePlus className="h-3.5 w-3.5" />
-                            Ajouter une image
-                          </Button>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label className="text-xs">Insérer image à partir d'une URL</Label>
-                          <Input 
-                            value={templateStyles.backgroundImageUrl}
-                            onChange={(e) => setTemplateStyles({ ...templateStyles, backgroundImageUrl: e.target.value })}
-                            placeholder="https://mydomain.com/myimage.png"
-                            className="h-8 text-xs"
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label className="text-xs">Couleur du corps</Label>
-                          <div className="flex items-center gap-2">
-                            <div className="w-10 h-10 rounded border-2 border-gray-300 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZGRkIi8+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNmZmYiLz48L3N2Zz4=')] bg-[length:10px_10px] cursor-pointer"></div>
-                            <Input 
-                              value={templateStyles.bodyColor || ""}
-                              onChange={(e) => setTemplateStyles({ ...templateStyles, bodyColor: e.target.value })}
-                              placeholder="Transparent"
-                              className="h-8 text-xs flex-1"
-                            />
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label className="text-xs">Largeur du corps</Label>
-                          <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 border border-gray-300"></div>
-                            <div className="flex items-center gap-1 flex-1">
-                              <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setTemplateStyles({ ...templateStyles, bodyWidth: Math.max(300, templateStyles.bodyWidth - 10) })}>-</Button>
-                              <Input 
-                                type="number"
-                                value={templateStyles.bodyWidth}
-                                onChange={(e) => setTemplateStyles({ ...templateStyles, bodyWidth: parseInt(e.target.value) || 600 })}
-                                className="h-8 text-xs text-center flex-1"
-                              />
-                              <span className="text-xs text-muted-foreground">px</span>
-                              <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setTemplateStyles({ ...templateStyles, bodyWidth: templateStyles.bodyWidth + 10 })}>+</Button>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <Label className="text-xs">Afficher dans le navigateur</Label>
-                          <Switch 
-                            checked={templateStyles.showInBrowser}
-                            onCheckedChange={(checked) => setTemplateStyles({ ...templateStyles, showInBrowser: checked })}
-                          />
-                        </div>
-                      </div>
-                    )}
+              {sidebarIcon === "sonia" && (
+                <div className="p-4">
+                  <div className="text-sm text-muted-foreground text-center py-8">
+                    Assistant Sonia - Bientôt disponible
                   </div>
-                  
-                  {/* Apparence du texte - Section repliable */}
-                  <div className="space-y-3 border-t pt-3">
-                    <button 
-                      onClick={() => setTextAppearanceExpanded(!textAppearanceExpanded)}
-                      className="w-full flex items-center justify-between text-sm font-medium text-foreground hover:text-primary transition-colors"
-                    >
-                      <span>Apparence du texte</span>
-                      {textAppearanceExpanded ? (
-                        <ChevronUp className="h-4 w-4" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4" />
-                      )}
-                    </button>
-                    
-                    {textAppearanceExpanded && (
-                      <div className="space-y-3 pt-2">
-                        {/* Info box */}
-                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 flex items-start gap-2">
-                          <Info className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
-                          <p className="text-xs text-purple-900">
-                            Enregistrez les polices de votre marque pour créer des emails adaptés à votre image de marque encore plus rapidement.
-                          </p>
-                        </div>
-                        
-                        <Button variant="outline" size="sm" className="w-full text-xs h-8">
-                          Enregistrer les polices
-                        </Button>
-                        
-                        {/* Paragraphe */}
-                        <div className="space-y-2 border-t pt-3">
-                          <h4 className="text-xs font-semibold text-foreground">Paragraphe</h4>
-                          <div className="space-y-2">
-                            <Select value={textStyles.paragraph.font} onValueChange={(value) => setTextStyles({ ...textStyles, paragraph: { ...textStyles.paragraph, font: value } })}>
-                              <SelectTrigger className="h-8 text-xs">
+                </div>
+              )}
+              
+              {sidebarTab === "sections" && (
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
