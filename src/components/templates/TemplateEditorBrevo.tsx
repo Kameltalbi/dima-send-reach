@@ -20,9 +20,10 @@ interface TemplateEditorBrevoProps {
   onSave: (html: string) => void;
   deviceView?: "desktop" | "mobile";
   onGetCurrentHtml?: (getHtml: () => string) => void;
+  onComponentSelected?: (component: any) => void;
 }
 
-export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desktop", onGetCurrentHtml }: TemplateEditorBrevoProps) {
+export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desktop", onGetCurrentHtml, onComponentSelected }: TemplateEditorBrevoProps) {
   const editorRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -208,6 +209,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       },
       // Configurer le styleManager
       styleManager: {
+        appendTo: "#grapesjs-style-panel",
         sectors: [
           {
             name: "Dimensions",
@@ -443,6 +445,99 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
     });
 
     editorRef.current = editor;
+
+    // Configurer le Rich Text Editor (RTE) après le chargement
+    editor.on('load', () => {
+      setTimeout(() => {
+        const rte = editor.RichTextEditor;
+        if (rte && typeof rte.add === 'function') {
+          // Ajouter un sélecteur de police
+          rte.add('font-family', {
+            icon: '<i class="fa fa-font"></i>',
+            attributes: { title: 'Police' },
+            result: (rteInstance: any) => {
+              const fonts = ['Arial', 'Helvetica', 'Times New Roman', 'Courier New', 'Verdana', 'Georgia', 'Palatino', 'Garamond', 'Comic Sans MS', 'Trebuchet MS', 'Impact'];
+              const currentFont = rteInstance.getCurrentStyle('font-family') || 'Arial';
+              const select = document.createElement('select');
+              select.style.cssText = 'padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px;';
+              
+              fonts.forEach(font => {
+                const option = document.createElement('option');
+                option.value = font;
+                option.textContent = font;
+                option.style.fontFamily = font;
+                if (currentFont.includes(font)) {
+                  option.selected = true;
+                }
+                select.appendChild(option);
+              });
+              
+              select.onchange = () => {
+                rteInstance.exec('fontName', select.value);
+                rteInstance.close();
+              };
+              
+              return select;
+            }
+          });
+
+          // Ajouter un sélecteur de taille
+          rte.add('font-size', {
+            icon: '<i class="fa fa-text-height"></i>',
+            attributes: { title: 'Taille' },
+            result: (rteInstance: any) => {
+              const sizes = ['8px', '10px', '12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '48px'];
+              const currentSize = rteInstance.getCurrentStyle('font-size') || '14px';
+              const select = document.createElement('select');
+              select.style.cssText = 'padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px;';
+              
+              sizes.forEach(size => {
+                const option = document.createElement('option');
+                option.value = size;
+                option.textContent = size;
+                if (currentSize === size || currentSize.includes(size.replace('px', ''))) {
+                  option.selected = true;
+                }
+                select.appendChild(option);
+              });
+              
+              select.onchange = () => {
+                rteInstance.exec('fontSize', select.value);
+                rteInstance.close();
+              };
+              
+              return select;
+            }
+          });
+
+          // Ajouter un sélecteur de couleur
+          rte.add('text-color', {
+            icon: '<i class="fa fa-paint-brush"></i>',
+            attributes: { title: 'Couleur' },
+            result: (rteInstance: any) => {
+              const input = document.createElement('input');
+              input.type = 'color';
+              input.style.cssText = 'width: 40px; height: 30px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;';
+              
+              // Récupérer la couleur actuelle
+              const currentColor = rteInstance.getCurrentStyle('color') || '#000000';
+              input.value = currentColor;
+              
+              input.onchange = () => {
+                rteInstance.exec('foreColor', input.value);
+                rteInstance.close();
+              };
+              
+              return input;
+            }
+          });
+          
+          console.log('Contrôles RTE ajoutés: police, taille, couleur');
+        } else {
+          console.warn('RTE non disponible ou méthode add non trouvée');
+        }
+      }, 500);
+    });
 
     // Vérifier que le TraitsManager est bien initialisé
     setTimeout(() => {
@@ -682,6 +777,28 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       component.set('editable', true);
       component.set('selectable', true);
       component.set('hoverable', true);
+      
+      // Notifier le parent quand un composant texte/titre est sélectionné
+      if (onComponentSelected) {
+        const tagName = component.get('tagName') || '';
+        const type = component.get('type') || '';
+        const isTextElement = tagName === 'h1' || tagName === 'h2' || tagName === 'h3' || tagName === 'h4' || tagName === 'h5' || tagName === 'h6' || 
+                             tagName === 'p' || tagName === 'span' || tagName === 'div' || 
+                             type === 'text' || component.get('editable');
+        
+        if (isTextElement) {
+          onComponentSelected(component);
+        } else {
+          onComponentSelected(null);
+        }
+      }
+    });
+    
+    // Écouter aussi les désélections
+    editor.on('component:deselected', () => {
+      if (onComponentSelected) {
+        onComponentSelected(null);
+      }
     });
 
     // Appliquer les styles directement en inline sur les composants
@@ -753,15 +870,6 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
     // Attendre que l'éditeur soit complètement chargé avant de charger le contenu
     editor.on('load', () => {
       console.log("Événement 'load' de GrapesJS déclenché");
-      
-      // Rendre le StyleManager dans le panneau personnalisé
-      const stylePanel = document.getElementById("grapesjs-style-panel");
-      if (stylePanel) {
-        const sm = editor.StyleManager;
-        stylePanel.innerHTML = '';
-        stylePanel.appendChild(sm.render());
-        console.log("StyleManager rendu dans le panneau");
-      }
       
       // Utiliser la ref pour avoir la dernière valeur de initialContent
       const contentToLoad = initialContentRef.current;

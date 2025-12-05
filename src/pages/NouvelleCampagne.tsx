@@ -98,46 +98,19 @@ const NouvelleCampagne = () => {
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [editorVersion, setEditorVersion] = useState(0);
   const mediaInputRef = useRef<HTMLInputElement>(null);
-  
-  // États pour les sections Style (repliables)
-  const [templateExpanded, setTemplateExpanded] = useState(false);
-  const [textAppearanceExpanded, setTextAppearanceExpanded] = useState(true);
-  const [buttonsExpanded, setButtonsExpanded] = useState(false);
-  
-  // États pour les styles
-  const [templateStyles, setTemplateStyles] = useState({
-    backgroundColor: "#f5f0e8",
-    backgroundImage: "",
-    backgroundImageUrl: "",
-    bodyColor: "",
-    bodyWidth: 600,
-    showInBrowser: false,
-  });
-  
+  const [selectedTextComponent, setSelectedTextComponent] = useState<boolean>(false);
+  const selectedComponentRef = useRef<any>(null);
   const [textStyles, setTextStyles] = useState({
-    paragraph: { font: "verdana", size: 15, color: "#2d5016" },
-    title1: { font: "courier", size: 24, color: "#f5f0e8" },
-    title2: { font: "courier", size: 24, color: "#2d5016" },
-    title3: { font: "courier", size: 16, color: "#2d5016" },
-    title4: { font: "courier", size: 12, color: "#2d5016" },
-    link: { bold: false, italic: false, underline: false, color: "#2d5016" },
-    lineSpacing: "left",
-    writingDirection: "ltr",
+    fontFamily: 'Arial',
+    fontSize: '14px',
+    color: '#000000',
+    textAlign: 'left',
+    fontWeight: 'normal',
+    fontStyle: 'normal',
+    textDecoration: 'none',
+    lineHeight: '1.5',
   });
   
-  const [buttonStyles, setButtonStyles] = useState({
-    font: "courier",
-    size: 16,
-    color: "#f5f0e8",
-    bold: false,
-    italic: false,
-    underline: false,
-    width: 209,
-    borderRadius: 30,
-    backgroundColor: "#2d5016",
-    borderWidth: 1,
-    borderColor: "#f5f0e8",
-  });
   
   const [formData, setFormData] = useState({
     nom_campagne: "",
@@ -248,6 +221,7 @@ const NouvelleCampagne = () => {
       }
     }
   }, [templateIdFromUrl, templates, htmlContent]);
+
 
   // Ouvrir automatiquement le dialog de configuration en mode création
   useEffect(() => {
@@ -1125,29 +1099,22 @@ const NouvelleCampagne = () => {
 
             {/* Zone de contenu */}
             <div className="flex-1 overflow-y-auto bg-white">
-              {/* Panneau de propriétés GrapesJS - toujours présent dans le DOM */}
-              <div 
-                id="grapesjs-style-panel" 
-                className={`${sidebarIcon === "style" ? "block" : "hidden"}`}
-                style={{ position: sidebarIcon === "style" ? "relative" : "absolute", left: "-9999px" }}
-              ></div>
-              
-              {/* Panneau de traits GrapesJS (pour éditer href, target, etc.) - toujours présent dans le DOM */}
-              {sidebarIcon === "style" && (
-                <div className="p-4 border-b">
-                  <h3 className="text-xs font-semibold text-foreground mb-3">Propriétés</h3>
+              {/* Panneaux GrapesJS - toujours présents dans le DOM mais cachés quand l'onglet Style n'est pas sélectionné */}
+              {sidebarIcon !== "style" && (
+                <>
+                  <div 
+                    id="grapesjs-style-panel" 
+                    className="hidden"
+                    style={{ position: "absolute", left: "-9999px" }}
+                  ></div>
+                  
                   <div 
                     id="grapesjs-traits-panel" 
-                    className="block"
+                    className="hidden"
+                    style={{ position: "absolute", left: "-9999px" }}
                   ></div>
-                </div>
+                </>
               )}
-              {/* Panneau caché pour que GrapesJS puisse toujours l'utiliser */}
-              <div 
-                id="grapesjs-traits-panel-hidden" 
-                className="hidden"
-                style={{ position: "absolute", left: "-9999px" }}
-              ></div>
               
               {sidebarIcon === "contenu" && sidebarTab === "blocs" && (
                 <div className="p-4 space-y-4">
@@ -1203,46 +1170,31 @@ const NouvelleCampagne = () => {
               )}
               
               {sidebarIcon === "style" && (
-                <div className="p-4 space-y-4 overflow-y-auto">
-                  {/* Bibliothèque de marques */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-semibold text-foreground">Bibliothèque de marques</h3>
-                      <Badge className="bg-green-500 text-white text-xs">Nouveau</Badge>
-                    </div>
-                    
-                    {/* Éléments de marque - 4 éléments */}
-                    <div className="grid grid-cols-4 gap-2">
-                      <div className="border rounded-lg p-2 bg-white flex items-center justify-center h-16 cursor-pointer hover:border-primary transition-colors">
-                        <span className="text-xs font-semibold">Iddéco</span>
-                      </div>
-                      <div className="border rounded-lg p-2 bg-[#2d5016] flex items-center justify-center h-16 cursor-pointer hover:border-primary transition-colors"></div>
-                      <div className="border rounded-lg p-2 bg-[#f5f0e8] flex items-center justify-center h-16 cursor-pointer hover:border-primary transition-colors"></div>
-                      <div className="border rounded-lg p-2 bg-white flex items-center justify-center gap-1 h-16 cursor-pointer hover:border-primary transition-colors">
-                        <Facebook className="h-4 w-4 text-blue-600" />
-                        <Instagram className="h-4 w-4 text-pink-600" />
-                      </div>
-                    </div>
-                    
-                    {/* Info box */}
-                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 flex items-start gap-2">
-                      <Info className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
-                      <p className="text-xs text-purple-900">
-                        Nouveaux éléments de marque disponibles
-                      </p>
-                    </div>
-                    
-                    {/* Boutons */}
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1 text-xs h-8">
-                        Modifier
-                      </Button>
-                      <Button size="sm" className="flex-1 text-xs bg-foreground text-background h-8">
-                        Appliquer les éléments
-                      </Button>
-                    </div>
+                <div className="h-full flex flex-col overflow-hidden bg-white">
+                  {/* Panneau de traits (Propriétés) - pour les liens/boutons */}
+                  <div className="p-4 border-b bg-white flex-shrink-0">
+                    <h3 className="text-xs font-semibold text-foreground mb-3">Propriétés</h3>
+                    <div 
+                      id="grapesjs-traits-panel" 
+                      className="block"
+                      style={{ display: 'block' }}
+                    ></div>
                   </div>
                   
+                  {/* Panneau de styles GrapesJS - s'adapte automatiquement à l'élément sélectionné */}
+                  <div className="flex-1 overflow-y-auto p-4">
+                    <div 
+                      id="grapesjs-style-panel" 
+                      className="block"
+                      style={{ display: 'block' }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Ancienne section Style complexe - SUPPRIMÉE */}
+              {false && sidebarIcon === "style" && (
+                <div className="p-4 space-y-4 overflow-y-auto">
                   {/* Template - Section repliable */}
                   <div className="space-y-3 border-t pt-3">
                     <button 
@@ -2262,7 +2214,7 @@ const NouvelleCampagne = () => {
           />
           
           {/* Zone d'édition - pleine largeur */}
-          <div className="h-full overflow-auto">
+          <div className="h-full overflow-auto relative">
             <div className="bg-white shadow-2xl h-full flex flex-col w-full">
               <TemplateEditorBrevo
                 key={`editor-v${editorVersion}`}
@@ -2272,8 +2224,310 @@ const NouvelleCampagne = () => {
                 onGetCurrentHtml={(getHtml) => {
                   getCurrentHtmlRef.current = getHtml;
                 }}
+                onComponentSelected={(component) => {
+                  if (component) {
+                    selectedComponentRef.current = component;
+                    // Extraire les styles du composant
+                    const styles = component.getStyle();
+                    // Convertir rgb() en hex si nécessaire
+                    let color = styles['color'] || '#000000';
+                    if (color.startsWith('rgb')) {
+                      const rgb = color.match(/\d+/g);
+                      if (rgb && rgb.length >= 3) {
+                        color = '#' + rgb.map(x => parseInt(x).toString(16).padStart(2, '0')).join('');
+                      }
+                    }
+                    setTextStyles({
+                      fontFamily: styles['font-family']?.replace(/['"]/g, '') || 'Arial',
+                      fontSize: styles['font-size'] || '14px',
+                      color: color,
+                      textAlign: styles['text-align'] || 'left',
+                      fontWeight: styles['font-weight'] || 'normal',
+                      fontStyle: styles['font-style'] || 'normal',
+                      textDecoration: styles['text-decoration'] || 'none',
+                      lineHeight: styles['line-height'] || '1.5',
+                    });
+                    setSelectedTextComponent(true);
+                  } else {
+                    selectedComponentRef.current = null;
+                    setSelectedTextComponent(false);
+                  }
+                }}
               />
             </div>
+            
+            {/* Panneau de configuration texte à droite - style Brevo */}
+            {selectedTextComponent && selectedComponentRef.current && (
+              <div className="absolute right-0 top-0 bottom-0 w-80 bg-white border-l shadow-lg z-50 overflow-y-auto">
+                <div className="p-4 border-b">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-foreground">Paramètres du texte</h3>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => {
+                        setSelectedTextComponent(false);
+                        selectedComponentRef.current = null;
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="p-4 space-y-4">
+                  {/* Police */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium">Police</Label>
+                    <Select
+                      value={textStyles.fontFamily}
+                      onValueChange={(value) => {
+                        if (selectedComponentRef.current) {
+                          selectedComponentRef.current.addStyle({ 'font-family': value });
+                          setTextStyles({ ...textStyles, fontFamily: value });
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Arial">Arial</SelectItem>
+                        <SelectItem value="Helvetica">Helvetica</SelectItem>
+                        <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+                        <SelectItem value="Courier New">Courier New</SelectItem>
+                        <SelectItem value="Verdana">Verdana</SelectItem>
+                        <SelectItem value="Georgia">Georgia</SelectItem>
+                        <SelectItem value="Palatino">Palatino</SelectItem>
+                        <SelectItem value="Garamond">Garamond</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Taille */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium">Taille</Label>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 w-9 p-0"
+                        onClick={() => {
+                          if (selectedComponentRef.current) {
+                            const currentSize = parseInt(textStyles.fontSize.replace('px', '') || '14');
+                            const newSize = Math.max(8, currentSize - 1);
+                            selectedComponentRef.current.addStyle({ 'font-size': `${newSize}px` });
+                            setTextStyles({ ...textStyles, fontSize: `${newSize}px` });
+                          }
+                        }}
+                      >
+                        -
+                      </Button>
+                      <Input
+                        type="number"
+                        value={parseInt(textStyles.fontSize.replace('px', '') || '14')}
+                        onChange={(e) => {
+                          if (selectedComponentRef.current) {
+                            const size = parseInt(e.target.value) || 14;
+                            selectedComponentRef.current.addStyle({ 'font-size': `${size}px` });
+                            setTextStyles({ ...textStyles, fontSize: `${size}px` });
+                          }
+                        }}
+                        className="h-9 text-sm text-center flex-1"
+                      />
+                      <span className="text-xs text-muted-foreground">px</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 w-9 p-0"
+                        onClick={() => {
+                          if (selectedComponentRef.current) {
+                            const currentSize = parseInt(textStyles.fontSize.replace('px', '') || '14');
+                            const newSize = currentSize + 1;
+                            selectedComponentRef.current.addStyle({ 'font-size': `${newSize}px` });
+                            setTextStyles({ ...textStyles, fontSize: `${newSize}px` });
+                          }
+                        }}
+                      >
+                        +
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Couleur */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium">Couleur</Label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={textStyles.color.startsWith('#') ? textStyles.color : '#000000'}
+                        onChange={(e) => {
+                          if (selectedComponentRef.current) {
+                            selectedComponentRef.current.addStyle({ 'color': e.target.value });
+                            setTextStyles({ ...textStyles, color: e.target.value });
+                          }
+                        }}
+                        className="w-12 h-9 rounded border-2 border-gray-300 cursor-pointer"
+                      />
+                      <Input
+                        value={textStyles.color}
+                        onChange={(e) => {
+                          if (selectedComponentRef.current) {
+                            selectedComponentRef.current.addStyle({ 'color': e.target.value });
+                            setTextStyles({ ...textStyles, color: e.target.value });
+                          }
+                        }}
+                        className="h-9 text-sm flex-1"
+                        placeholder="#000000"
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Alignement */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium">Alignement</Label>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant={textStyles.textAlign === 'left' ? 'default' : 'outline'}
+                        size="sm"
+                        className="h-9 flex-1"
+                        onClick={() => {
+                          if (selectedComponentRef.current) {
+                            selectedComponentRef.current.addStyle({ 'text-align': 'left' });
+                            setTextStyles({ ...textStyles, textAlign: 'left' });
+                          }
+                        }}
+                      >
+                        <AlignLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant={textStyles.textAlign === 'center' ? 'default' : 'outline'}
+                        size="sm"
+                        className="h-9 flex-1"
+                        onClick={() => {
+                          if (selectedComponentRef.current) {
+                            selectedComponentRef.current.addStyle({ 'text-align': 'center' });
+                            setTextStyles({ ...textStyles, textAlign: 'center' });
+                          }
+                        }}
+                      >
+                        <AlignCenter className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant={textStyles.textAlign === 'right' ? 'default' : 'outline'}
+                        size="sm"
+                        className="h-9 flex-1"
+                        onClick={() => {
+                          if (selectedComponentRef.current) {
+                            selectedComponentRef.current.addStyle({ 'text-align': 'right' });
+                            setTextStyles({ ...textStyles, textAlign: 'right' });
+                          }
+                        }}
+                      >
+                        <AlignRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Gras, Italique, Souligné */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium">Style</Label>
+                    <div className="flex items-center gap-2">
+                      <Toggle
+                        pressed={textStyles.fontWeight === 'bold' || textStyles.fontWeight === '700'}
+                        onPressedChange={(pressed) => {
+                          if (selectedComponentRef.current) {
+                            selectedComponentRef.current.addStyle({ 'font-weight': pressed ? 'bold' : 'normal' });
+                            setTextStyles({ ...textStyles, fontWeight: pressed ? 'bold' : 'normal' });
+                          }
+                        }}
+                        size="sm"
+                        className="h-9 flex-1"
+                      >
+                        <Bold className="h-4 w-4" />
+                      </Toggle>
+                      <Toggle
+                        pressed={textStyles.fontStyle === 'italic'}
+                        onPressedChange={(pressed) => {
+                          if (selectedComponentRef.current) {
+                            selectedComponentRef.current.addStyle({ 'font-style': pressed ? 'italic' : 'normal' });
+                            setTextStyles({ ...textStyles, fontStyle: pressed ? 'italic' : 'normal' });
+                          }
+                        }}
+                        size="sm"
+                        className="h-9 flex-1"
+                      >
+                        <Italic className="h-4 w-4" />
+                      </Toggle>
+                      <Toggle
+                        pressed={textStyles.textDecoration.includes('underline')}
+                        onPressedChange={(pressed) => {
+                          if (selectedComponentRef.current) {
+                            selectedComponentRef.current.addStyle({ 'text-decoration': pressed ? 'underline' : 'none' });
+                            setTextStyles({ ...textStyles, textDecoration: pressed ? 'underline' : 'none' });
+                          }
+                        }}
+                        size="sm"
+                        className="h-9 flex-1"
+                      >
+                        <Underline className="h-4 w-4" />
+                      </Toggle>
+                    </div>
+                  </div>
+                  
+                  {/* Interlignage */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium">Interlignage</Label>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 w-9 p-0"
+                        onClick={() => {
+                          if (selectedComponentRef.current) {
+                            const currentLineHeight = parseFloat(textStyles.lineHeight || '1.5');
+                            const newLineHeight = Math.max(1, currentLineHeight - 0.1);
+                            selectedComponentRef.current.addStyle({ 'line-height': newLineHeight.toFixed(1) });
+                            setTextStyles({ ...textStyles, lineHeight: newLineHeight.toFixed(1) });
+                          }
+                        }}
+                      >
+                        -
+                      </Button>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={parseFloat(textStyles.lineHeight || '1.5').toFixed(1)}
+                        onChange={(e) => {
+                          if (selectedComponentRef.current) {
+                            const lineHeight = parseFloat(e.target.value) || 1.5;
+                            selectedComponentRef.current.addStyle({ 'line-height': lineHeight.toFixed(1) });
+                            setTextStyles({ ...textStyles, lineHeight: lineHeight.toFixed(1) });
+                          }
+                        }}
+                        className="h-9 text-sm text-center flex-1"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 w-9 p-0"
+                        onClick={() => {
+                          if (selectedComponentRef.current) {
+                            const currentLineHeight = parseFloat(textStyles.lineHeight || '1.5');
+                            const newLineHeight = currentLineHeight + 0.1;
+                            selectedComponentRef.current.addStyle({ 'line-height': newLineHeight.toFixed(1) });
+                            setTextStyles({ ...textStyles, lineHeight: newLineHeight.toFixed(1) });
+                          }
+                        }}
+                      >
+                        +
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
