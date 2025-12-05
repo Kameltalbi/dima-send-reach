@@ -79,37 +79,28 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
           // Vérifier si le contenu est chargé
           const wrapper = editorInstance.getWrapper();
           const components = wrapper?.components();
-          const count = components?.length ? components.length() : 0;
+          const count = components?.length || 0;
           console.log("Nombre de composants:", count);
           
           // Forcer le refresh
           editorInstance.refresh();
           console.log("refresh() appelé");
           
-          // Réactiver l'événement update
-          const updateHandler = () => {
-            if (saveTimeoutRef.current) {
-              clearTimeout(saveTimeoutRef.current);
-            }
-            saveTimeoutRef.current = setTimeout(() => {
-              const htmlOut = editorInstance.getHtml();
-              const cssOut = editorInstance.getCss();
-              const fullHtml = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>${cssOut}</style>
-</head>
-<body>
-  ${htmlOut}
-</body>
-</html>`;
-              onSave(fullHtml);
-            }, 500);
-          };
-          editorInstance.on('update', updateHandler);
-          console.log("Événement update réactivé");
+          // Appliquer les styles inline à tous les composants
+          if (components && components.models) {
+            components.models.forEach((comp: any) => {
+              const styles = comp.getStyle();
+              const el = comp.getEl();
+              if (el && styles) {
+                Object.keys(styles).forEach(prop => {
+                  const camelProp = prop.replace(/-([a-z])/g, (g: string) => g[1].toUpperCase());
+                  el.style[camelProp] = styles[prop];
+                });
+              }
+            });
+          }
+          
+          console.log("Contenu chargé avec succès");
         } catch (error) {
           console.error("Erreur lors du chargement:", error);
         }
