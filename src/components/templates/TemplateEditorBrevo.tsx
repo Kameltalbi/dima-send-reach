@@ -878,12 +878,18 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       setTimeout(() => {
         const allComponents = editor.getComponents();
         const findImages = (comp: any) => {
-          if (comp.get('type') === 'image') {
+          if (!comp) return;
+          if (comp.get && comp.get('type') === 'image') {
             addImageOverlay(comp);
           }
-          const children = comp.components();
-          if (children && children.length) {
-            children.each((child: any) => findImages(child));
+          // Vérifier si c'est une collection ou un composant
+          if (typeof comp.each === 'function') {
+            comp.each((child: any) => findImages(child));
+          } else if (typeof comp.components === 'function') {
+            const children = comp.components();
+            if (children && children.length) {
+              children.each((child: any) => findImages(child));
+            }
           }
         };
         findImages(allComponents);
