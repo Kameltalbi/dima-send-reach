@@ -148,6 +148,9 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       height: "600px",
       width: "100%",
       storageManager: false,
+      // Forcer les styles inline pour les emails
+      avoidInlineStyle: false,
+      forceClass: false,
       plugins: [newsletterPreset],
       pluginsOpts: {
         [newsletterPreset as any]: {
@@ -357,6 +360,35 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       component.set('editable', true);
       component.set('selectable', true);
       component.set('hoverable', true);
+    });
+
+    // Appliquer les styles directement en inline sur les composants
+    editor.on('component:styleUpdate', (component: any) => {
+      const el = component.getEl();
+      if (el) {
+        const styles = component.getStyle();
+        Object.keys(styles).forEach(prop => {
+          el.style[prop] = styles[prop];
+        });
+      }
+    });
+
+    // Écouter les changements de style du StyleManager
+    editor.on('style:property:update', (property: any, value: any) => {
+      const selected = editor.getSelected();
+      if (selected) {
+        const el = selected.getEl();
+        if (el && property && property.get) {
+          const propName = property.get('property');
+          const propValue = property.getFullValue();
+          if (propName && propValue !== undefined) {
+            // Convertir le nom CSS en camelCase pour le style JS
+            const camelProp = propName.replace(/-([a-z])/g, (g: string) => g[1].toUpperCase());
+            el.style[camelProp] = propValue;
+            console.log(`Style appliqué: ${propName} = ${propValue}`);
+          }
+        }
+      }
     });
     
     function makeComponentEditable(component: any) {
