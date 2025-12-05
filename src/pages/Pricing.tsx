@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Menu } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Check, X, Menu, Info } from "lucide-react";
 import { Link } from "react-router-dom";
 import { LogoWithText } from "@/components/Logo";
 import { useTranslation } from "react-i18next";
@@ -148,9 +149,6 @@ const Pricing = () => {
             <LogoWithText className="h-12 md:h-14" />
           </Link>
           <nav className="hidden lg:flex items-center gap-4 xl:gap-6">
-            <Link to="/" className="text-base xl:text-lg font-semibold text-foreground hover:text-accent transition-colors">
-              {t('nav.home')}
-            </Link>
             <a href="/#features" className="text-base xl:text-lg font-semibold text-foreground hover:text-accent transition-colors">
               {t('nav.features')}
             </a>
@@ -185,13 +183,6 @@ const Pricing = () => {
                     <LogoWithText className="h-12" />
                   </div>
                   <nav className="flex flex-col gap-4">
-                    <Link 
-                      to="/" 
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="text-xl font-semibold text-foreground hover:text-accent transition-colors py-2"
-                    >
-                      {t('nav.home')}
-                    </Link>
                     <a 
                       href="/#features" 
                       onClick={() => setMobileMenuOpen(false)}
@@ -251,25 +242,35 @@ const Pricing = () => {
           </p>
         </div>
 
+        {/* Domain Requirement Alert */}
+        <div className="max-w-[1920px] mx-auto px-4 mb-8">
+          <Alert className="border-primary/50 bg-primary/5">
+            <Info className="h-4 w-4 text-primary" />
+            <AlertTitle className="font-semibold text-foreground">{t('pricing.domainRequiredNote')}</AlertTitle>
+            <AlertDescription className="text-muted-foreground mt-2">
+              {t('pricing.domainRequired')}
+            </AlertDescription>
+          </Alert>
+        </div>
+
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-5 gap-6 max-w-[1920px] mx-auto px-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-5 gap-6 max-w-[1920px] mx-auto px-4 overflow-visible">
           {plans.map((plan) => (
-            <Card
-              key={plan.name}
-              className={`relative flex flex-col transition-all duration-300 hover:shadow-xl ${
-                plan.popular
-                  ? "border-l-4 border-l-primary border-2 border-t border-r border-b shadow-xl shadow-primary/30 scale-105 bg-gradient-to-br from-primary/10 via-primary/5 to-accent/5"
-                  : "border-l-4 border-l-border border-2 border-t border-r border-b bg-card hover:border-l-primary/50 hover:bg-gradient-to-br hover:from-primary/5 hover:to-transparent"
-              }`}
-            >
+            <div key={plan.name} className="relative">
               {plan.popular && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-gradient-to-r from-primary to-accent text-primary-foreground px-4 py-1 shadow-lg font-semibold">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
+                  <Badge className="bg-gradient-to-r from-primary to-accent text-primary-foreground px-4 py-1 shadow-lg font-semibold whitespace-nowrap">
                     {t('pricing.popular')}
                   </Badge>
                 </div>
               )}
-
+              <Card
+                className={`relative flex flex-col transition-all duration-300 hover:shadow-xl ${
+                  plan.popular
+                    ? "border-l-4 border-l-primary border-2 border-t border-r border-b shadow-xl shadow-primary/30 scale-105 bg-gradient-to-br from-primary/10 via-primary/5 to-accent/5 mt-4"
+                    : "border-l-4 border-l-border border-2 border-t border-r border-b bg-card hover:border-l-primary/50 hover:bg-gradient-to-br hover:from-primary/5 hover:to-transparent"
+                }`}
+              >
               <CardHeader className="text-center pb-8 pt-8">
                 <CardTitle className={`text-2xl font-heading font-bold ${plan.popular ? 'text-primary' : 'text-foreground'}`}>
                   {plan.name}
@@ -354,7 +355,8 @@ const Pricing = () => {
                   </Link>
                 )}
               </CardFooter>
-            </Card>
+              </Card>
+            </div>
           ))}
         </div>
 
@@ -472,7 +474,11 @@ const Pricing = () => {
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="mb-4">
-                <LogoWithText className="h-14" />
+                <img 
+                  src="/logo-DymaMail-F-blanc.png" 
+                  alt="DymaMail Logo" 
+                  className="h-14 w-auto object-contain"
+                />
               </div>
               <p className="text-sm opacity-80">
                 Professional email marketing platform.

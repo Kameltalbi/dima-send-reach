@@ -85,9 +85,6 @@ const Support = () => {
             <LogoWithText className="h-12 md:h-14" />
           </Link>
           <nav className="hidden lg:flex items-center gap-4 xl:gap-6">
-            <Link to="/" className="text-base xl:text-lg font-semibold text-foreground hover:text-accent transition-colors">
-              {t('nav.home')}
-            </Link>
             <a href="/#features" className="text-base xl:text-lg font-semibold text-foreground hover:text-accent transition-colors">
               {t('nav.features')}
             </a>
@@ -122,13 +119,6 @@ const Support = () => {
                     <LogoWithText className="h-12" />
                   </div>
                   <nav className="flex flex-col gap-4">
-                    <Link 
-                      to="/" 
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="text-xl font-semibold text-foreground hover:text-accent transition-colors py-2"
-                    >
-                      {t('nav.home')}
-                    </Link>
                     <a 
                       href="/#features" 
                       onClick={() => setMobileMenuOpen(false)}
@@ -346,7 +336,11 @@ const Support = () => {
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="mb-4">
-                <LogoWithText className="h-14" />
+                <img 
+                  src="/logo-DymaMail-F-blanc.png" 
+                  alt="DymaMail Logo" 
+                  className="h-14 w-auto object-contain"
+                />
               </div>
               <p className="text-sm opacity-80">
                 Professional email marketing platform.

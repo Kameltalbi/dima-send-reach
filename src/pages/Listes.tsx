@@ -82,6 +82,37 @@ const Listes = () => {
     enabled: !!user,
   });
 
+  // Charger les contacts de toutes les listes pour la recherche
+  const { data: listContactsMap } = useQuery({
+    queryKey: ["lists-contacts", lists?.map(l => l.id)],
+    queryFn: async () => {
+      if (!lists || lists.length === 0) return {};
+      
+      const map: Record<string, any[]> = {};
+      
+      // Charger les contacts pour chaque liste
+      await Promise.all(
+        lists.map(async (list) => {
+          const { data, error } = await supabase
+            .from("list_contacts")
+            .select(`
+              contacts(id, nom, prenom, email)
+            `)
+            .eq("list_id", list.id);
+          
+          if (!error && data) {
+            map[list.id] = data
+              .map((lc: any) => lc.contacts)
+              .filter(Boolean);
+          }
+        })
+      );
+      
+      return map;
+    },
+    enabled: !!user && !!lists && lists.length > 0,
+  });
+
   // Charger les contacts de test
   const { data: testContacts } = useQuery({
     queryKey: ["test-contacts-list"],
@@ -98,14 +129,25 @@ const Listes = () => {
     enabled: !!user,
   });
 
-  // Filtrer par recherche
+  // Filtrer par recherche dans les contacts (nom ou email)
   const filteredLists = lists?.filter((list) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
-    return (
-      list.nom?.toLowerCase().includes(query) ||
-      list.description?.toLowerCase().includes(query)
-    );
+    
+    // Rechercher dans les contacts de la liste
+    const listContacts = listContactsMap?.[list.id] || [];
+    const hasMatchingContact = listContacts.some((contact: any) => {
+      if (!contact) return false;
+      const fullName = `${contact.prenom || ''} ${contact.nom || ''}`.toLowerCase().trim();
+      return (
+        contact.nom?.toLowerCase().includes(query) ||
+        contact.prenom?.toLowerCase().includes(query) ||
+        fullName.includes(query) ||
+        contact.email?.toLowerCase().includes(query)
+      );
+    });
+    
+    return hasMatchingContact;
   }) || [];
 
   // Mutation pour créer une liste
@@ -304,7 +346,7 @@ const Listes = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Rechercher une liste..."
+              placeholder="Rechercher un contact par nom ou email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -345,66 +387,91 @@ const Listes = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredLists.map((list) => (
-            <Card key={list.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="mb-1">{list.nom}</CardTitle>
-                    <CardDescription className="line-clamp-2">
-                      {list.description || "Pas de description"}
-                    </CardDescription>
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleEdit(list)}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Modifier
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleManageContacts(list.id)}>
-                        <Users className="h-4 w-4 mr-2" />
-                        Gérer les contacts
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="text-destructive"
-                        onClick={() => handleDelete(list)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Supprimer
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
-                      {list.contactCount} contact{list.contactCount > 1 ? "s" : ""}
-                    </span>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[200px]">Nom</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead className="w-[150px]">Contacts</TableHead>
+                  <TableHead className="w-[150px]">Date de création</TableHead>
+                  <TableHead className="w-[100px] text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredLists.map((list) => (
+                  <TableRow 
+                    key={list.id} 
+                    className="cursor-pointer hover:bg-muted/50"
                     onClick={() => handleManageContacts(list.id)}
-                    className="gap-2"
                   >
-                    Gérer
-                    <ArrowRight className="h-3 w-3" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        {list.nom}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-muted-foreground">
+                        {list.description || "Pas de description"}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className="gap-1">
+                        <Users className="h-3 w-3" />
+                        {list.contactCount} contact{list.contactCount > 1 ? "s" : ""}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {new Date(list.created_at).toLocaleDateString("fr-FR", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation();
+                            handleManageContacts(list.id);
+                          }}>
+                            <Users className="h-4 w-4 mr-2" />
+                            Gérer les contacts
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(list);
+                          }}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Modifier
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(list);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Supprimer
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       )}
 
       {/* Dialog création/modification */}

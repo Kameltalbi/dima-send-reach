@@ -27,8 +27,7 @@ export const LanguageSwitcher = () => {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="gap-2">
           <Globe className="h-4 w-4" />
-          <span className="hidden sm:inline">{currentLanguage.flag} {currentLanguage.label}</span>
-          <span className="sm:hidden">{currentLanguage.flag}</span>
+          <span>{currentLanguage.flag}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
@@ -38,8 +37,7 @@ export const LanguageSwitcher = () => {
             onClick={() => changeLanguage(lang.code)}
             className={i18n.language === lang.code ? 'bg-accent/10' : ''}
           >
-            <span className="mr-2">{lang.flag}</span>
-            {lang.label}
+            <span>{lang.flag}</span>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

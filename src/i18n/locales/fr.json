@@ -42,7 +42,7 @@
     "hero": {
       "title": "Envoyez vos campagnes email simplement et efficacement",
       "subtitle": "DymaMail est la plateforme d'email marketing qui vous permet d'envoyer jusqu'à 1 000 000 d'emails par campagne, avec un suivi en temps réel.",
-      "cta": "Créer un compte gratuit",
+      "cta": "Essayer Gratuitement",
       "pricing": "Découvrir les tarifs",
       "emailPlaceholder": "Votre email professionnel"
     },
@@ -79,7 +79,7 @@
       "subtitle": "La solution d'email marketing qui fait la différence",
       "points": {
         "multilingual": {
-          "title": "Interface en français & arabe",
+          "title": "Interface en français & anglais",
           "description": "Une expérience utilisateur complète dans votre langue."
         },
         "pricing": {
@@ -115,6 +115,8 @@
       "seeDetails": "Voir tous les détails des plans",
       "payableAnnual": "Payable par an :",
       "annualOnlyNote": "* Plans payables pour 3, 6 ou 12 mois en Tunisie",
+      "domainRequired": "Important : Chaque utilisateur doit fournir son propre nom de domaine valide pour utiliser l'application.",
+      "domainRequiredNote": "Un nom de domaine valide est requis pour tous les plans",
       "plans": {
         "free": {
           "name": "Free",
@@ -474,6 +476,8 @@
     "features": "Fonctionnalités",
     "startFree": "Commencer gratuitement",
     "choosePlan": "Choisir ce plan",
+    "domainRequired": "Important : Chaque utilisateur doit fournir son propre nom de domaine valide pour utiliser l'application.",
+    "domainRequiredNote": "Un nom de domaine valide est requis pour tous les plans",
     "faq": {
       "title": "Questions fréquentes",
       "changePlan": {
@@ -979,6 +983,11 @@
     "general": "Général",
     "trigger": "Déclencheur",
     "steps": "Étapes",
+    "tabs": {
+      "general": "Général",
+      "trigger": "Déclencheur",
+      "steps": "Étapes"
+    },
     "name": "Nom",
     "namePlaceholder": "Ex: Email de bienvenue",
     "description": "Description",
@@ -988,16 +997,23 @@
     "selectListPlaceholder": "Choisir une liste",
     "addEmail": "Email",
     "addWait": "Attendre",
+    "addEmailStep": "Envoyer un email",
+    "addWaitStep": "Attendre",
     "noSteps": "Aucune étape définie",
     "step": "Étape",
     "stepEmail": "Envoyer un email",
     "stepWait": "Attendre",
+    "sendEmail": "Envoyer un email",
+    "wait": "Attendre",
     "template": "Template",
     "selectTemplate": "Choisir un template",
+    "selectTemplatePlaceholder": "Choisir un template",
     "waitDays": "Nombre de jours",
     "create": "Créer",
     "confirmDelete": "Supprimer l'automatisation ?",
+    "deleteConfirmTitle": "Supprimer l'automatisation ?",
     "deleteWarning": "Cette action est irréversible. L'automatisation sera supprimée définitivement.",
+    "deleteConfirmDescription": "Cette action est irréversible. L'automatisation sera supprimée définitivement.",
     "stats": "Statistiques",
     "active": "Actif",
     "inactive": "Inactif",

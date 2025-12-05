@@ -124,9 +124,9 @@ const Landing = () => {
       {/* Header - Design minimaliste style Finpay */}
       <header className="bg-white border-b border-border/50 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center flex-shrink-0">
+          <Link to="/" className="flex items-center flex-shrink-0">
             <LogoWithText className="h-10" />
-          </div>
+          </Link>
           <nav className="hidden lg:flex items-center gap-8 mx-auto">
             <a href="#features" className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors">{t('nav.features')}</a>
             <Link to="/pricing" className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors">{t('nav.pricing')}</Link>
@@ -153,13 +153,6 @@ const Landing = () => {
                     <LogoWithText className="h-12" />
                   </div>
                   <nav className="flex flex-col gap-4">
-                    <a 
-                      href="#home" 
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="text-xl font-semibold text-foreground hover:text-accent transition-colors py-2"
-                    >
-                      {t('nav.home')}
-                    </a>
                     <a 
                       href="#features" 
                       onClick={() => setMobileMenuOpen(false)}
@@ -220,18 +213,11 @@ const Landing = () => {
                 {t('landing.hero.subtitle')}
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex items-center gap-3 bg-muted/50 rounded-lg px-4 py-3 max-w-md">
-                  <input 
-                    type="email" 
-                    placeholder={t('landing.hero.emailPlaceholder') || "Votre email professionnel"}
-                    className="flex-1 bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground"
-                  />
-                  <Link to="/auth">
-                    <Button className="bg-primary text-primary-foreground hover:bg-primary/90 whitespace-nowrap">
-                      {t('landing.hero.cta')}
-                    </Button>
-                  </Link>
-                </div>
+                <Link to="/pricing">
+                  <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 whitespace-nowrap text-lg px-8 py-6">
+                    {t('landing.hero.cta')}
+                  </Button>
+                </Link>
               </div>
             </div>
             <div className={`hidden lg:block animate-on-scroll-right ${heroRef.isVisible ? 'visible animate-delay-200' : ''}`}>
@@ -462,6 +448,20 @@ const Landing = () => {
             </p>
             <div className="w-24 h-1 bg-gradient-to-r from-transparent via-accent to-transparent mx-auto mt-4"></div>
           </div>
+          
+          {/* Domain Requirement Alert */}
+          <div className="max-w-[1600px] mx-auto mb-8">
+            <div className="bg-primary/10 border border-primary/30 rounded-lg p-4 flex items-start gap-3">
+              <div className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+                <span className="text-primary text-sm font-bold">!</span>
+              </div>
+              <div>
+                <p className="font-semibold text-sm text-foreground mb-1">{t('pricing.domainRequiredNote')}</p>
+                <p className="text-xs text-muted-foreground">{t('pricing.domainRequired')}</p>
+              </div>
+            </div>
+          </div>
+          
           <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 max-w-[1600px] mx-auto">
             {/* Free Plan */}
             <Card className={`hover-lift transition-all duration-300 animate-on-scroll-scale ${pricingRef.isVisible ? 'visible animate-delay-100' : ''}`}>
@@ -780,7 +780,11 @@ const Landing = () => {
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="mb-4">
-                <LogoWithText className="h-14" />
+                <img 
+                  src="/logo-DymaMail-F-blanc.png" 
+                  alt="DymaMail Logo" 
+                  className="h-14 w-auto object-contain"
+                />
               </div>
               <p className="text-sm opacity-80">
                 Professional email marketing platform.
