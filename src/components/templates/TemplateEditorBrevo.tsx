@@ -673,58 +673,81 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
     // Exposer la fonction d'ajout de bloc au parent
     if (onRegisterAddBlock) {
       onRegisterAddBlock((blockType: string) => {
-        if (editorRef.current) {
-          // Appeler la fonction interne addBlockToEditor définie plus bas
-          const wrapper = editorRef.current.getWrapper();
-          let blockContent = '';
-          
-          switch (blockType) {
-            case 'titre':
-              blockContent = '<h1 data-gjs-type="text" style="font-size: 32px; font-weight: 700; margin: 20px 0;">Votre titre</h1>';
-              break;
-            case 'texte':
-              blockContent = '<p data-gjs-type="text" style="font-size: 16px; line-height: 1.6; margin: 20px 0;">Votre texte ici</p>';
-              break;
-            case 'image':
-              blockContent = '<img src="https://via.placeholder.com/600x300" alt="Image" style="max-width: 100%; height: auto; display: block; margin: 20px auto;" />';
-              break;
-            case 'bouton':
-              blockContent = '<a href="#" data-gjs-type="link" style="display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0;">Bouton</a>';
-              break;
-            case 'diviseur':
-              blockContent = '<hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;"/>';
-              break;
-            case 'video':
-              blockContent = '<div style="position: relative; padding-bottom: 56.25%; height: 0; margin: 20px 0;"><iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" frameborder="0" allowfullscreen></iframe></div>';
-              break;
-            case 'logo':
-              blockContent = '<img src="https://via.placeholder.com/200x80?text=Logo" alt="Logo" style="max-width: 200px; height: auto; display: block; margin: 20px auto;" />';
-              break;
-            case 'social':
-              blockContent = '<div style="text-align: center; margin: 20px 0;"><a href="#" style="margin: 0 10px; display: inline-block;"><img src="https://via.placeholder.com/32x32?text=f" alt="Facebook" /></a><a href="#" style="margin: 0 10px; display: inline-block;"><img src="https://via.placeholder.com/32x32?text=t" alt="Twitter" /></a><a href="#" style="margin: 0 10px; display: inline-block;"><img src="https://via.placeholder.com/32x32?text=in" alt="LinkedIn" /></a></div>';
-              break;
-            case 'html':
-              blockContent = '<div data-gjs-type="text" style="padding: 20px; background: #f5f5f5; border: 1px dashed #ccc; margin: 20px 0;">Code HTML personnalisé</div>';
-              break;
-            case 'paiement':
-              blockContent = '<a href="#" data-gjs-type="link" style="display: inline-block; padding: 14px 28px; background: #28a745; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: bold;">💳 Payer maintenant</a>';
-              break;
-            case 'produit':
-              blockContent = '<div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;"><img src="https://via.placeholder.com/200x200?text=Produit" alt="Produit" style="max-width: 200px; height: auto; margin-bottom: 15px;" /><h3 style="margin: 0 0 10px 0; font-size: 18px;">Nom du produit</h3><p style="color: #667eea; font-weight: bold; margin: 0 0 15px 0;">29.99€</p><a href="#" style="display: inline-block; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 4px;">Acheter</a></div>';
-              break;
-            case 'navigation':
-              blockContent = '<div style="background: #f8f9fa; padding: 15px 20px; margin: 20px 0;"><nav style="display: flex; justify-content: center; gap: 30px;"><a href="#" style="color: #333; text-decoration: none; font-weight: 500;">Accueil</a><a href="#" style="color: #333; text-decoration: none; font-weight: 500;">Produits</a><a href="#" style="color: #333; text-decoration: none; font-weight: 500;">À propos</a><a href="#" style="color: #333; text-decoration: none; font-weight: 500;">Contact</a></nav></div>';
-              break;
-            case 'bloc-vide':
-              blockContent = '<div style="min-height: 100px; padding: 20px; margin: 20px 0; background: #fafafa; border: 2px dashed #ddd; display: flex; align-items: center; justify-content: center;"><span style="color: #999;">Zone vide</span></div>';
-              break;
-            default:
-              blockContent = '<div data-gjs-type="text" style="padding: 20px;">Nouveau bloc</div>';
-          }
-          
-          wrapper.components().add(blockContent);
+        console.log("addBlock appelé avec:", blockType);
+        console.log("editorRef.current:", editorRef.current);
+        
+        if (!editorRef.current) {
+          console.error("Éditeur non disponible");
+          toast.error("L'éditeur n'est pas prêt");
+          return;
+        }
+        
+        const wrapper = editorRef.current.getWrapper();
+        console.log("Wrapper:", wrapper);
+        
+        if (!wrapper) {
+          console.error("Wrapper non disponible");
+          toast.error("L'éditeur n'est pas initialisé");
+          return;
+        }
+        
+        let blockContent = '';
+        
+        switch (blockType) {
+          case 'titre':
+            blockContent = '<h1 data-gjs-type="text" style="font-size: 32px; font-weight: 700; margin: 20px 0; color: #333;">Votre titre</h1>';
+            break;
+          case 'texte':
+            blockContent = '<p data-gjs-type="text" style="font-size: 16px; line-height: 1.6; margin: 20px 0; color: #333;">Votre texte ici</p>';
+            break;
+          case 'image':
+            blockContent = '<img src="https://via.placeholder.com/600x300" alt="Image" style="max-width: 100%; height: auto; display: block; margin: 20px auto;" />';
+            break;
+          case 'bouton':
+            blockContent = '<a href="#" data-gjs-type="link" style="display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0;">Bouton</a>';
+            break;
+          case 'diviseur':
+            blockContent = '<hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;"/>';
+            break;
+          case 'video':
+            blockContent = '<div style="position: relative; padding-bottom: 56.25%; height: 0; margin: 20px 0;"><iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" frameborder="0" allowfullscreen></iframe></div>';
+            break;
+          case 'logo':
+            blockContent = '<img src="https://via.placeholder.com/200x80?text=Logo" alt="Logo" style="max-width: 200px; height: auto; display: block; margin: 20px auto;" />';
+            break;
+          case 'social':
+            blockContent = '<div style="text-align: center; margin: 20px 0;"><a href="#" style="margin: 0 10px; display: inline-block;"><img src="https://via.placeholder.com/32x32?text=f" alt="Facebook" /></a><a href="#" style="margin: 0 10px; display: inline-block;"><img src="https://via.placeholder.com/32x32?text=t" alt="Twitter" /></a><a href="#" style="margin: 0 10px; display: inline-block;"><img src="https://via.placeholder.com/32x32?text=in" alt="LinkedIn" /></a></div>';
+            break;
+          case 'html':
+            blockContent = '<div data-gjs-type="text" style="padding: 20px; background: #f5f5f5; border: 1px dashed #ccc; margin: 20px 0;">Code HTML personnalisé</div>';
+            break;
+          case 'paiement':
+            blockContent = '<a href="#" data-gjs-type="link" style="display: inline-block; padding: 14px 28px; background: #28a745; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: bold;">💳 Payer maintenant</a>';
+            break;
+          case 'produit':
+            blockContent = '<div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;"><img src="https://via.placeholder.com/200x200?text=Produit" alt="Produit" style="max-width: 200px; height: auto; margin-bottom: 15px;" /><h3 style="margin: 0 0 10px 0; font-size: 18px;">Nom du produit</h3><p style="color: #667eea; font-weight: bold; margin: 0 0 15px 0;">29.99€</p><a href="#" style="display: inline-block; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 4px;">Acheter</a></div>';
+            break;
+          case 'navigation':
+            blockContent = '<div style="background: #f8f9fa; padding: 15px 20px; margin: 20px 0;"><nav style="display: flex; justify-content: center; gap: 30px;"><a href="#" style="color: #333; text-decoration: none; font-weight: 500;">Accueil</a><a href="#" style="color: #333; text-decoration: none; font-weight: 500;">Produits</a><a href="#" style="color: #333; text-decoration: none; font-weight: 500;">À propos</a><a href="#" style="color: #333; text-decoration: none; font-weight: 500;">Contact</a></nav></div>';
+            break;
+          case 'bloc-vide':
+            blockContent = '<div style="min-height: 100px; padding: 20px; margin: 20px 0; background: #fafafa; border: 2px dashed #ddd; display: flex; align-items: center; justify-content: center;"><span style="color: #999;">Zone vide</span></div>';
+            break;
+          default:
+            blockContent = '<div data-gjs-type="text" style="padding: 20px;">Nouveau bloc</div>';
+        }
+        
+        console.log("Ajout du bloc:", blockContent.substring(0, 100));
+        
+        try {
+          const components = wrapper.components();
+          components.add(blockContent);
           editorRef.current.refresh();
+          console.log("Bloc ajouté avec succès");
           toast.success(`Bloc "${blockType}" ajouté`);
+        } catch (err) {
+          console.error("Erreur ajout bloc:", err);
+          toast.error("Erreur lors de l'ajout du bloc");
         }
       });
     }
