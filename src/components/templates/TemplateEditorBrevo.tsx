@@ -428,11 +428,55 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       
       console.log("Drop détecté - blockType:", blockType, "sectionHtml:", sectionHtml?.substring(0, 100));
       
+      // Trouver le composant cible à la position du drop
+      let targetComponent = null;
+      let insertIndex = -1;
+      
+      try {
+        const frame = editor.Canvas?.getFrameEl();
+        if (frame && frame.contentDocument) {
+          const dropX = e.clientX;
+          const dropY = e.clientY;
+          
+          // Obtenir la position relative à l'iframe
+          const frameRect = frame.getBoundingClientRect();
+          const relX = dropX - frameRect.left;
+          const relY = dropY - frameRect.top;
+          
+          // Trouver l'élément à cette position dans l'iframe
+          const elementAtPoint = frame.contentDocument.elementFromPoint(relX, relY);
+          
+          if (elementAtPoint) {
+            // Trouver le composant GrapesJS correspondant
+            const allComponents = editor.getWrapper().find('*');
+            for (let i = 0; i < allComponents.length; i++) {
+              const comp = allComponents[i];
+              if (comp.getEl() === elementAtPoint || comp.getEl()?.contains(elementAtPoint)) {
+                targetComponent = comp;
+                // Calculer si on doit insérer avant ou après
+                const compRect = comp.getEl()?.getBoundingClientRect();
+                if (compRect) {
+                  const compMiddle = compRect.top + compRect.height / 2 - frameRect.top;
+                  insertIndex = relY < compMiddle ? i : i + 1;
+                }
+                break;
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Erreur lors de la détection de position:", err);
+      }
+      
       if (sectionHtml && editor) {
         // Ajouter une section complète
         try {
           const wrapper = editor.getWrapper();
-          wrapper.components().add(sectionHtml);
+          if (insertIndex >= 0) {
+            wrapper.components().add(sectionHtml, { at: insertIndex });
+          } else {
+            wrapper.components().add(sectionHtml);
+          }
           editor.refresh();
           toast.success("Section ajoutée avec succès");
         } catch (error) {
@@ -440,8 +484,8 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
           toast.error("Erreur lors de l'ajout de la section");
         }
       } else if (blockType && editor) {
-        // Ajouter un bloc simple
-        addBlockToEditor(editor, blockType);
+        // Ajouter un bloc simple à la position détectée
+        addBlockToEditor(editor, blockType, insertIndex);
       }
     };
 
@@ -518,7 +562,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       }, 200);
     }
 
-    function addBlockToEditor(editorInstance: any, blockType: string) {
+    function addBlockToEditor(editorInstance: any, blockType: string, insertIndex: number = -1) {
       const wrapper = editorInstance.getWrapper();
       let blockContent = '';
 
@@ -557,10 +601,14 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
           blockContent = '<div data-gjs-type="text" style="padding: 20px;">Nouveau bloc</div>';
       }
 
-      wrapper.components().add(blockContent);
+      if (insertIndex >= 0) {
+        wrapper.components().add(blockContent, { at: insertIndex });
+      } else {
+        wrapper.components().add(blockContent);
+      }
       editorInstance.refresh();
       toast.success(`Bloc "${blockType}" ajouté`);
-      console.log("Bloc ajouté:", blockType);
+      console.log("Bloc ajouté:", blockType, "à l'index:", insertIndex);
     }
 
     // Ajuster la largeur selon le device view
