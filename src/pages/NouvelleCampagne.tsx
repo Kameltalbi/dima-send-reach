@@ -86,6 +86,7 @@ const NouvelleCampagne = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+  const [isInitialConfigDone, setIsInitialConfigDone] = useState(false);
   const [uploadedMedia, setUploadedMedia] = useState<Array<{ name: string; url: string; type: 'image' | 'video'; path: string }>>([]);
   const [isLoadingMedia, setIsLoadingMedia] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
@@ -209,18 +210,20 @@ const NouvelleCampagne = () => {
       if (existingCampaign.created_at) {
         setLastSaved(new Date(existingCampaign.created_at));
       }
+      // Marquer la configuration comme faite pour les campagnes existantes
+      setIsInitialConfigDone(true);
     }
   }, [existingCampaign]);
 
-  // Ouvrir automatiquement le dialog de sélection de template en mode création
+  // Ouvrir automatiquement le dialog de configuration en mode création
   useEffect(() => {
-    if (!isEditMode && !existingCampaign && templates !== undefined && !isLoadingCampaign) {
-      // Ouvrir le dialog seulement si on n'a pas encore de contenu
+    if (!isEditMode && !existingCampaign && templates !== undefined && !isLoadingCampaign && !isInitialConfigDone) {
+      // Ouvrir le dialog de configuration au lieu du template
       if (!htmlContent) {
-        setIsTemplateDialogOpen(true);
+        setIsSettingsOpen(true);
       }
     }
-  }, [isEditMode, existingCampaign, templates, isLoadingCampaign, htmlContent]);
+  }, [isEditMode, existingCampaign, templates, isLoadingCampaign, htmlContent, isInitialConfigDone]);
 
   // Fonction pour charger un template dans l'éditeur
   const handleLoadTemplate = async (templateId: string) => {
@@ -422,27 +425,109 @@ const NouvelleCampagne = () => {
         throw new Error("Veuillez remplir les informations de l'expéditeur et le sujet");
       }
 
-      const promises = emails.map((email) =>
-        supabase.functions.invoke("send-email", {
-          body: {
-            testEmail: {
-              to: email,
-              subject: `[TEST] ${formData.sujet_email}`,
-              html: htmlContent,
-              fromName: formData.expediteur_nom,
-              fromEmail: formData.expediteur_email,
+      const promises = emails.map(async (email) => {
+        try {
+          const result = await supabase.functions.invoke("send-email", {
+            body: {
+              testEmail: {
+                to: email,
+                subject: `[TEST] ${formData.sujet_email}`,
+                html: htmlContent,
+                fromName: formData.expediteur_nom,
+                fromEmail: formData.expediteur_email,
+              },
             },
-          },
-        })
-      );
+          });
 
-      const results = await Promise.allSettled(promises);
+          // Vérifier les erreurs de l'invocation Supabase
+          if (result.error) {
+            console.error(`Erreur Supabase pour ${email}:`, result.error);
+            
+            // Essayer d'extraire le message d'erreur du body si disponible
+            let errorMessage = result.error.message || "Erreur inconnue";
+            
+            // Si l'erreur contient des détails supplémentaires, les utiliser
+            if (result.error.context) {
+              try {
+                const errorContext = typeof result.error.context === 'string' 
+                  ? JSON.parse(result.error.context) 
+                  : result.error.context;
+                if (errorContext?.message) {
+                  errorMessage = errorContext.message;
+                } else if (errorContext?.error) {
+                  errorMessage = errorContext.error;
+                }
+              } catch (e) {
+                // Ignorer si on ne peut pas parser
+              }
+            }
+            
+            // Vérifier aussi si result.data existe malgré l'erreur (cas où la fonction retourne 200 avec success: false)
+            if (result.data && typeof result.data === 'object') {
+              if (result.data.success === false) {
+                errorMessage = result.data.message || result.data.error || errorMessage;
+              }
+            }
+            
+            return {
+              success: false,
+              email,
+              error: errorMessage,
+            };
+          }
+
+          // Vérifier la réponse de la fonction Edge
+          if (result.data) {
+            // Si la fonction retourne success: false, c'est une erreur métier
+            if (result.data.success === false) {
+              console.error(`Échec pour ${email}:`, result.data);
+              return {
+                success: false,
+                email,
+                error: result.data.message || result.data.error || "Erreur inconnue",
+              };
+            }
+            
+            // Si success est true, c'est bon
+            if (result.data.success === true) {
+              return { success: true, email };
+            }
+            
+            // Si la réponse contient un champ "error", c'est une erreur
+            if (result.data.error) {
+              return {
+                success: false,
+                email,
+                error: result.data.error,
+              };
+            }
+          }
+
+          // Si on arrive ici, la réponse n'est pas dans le format attendu
+          console.error(`Réponse inattendue pour ${email}:`, result);
+          return {
+            success: false,
+            email,
+            error: "Format de réponse inattendu de l'Edge Function",
+          };
+        } catch (error: any) {
+          console.error(`Exception pour ${email}:`, error);
+          return {
+            success: false,
+            email,
+            error: error.message || error.toString() || "Erreur inattendue",
+          };
+        }
+      });
+
+      const results = await Promise.all(promises);
       
-      const successes = results.filter((r) => r.status === "fulfilled" && r.value.data?.success).length;
-      const failures = results.length - successes;
+      const successes = results.filter((r) => r.success).length;
+      const failures = results.filter((r) => !r.success);
 
-      if (failures > 0) {
-        throw new Error(`${successes} emails envoyés, ${failures} échecs`);
+      if (failures.length > 0) {
+        const errorMessages = failures.map((f) => `${f.email}: ${f.error}`).join("; ");
+        throw new Error(`${successes} email${successes > 1 ? "s" : ""} envoyé${successes > 1 ? "s" : ""}, ${failures.length} échec${failures.length > 1 ? "s" : ""}. Détails: ${errorMessages}`);
       }
 
       return { successes, total: results.length };
@@ -452,6 +537,7 @@ const NouvelleCampagne = () => {
       setIsTestDialogOpen(false);
     },
     onError: (error: any) => {
+      console.error("Erreur lors de l'envoi des emails de test:", error);
       toast.error(error.message || "Erreur lors de l'envoi des emails de test");
     },
   });
@@ -1967,12 +2053,38 @@ const NouvelleCampagne = () => {
       </div>
 
       {/* Dialog Paramètres */}
-      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+      <Dialog 
+        open={isSettingsOpen} 
+        onOpenChange={(open) => {
+          // En mode création initial, empêcher la fermeture sans remplir les champs obligatoires
+          if (!open && !isInitialConfigDone && !isEditMode && !htmlContent) {
+            const hasRequiredFields = formData.nom_campagne.trim() && 
+                                     formData.sujet_email.trim() && 
+                                     formData.expediteur_nom.trim() && 
+                                     formData.expediteur_email.trim() && 
+                                     formData.list_id;
+            
+            if (!hasRequiredFields) {
+              if (confirm("Voulez-vous vraiment quitter sans remplir la configuration ?")) {
+                navigate("/campagnes");
+              }
+              return;
+            }
+          }
+          setIsSettingsOpen(open);
+        }}
+      >
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Paramètres de la campagne</DialogTitle>
+            <DialogTitle>
+              {!isInitialConfigDone && !isEditMode && !htmlContent 
+                ? "Configuration de la campagne" 
+                : "Paramètres de la campagne"}
+            </DialogTitle>
             <DialogDescription>
-              Configurez les informations de votre campagne
+              {!isInitialConfigDone && !isEditMode && !htmlContent
+                ? "Configurez les informations de base de votre campagne avant de choisir un template"
+                : "Configurez les informations de votre campagne"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-6 py-4">
@@ -2054,15 +2166,72 @@ const NouvelleCampagne = () => {
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button variant="outline" onClick={() => setIsSettingsOpen(false)}>
-              Fermer
-            </Button>
-            <Button onClick={() => {
-              saveMutation.mutate(true);
-              setIsSettingsOpen(false);
-            }}>
-              Enregistrer
-            </Button>
+            {!isInitialConfigDone && !isEditMode && !htmlContent ? (
+              <>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    if (confirm("Voulez-vous vraiment quitter sans remplir la configuration ?")) {
+                      navigate("/campagnes");
+                    }
+                  }}
+                >
+                  Annuler
+                </Button>
+                <Button 
+                  onClick={() => {
+                    // Valider les champs obligatoires
+                    if (!formData.nom_campagne.trim()) {
+                      toast.error("Le nom de la campagne est obligatoire");
+                      return;
+                    }
+                    if (!formData.sujet_email.trim()) {
+                      toast.error("Le sujet de l'e-mail est obligatoire");
+                      return;
+                    }
+                    if (!formData.expediteur_nom.trim()) {
+                      toast.error("Le nom de l'expéditeur est obligatoire");
+                      return;
+                    }
+                    if (!formData.expediteur_email.trim()) {
+                      toast.error("L'email de l'expéditeur est obligatoire");
+                      return;
+                    }
+                    if (!formData.list_id) {
+                      toast.error("La liste de contacts est obligatoire");
+                      return;
+                    }
+                    
+                    // Sauvegarder comme brouillon
+                    saveMutation.mutate(true, {
+                      onSuccess: () => {
+                        setIsInitialConfigDone(true);
+                        setIsSettingsOpen(false);
+                        // Ouvrir le dialogue de sélection de template
+                        setTimeout(() => {
+                          setIsTemplateDialogOpen(true);
+                        }, 300);
+                      }
+                    });
+                  }}
+                >
+                  Continuer
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setIsSettingsOpen(false)}>
+                  Fermer
+                </Button>
+                <Button onClick={() => {
+                  saveMutation.mutate(true);
+                  setIsSettingsOpen(false);
+                }}>
+                  Enregistrer
+                </Button>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>

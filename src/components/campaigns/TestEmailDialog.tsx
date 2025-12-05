@@ -27,7 +27,7 @@ export function TestEmailDialog({ open, onOpenChange, onSendTest, isSending }: T
   const { user } = useAuth();
   const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
 
-  // Charger les contacts de test
+  // Charger uniquement les contacts de test
   const { data: testContacts, isLoading } = useQuery({
     queryKey: ["test-contacts"],
     queryFn: async () => {
@@ -102,26 +102,31 @@ export function TestEmailDialog({ open, onOpenChange, onSendTest, isSending }: T
 
               <div className="border rounded-md max-h-[300px] overflow-y-auto">
                 <div className="divide-y">
-                  {testContacts.map((contact) => (
-                    <div
-                      key={contact.id}
-                      className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer"
-                      onClick={() => handleToggleEmail(contact.email)}
-                    >
-                      <Checkbox
-                        checked={selectedEmails.includes(contact.email)}
-                        onCheckedChange={() => handleToggleEmail(contact.email)}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {contact.prenom} {contact.nom}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {contact.email}
-                        </p>
+                  {testContacts.map((contact) => {
+                    const isSelected = selectedEmails.includes(contact.email);
+                    return (
+                      <div
+                        key={contact.id}
+                        className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer"
+                        onClick={() => handleToggleEmail(contact.email)}
+                      >
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => handleToggleEmail(contact.email)}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {contact.prenom} {contact.nom}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {contact.email}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </>
@@ -129,7 +134,7 @@ export function TestEmailDialog({ open, onOpenChange, onSendTest, isSending }: T
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Aucun contact de test configuré. Allez dans Contacts ou Listes pour marquer des contacts comme "Contact de test".
+                Aucun contact de test configuré. Allez dans Contacts pour marquer des contacts comme "Contact de test".
               </AlertDescription>
             </Alert>
           )}

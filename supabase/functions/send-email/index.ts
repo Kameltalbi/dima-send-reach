@@ -44,60 +44,125 @@ serve(async (req) => {
       subject: string;
       html: string;
     }) {
-      const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${RESEND_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(emailData),
-      });
+      try {
+        const response = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${RESEND_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(emailData),
+        });
 
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Resend API error: ${response.status} - ${errorData}`);
+        if (!response.ok) {
+          let errorData;
+          try {
+            errorData = await response.json();
+          } catch {
+            errorData = await response.text();
+          }
+          
+          const errorMessage = typeof errorData === 'string' 
+            ? errorData 
+            : (errorData?.message || JSON.stringify(errorData));
+          
+          throw new Error(`Resend API error (${response.status}): ${errorMessage}`);
+        }
+
+        return await response.json();
+      } catch (error: any) {
+        // Si c'est déjà une erreur formatée, la relancer
+        if (error.message && error.message.includes("Resend API error")) {
+          throw error;
+        }
+        // Sinon, wrapper l'erreur
+        throw new Error(`Erreur lors de l'appel à Resend API: ${error.message || error.toString()}`);
       }
-
-      return await response.json();
     }
 
     // Si c'est un email de test
     if (testEmail) {
-      const { to, subject, html, fromName, fromEmail } = testEmail;
-      
-      // Valider l'email de test
-      const emailValidation = validateEmailList([to]);
-      if (emailValidation.invalid.length > 0) {
+      try {
+        const { to, subject, html, fromName, fromEmail } = testEmail;
+        
+        // Vérifier que tous les champs requis sont présents
+        if (!to || !subject || !html || !fromName || !fromEmail) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              message: "Champs manquants: tous les champs (to, subject, html, fromName, fromEmail) sont requis",
+            }),
+            {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200, // Toujours 200 pour que le client puisse lire le message
+            }
+          );
+        }
+        
+        // Valider l'email de test
+        const emailValidation = validateEmailList([to]);
+        if (emailValidation.invalid.length > 0) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              message: `Email invalide: ${emailValidation.invalid[0].reason}`,
+            }),
+            {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200, // Toujours 200 pour que le client puisse lire le message
+            }
+          );
+        }
+        
+        // Valider l'email de l'expéditeur
+        const fromEmailValidation = validateEmailList([fromEmail]);
+        if (fromEmailValidation.invalid.length > 0) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              message: `Email expéditeur invalide: ${fromEmailValidation.invalid[0].reason}`,
+            }),
+            {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200, // Toujours 200 pour que le client puisse lire le message
+            }
+          );
+        }
+        
+        console.log("Envoi d'un email de test à:", to);
+        console.log("Depuis:", fromEmail, "Nom:", fromName);
+        
+        const data = await sendWithResend({
+          from: `${fromName} <${fromEmail}>`,
+          to: to,
+          subject: subject,
+          html: html,
+        });
+
+        console.log("Email de test envoyé avec succès:", data);
+
+        return new Response(
+          JSON.stringify({ success: true, message: "Email de test envoyé", data }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      } catch (testError: any) {
+        console.error("Erreur lors de l'envoi de l'email de test:", testError);
+        const errorMessage = testError.message || testError.toString() || "Erreur lors de l'envoi de l'email de test";
         return new Response(
           JSON.stringify({
             success: false,
-            message: `Email invalide: ${emailValidation.invalid[0].reason}`,
+            message: errorMessage,
+            error: errorMessage,
           }),
           {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 400,
+            status: 200, // Toujours 200 pour que le client puisse lire le message
           }
         );
       }
-      
-      console.log("Envoi d'un email de test à:", to);
-      
-      const data = await sendWithResend({
-        from: `${fromName} <${fromEmail}>`,
-        to: to,
-        subject: subject,
-        html: html,
-      });
-
-      console.log("Email de test envoyé avec succès:", data);
-
-      return new Response(
-        JSON.stringify({ success: true, message: "Email de test envoyé", data }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        }
-      );
     }
 
     // Envoi de campagne
@@ -418,11 +483,25 @@ serve(async (req) => {
   } catch (error) {
     console.error("Erreur dans send-email:", error);
     const errorMessage = error instanceof Error ? error.message : "Une erreur inconnue s'est produite";
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    // Logger plus de détails pour le débogage
+    console.error("Détails de l'erreur:", {
+      message: errorMessage,
+      stack: errorStack,
+      error: error,
+    });
+    
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ 
+        success: false,
+        error: errorMessage,
+        message: errorMessage,
+        details: errorStack,
+      }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
+        status: 200, // Toujours 200 pour que le client puisse lire le message d'erreur
       }
     );
   }
