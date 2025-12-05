@@ -87,17 +87,59 @@ const Campagnes = () => {
   // Mutation pour supprimer une campagne
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      // 1. Supprimer d'abord les emails en queue liés
+      const { error: queueError } = await supabase
+        .from("email_queue")
+        .delete()
+        .eq("campaign_id", id);
+      if (queueError) {
+        console.error("Erreur suppression queue:", queueError);
+      }
+
+      // 2. Supprimer les stats de campagne
+      const { error: statsError } = await supabase
+        .from("campaign_stats")
+        .delete()
+        .eq("campaign_id", id);
+      if (statsError) {
+        console.error("Erreur suppression stats:", statsError);
+      }
+
+      // 3. Supprimer les destinataires de la campagne
+      const { error: recipientsError } = await supabase
+        .from("campaign_recipients")
+        .delete()
+        .eq("campaign_id", id);
+      if (recipientsError) {
+        console.error("Erreur suppression recipients:", recipientsError);
+      }
+
+      // 4. Supprimer les A/B tests liés
+      const { error: abTestError } = await supabase
+        .from("ab_tests")
+        .delete()
+        .eq("campaign_id", id);
+      if (abTestError) {
+        console.error("Erreur suppression ab_tests:", abTestError);
+      }
+
+      // 5. Enfin, supprimer la campagne elle-même
       const { error } = await supabase.from("campaigns").delete().eq("id", id);
-      if (error) throw error;
+      if (error) {
+        console.error("Erreur suppression campagne:", error);
+        throw error;
+      }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+      await queryClient.refetchQueries({ queryKey: ["campaigns"] });
       toast.success("Campagne supprimée avec succès");
       setIsDeleteOpen(false);
       setSelectedCampaign(null);
     },
-    onError: () => {
-      toast.error("Erreur lors de la suppression de la campagne");
+    onError: (error: any) => {
+      console.error("Erreur de suppression:", error);
+      toast.error(`Erreur lors de la suppression: ${error.message || "Erreur inconnue"}`);
     },
   });
 
