@@ -230,10 +230,13 @@ const NouvelleCampagne = () => {
         console.log("Chargement du template:", template.nom);
         console.log("Contenu HTML:", template.content_html.substring(0, 200) + "...");
         setHtmlContent(template.content_html);
-        setEditorVersion(v => v + 1); // Force le remontage de l'éditeur
         setHasUnsavedChanges(true);
         toast.success(`Template "${template.nom}" chargé avec succès`);
         setIsTemplateDialogOpen(false);
+        // Attendre que le state soit mis à jour avant de forcer le remontage
+        setTimeout(() => {
+          setEditorVersion(v => v + 1);
+        }, 100);
       } else {
         toast.error("Ce template ne contient pas de contenu HTML");
       }
