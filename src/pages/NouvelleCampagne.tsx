@@ -84,6 +84,7 @@ const NouvelleCampagne = () => {
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   const [htmlContent, setHtmlContent] = useState("");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const getCurrentHtmlRef = useRef<(() => string) | null>(null);
   const [sidebarTab, setSidebarTab] = useState<"blocs" | "sections" | "enregistres">("blocs");
   const [sidebarIcon, setSidebarIcon] = useState<"contenu" | "style" | "sonia">("contenu");
   const [deviceView, setDeviceView] = useState<"desktop" | "mobile">("desktop");
@@ -307,6 +308,29 @@ const NouvelleCampagne = () => {
   // Mutation pour sauvegarder la campagne
   const saveMutation = useMutation({
     mutationFn: async (isDraft: boolean) => {
+      // Forcer la sauvegarde du contenu de l'éditeur avant de sauvegarder la campagne
+      let currentHtml = htmlContent;
+      
+      if (getCurrentHtmlRef.current) {
+        try {
+          const editorHtml = getCurrentHtmlRef.current();
+          if (editorHtml && editorHtml.trim()) {
+            currentHtml = editorHtml;
+            setHtmlContent(editorHtml);
+            console.log("Contenu HTML récupéré depuis l'éditeur avant sauvegarde, longueur:", editorHtml.length);
+          } else {
+            console.warn("getCurrentHtmlRef retourne un contenu vide");
+          }
+        } catch (error) {
+          console.error("Erreur lors de la récupération du HTML:", error);
+        }
+      } else {
+        console.warn("getCurrentHtmlRef.current est null, utilisation de htmlContent");
+      }
+
+      // Attendre un peu pour s'assurer que le state est mis à jour
+      await new Promise(resolve => setTimeout(resolve, 200));
+
       if (!formData.nom_campagne.trim()) {
         throw new Error("Veuillez saisir un nom pour la campagne");
       }
@@ -316,9 +340,12 @@ const NouvelleCampagne = () => {
           throw new Error("Veuillez remplir tous les champs obligatoires");
         }
 
-        if (!htmlContent.trim()) {
+        // Utiliser le contenu récupéré directement depuis l'éditeur si disponible
+        const contentToSave = currentHtml || htmlContent;
+        if (!contentToSave || !contentToSave.trim()) {
           throw new Error("Veuillez créer ou sélectionner un contenu pour votre email");
         }
+        console.log("Contenu à sauvegarder, longueur:", contentToSave.length);
 
         if (!formData.list_id) {
           throw new Error("Veuillez sélectionner une liste de contacts");
@@ -349,10 +376,16 @@ const NouvelleCampagne = () => {
         expediteur_nom: formData.expediteur_nom || "",
         expediteur_email: formData.expediteur_email || user?.email || "",
         list_id: formData.list_id === "all" ? null : (formData.list_id || null),
-        html_contenu: htmlContent || null,
+        html_contenu: currentHtml || htmlContent || null,
         statut: isDraft ? "brouillon" : formData.whenToSend === "now" ? "en_cours" : "en_attente",
         date_envoi: dateEnvoi,
       };
+      
+      console.log("Données de campagne à sauvegarder:", {
+        nom: campaignData.nom_campagne,
+        htmlLength: campaignData.html_contenu ? campaignData.html_contenu.length : 0,
+        statut: campaignData.statut
+      });
 
       // Ajouter les champs A/B si activé
       if (isAbTestEnabled) {
@@ -446,10 +479,22 @@ const NouvelleCampagne = () => {
       return data;
     },
     onSuccess: (data, isDraft) => {
+      console.log("Campagne sauvegardée avec succès:", {
+        id: data?.id,
+        nom: data?.nom_campagne,
+        htmlLength: data?.html_contenu ? data.html_contenu.length : 0
+      });
+      
       queryClient.invalidateQueries({ queryKey: ["campaigns"] });
       queryClient.invalidateQueries({ queryKey: ["campaign", campaignId] });
       setHasUnsavedChanges(false);
       setLastSaved(new Date());
+      
+      // Mettre à jour htmlContent avec le contenu sauvegardé
+      if (data?.html_contenu) {
+        setHtmlContent(data.html_contenu);
+      }
+      
       if (isDraft) {
         toast.success(isEditMode ? "Campagne modifiée et enregistrée" : "Campagne enregistrée");
       } else if (formData.whenToSend === "now") {
@@ -2208,6 +2253,9 @@ const NouvelleCampagne = () => {
                 initialContent={htmlContent}
                 onSave={handleEditorSave}
                 deviceView={deviceView}
+                onGetCurrentHtml={(getHtml) => {
+                  getCurrentHtmlRef.current = getHtml;
+                }}
               />
             </div>
           </div>

@@ -188,6 +188,21 @@ export default function Templates() {
         return;
       }
 
+      // Vérifier si les templates d'exemple existent déjà
+      const templateNames = exampleTemplateNames;
+
+      const { data: existingTemplates } = await supabase
+        .from("templates")
+        .select("nom")
+        .eq("user_id", userData.user.id)
+        .in("nom", templateNames);
+
+      if (existingTemplates && existingTemplates.length > 0) {
+        const existingNames = existingTemplates.map(t => t.nom);
+        toast.info(`Vous avez déjà ${existingNames.length} template(s) d'exemple. Supprimez-les d'abord si vous voulez les recharger.`);
+        return;
+      }
+
       const { error } = await supabase.from("templates").insert([
         {
           user_id: userData.user.id,
@@ -608,6 +623,111 @@ export default function Templates() {
         },
         {
           user_id: userData.user.id,
+          nom: "Email Texte B2B Professionnel",
+          description: "Template texte épuré et professionnel pour emails B2B sans images, optimisé pour tous les clients email",
+          type: "newsletter",
+          content_html: `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Texte B2B</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f7fa; color: #111827; line-height: 1.6;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f5f7fa; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="padding: 40px 40px 30px 40px; border-bottom: 2px solid #e5e7eb;">
+              <h1 style="margin: 0; color: #111827; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">Votre Entreprise</h1>
+              <p style="margin: 8px 0 0 0; color: #6b7280; font-size: 14px;">Email professionnel</p>
+            </td>
+          </tr>
+
+          <!-- Contenu principal -->
+          <tr>
+            <td style="padding: 40px 40px 30px 40px;">
+              
+              <!-- Salutation -->
+              <p style="margin: 0 0 20px 0; color: #111827; font-size: 16px; font-weight: 600;">Bonjour,</p>
+              
+              <!-- Paragraphe d'introduction -->
+              <p style="margin: 0 0 20px 0; color: #374151; font-size: 16px; line-height: 1.7;">
+                Nous espérons que ce message vous trouve en bonne santé. Nous souhaitons vous informer des dernières actualités concernant nos services et solutions.
+              </p>
+
+              <!-- Section principale -->
+              <h2 style="margin: 30px 0 15px 0; color: #111827; font-size: 22px; font-weight: 600;">Sujet principal</h2>
+              
+              <p style="margin: 0 0 20px 0; color: #374151; font-size: 16px; line-height: 1.7;">
+                Nous avons le plaisir de vous annoncer de nouvelles fonctionnalités qui amélioreront votre expérience et optimiseront vos processus métier.
+              </p>
+
+              <!-- Points clés -->
+              <div style="margin: 25px 0;">
+                <p style="margin: 0 0 12px 0; color: #111827; font-size: 16px; font-weight: 600;">Points clés :</p>
+                <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 16px; line-height: 1.8;">
+                  <li style="margin-bottom: 10px;">Amélioration de la performance et de l'efficacité</li>
+                  <li style="margin-bottom: 10px;">Nouvelles fonctionnalités pour répondre à vos besoins</li>
+                  <li style="margin-bottom: 10px;">Support client renforcé et disponible</li>
+                </ul>
+              </div>
+
+              <!-- Appel à l'action -->
+              <div style="margin: 30px 0; padding: 20px; background-color: #f9fafb; border-left: 4px solid #3b82f6; border-radius: 4px;">
+                <p style="margin: 0 0 15px 0; color: #111827; font-size: 16px; font-weight: 600;">Prochaines étapes</p>
+                <p style="margin: 0 0 20px 0; color: #374151; font-size: 15px; line-height: 1.7;">
+                  Pour en savoir plus ou discuter de vos besoins spécifiques, n'hésitez pas à nous contacter. Notre équipe est à votre disposition pour répondre à toutes vos questions.
+                </p>
+                <p style="margin: 0; color: #374151; font-size: 15px;">
+                  <strong>Email :</strong> contact@entreprise.com<br />
+                  <strong>Téléphone :</strong> +33 1 23 45 67 89<br />
+                  <strong>Horaires :</strong> Lundi - Vendredi, 9h - 18h
+                </p>
+              </div>
+
+              <!-- Conclusion -->
+              <p style="margin: 30px 0 20px 0; color: #374151; font-size: 16px; line-height: 1.7;">
+                Nous restons à votre entière disposition pour toute information complémentaire.
+              </p>
+
+              <p style="margin: 0 0 5px 0; color: #111827; font-size: 16px;">Cordialement,</p>
+              <p style="margin: 0; color: #111827; font-size: 16px; font-weight: 600;">L'équipe [Votre Entreprise]</p>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; border-radius: 0 0 8px 8px;">
+              <p style="margin: 0 0 15px 0; color: #6b7280; font-size: 13px; line-height: 1.6;">
+                <strong>[Votre Entreprise]</strong><br />
+                123 Rue de l'Exemple<br />
+                75000 Paris, France<br />
+                SIRET: 123 456 789 00012
+              </p>
+              <p style="margin: 15px 0 0 0; color: #9ca3af; font-size: 12px; line-height: 1.6;">
+                © 2025 [Votre Entreprise]. Tous droits réservés.<br />
+                <a href="#" style="color: #3b82f6; text-decoration: none;">Se désabonner</a> | 
+                <a href="#" style="color: #3b82f6; text-decoration: none;">Gérer mes préférences</a> | 
+                <a href="#" style="color: #3b82f6; text-decoration: none;">Mentions légales</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`,
+          content_json: {}
+        },
+        {
+          user_id: userData.user.id,
           nom: "Newsletter Moderne",
           description: "Template professionnel pour vos newsletters mensuelles avec design épuré et responsive",
           type: "newsletter",
@@ -734,6 +854,22 @@ export default function Templates() {
     navigate(`/campagnes/nouvelle?template=${templateId}`);
   };
 
+  // Liste des noms de templates d'exemple
+  const exampleTemplateNames = [
+    "Template B2B Complet Pro",
+    "Newsletter B2B Professionnelle",
+    "Email B2B - Présentation Produit",
+    "Email B2B - Invitation Événement",
+    "Email Texte B2B Professionnel",
+    "Newsletter Moderne",
+    "Promotion Flash",
+    "Email de Bienvenue"
+  ];
+
+  const isExampleTemplate = (templateName: string) => {
+    return exampleTemplateNames.includes(templateName);
+  };
+
   const filteredTemplates = templates?.filter(template => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -771,20 +907,59 @@ export default function Templates() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Button 
-              onClick={handleLoadExamples} 
-              variant="outline" 
-              size="default"
-              className="gap-2"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4" />
-              )}
-              Charger des exemples
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="default"
+                  className="gap-2"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                  Charger des exemples
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleLoadExamples}>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Ajouter des templates d'exemple
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={async () => {
+                    if (!confirm("Êtes-vous sûr de vouloir supprimer tous les templates d'exemple ?")) {
+                      return;
+                    }
+                    try {
+                      const { data: userData } = await supabase.auth.getUser();
+                      if (!userData.user) {
+                        toast.error("Vous devez être connecté");
+                        return;
+                      }
+                      const { error } = await supabase
+                        .from("templates")
+                        .delete()
+                        .eq("user_id", userData.user.id)
+                        .in("nom", exampleTemplateNames);
+                      if (error) throw error;
+                      queryClient.invalidateQueries({ queryKey: ["templates"] });
+                      toast.success("Templates d'exemple supprimés");
+                    } catch (error: any) {
+                      toast.error("Erreur lors de la suppression");
+                    }
+                  }}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Supprimer tous les templates d'exemple
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button 
               onClick={() => setShowCreateDialog(true)} 
               size="default"
@@ -939,9 +1114,18 @@ export default function Templates() {
                 {/* Card Content */}
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <h4 className="font-medium text-sm line-clamp-1 text-foreground flex-1">
-                      {template.nom}
-                    </h4>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium text-sm line-clamp-1 text-foreground">
+                          {template.nom}
+                        </h4>
+                        {isExampleTemplate(template.nom) && (
+                          <Badge variant="secondary" className="text-xs shrink-0">
+                            Exemple
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                         <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 -mr-2">
@@ -1005,9 +1189,16 @@ export default function Templates() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between mb-1">
-                        <h4 className="font-medium text-sm">
-                          {template.nom}
-                        </h4>
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <h4 className="font-medium text-sm">
+                            {template.nom}
+                          </h4>
+                          {isExampleTemplate(template.nom) && (
+                            <Badge variant="secondary" className="text-xs shrink-0">
+                              Exemple
+                            </Badge>
+                          )}
+                        </div>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                             <Button variant="ghost" size="icon" className="h-7 w-7">

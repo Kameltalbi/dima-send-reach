@@ -16,9 +16,10 @@ interface TemplateEditorBrevoProps {
   initialContent?: string;
   onSave: (html: string) => void;
   deviceView?: "desktop" | "mobile";
+  onGetCurrentHtml?: (getHtml: () => string) => void;
 }
 
-export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desktop" }: TemplateEditorBrevoProps) {
+export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desktop", onGetCurrentHtml }: TemplateEditorBrevoProps) {
   const editorRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -360,6 +361,79 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
     editor.DomComponents.getType('default').model.prototype.defaults.toolbar = defaultToolbar;
 
     editorRef.current = editor;
+
+    // Exposer une fonction pour récupérer le HTML actuel immédiatement
+    const getCurrentHtml = () => {
+      const currentEditor = editorRef.current;
+      if (!currentEditor) {
+        console.warn("getCurrentHtml: éditeur non disponible");
+        return "";
+      }
+      try {
+        // Essayer d'obtenir le HTML avec styles inline (meilleur pour les emails)
+        const inlinedHtml = currentEditor.Commands.run('gjs-get-inlined-html');
+        if (inlinedHtml && inlinedHtml.trim()) {
+          return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  ${inlinedHtml}
+</body>
+</html>`;
+        } else {
+          // Fallback: HTML avec CSS séparé
+          const html = currentEditor.getHtml();
+          const css = currentEditor.getCss();
+          if (!html || !html.trim()) {
+            console.warn("getCurrentHtml: contenu HTML vide");
+            return "";
+          }
+          return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>${css || ''}</style>
+</head>
+<body>
+  ${html}
+</body>
+</html>`;
+        }
+      } catch (e) {
+        console.error("Erreur getCurrentHtml:", e);
+        // Fallback en cas d'erreur
+        try {
+          const html = currentEditor.getHtml();
+          const css = currentEditor.getCss();
+          if (!html || !html.trim()) {
+            return "";
+          }
+          return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>${css || ''}</style>
+</head>
+<body>
+  ${html}
+</body>
+</html>`;
+        } catch (e2) {
+          console.error("Erreur fallback getCurrentHtml:", e2);
+          return "";
+        }
+      }
+    };
+
+    // Exposer la fonction au parent si fournie
+    if (onGetCurrentHtml) {
+      onGetCurrentHtml(getCurrentHtml);
+    }
 
     editor.Commands.add('tlb-move', {
       run(ed: any) {
