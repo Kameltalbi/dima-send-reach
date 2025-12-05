@@ -1,18 +1,46 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Send, Save, Eye, Loader2, Calendar, Clock, Mail, FlaskConical, Shield } from "lucide-react";
+import { 
+  Save, 
+  Eye, 
+  Loader2, 
+  Monitor,
+  Smartphone,
+  Grid3x3,
+  Palette,
+  Sparkles,
+  Type,
+  FileText,
+  Image as ImageIcon,
+  Play,
+  MousePointerClick,
+  Link2,
+  Code,
+  CreditCard,
+  Minus,
+  Shirt,
+  Menu,
+  Square,
+  Settings,
+  X,
+  CheckCircle2,
+  Info,
+  ChevronDown,
+  ChevronUp,
+  Plus,
+  Facebook,
+  Instagram
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { TemplateEditor } from "@/components/templates/TemplateEditor";
 import { useEmailQuota } from "@/hooks/useEmailQuota";
 import {
   Dialog,
@@ -21,10 +49,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { TestEmailDialog } from "@/components/campaigns/TestEmailDialog";
-import { ABTestConfig, ABTestSettings } from "@/components/campaigns/ABTestConfig";
-import { SpamScoreCard } from "@/components/campaigns/SpamScoreCard";
+import { TemplateEditorBrevo } from "@/components/templates/TemplateEditorBrevo";
 
 const NouvelleCampagne = () => {
   const { id: campaignId } = useParams<{ id: string }>();
@@ -33,12 +59,13 @@ const NouvelleCampagne = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { quota, canSendEmails } = useEmailQuota();
-  const [activeTab, setActiveTab] = useState("info");
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [htmlContent, setHtmlContent] = useState("");
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [sidebarTab, setSidebarTab] = useState<"blocs" | "sections" | "enregistres">("blocs");
+  const [sidebarIcon, setSidebarIcon] = useState<"contenu" | "style" | "aura">("contenu");
+  const [deviceView, setDeviceView] = useState<"desktop" | "mobile">("desktop");
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
   const [formData, setFormData] = useState({
     nom_campagne: "",
@@ -49,20 +76,6 @@ const NouvelleCampagne = () => {
     whenToSend: "now",
     scheduledDate: "",
     scheduledTime: "",
-    testEmail: "",
-  });
-
-  // État pour A/B Testing
-  const [abTestSettings, setAbTestSettings] = useState<ABTestSettings>({
-    enabled: false,
-    testType: 'subject',
-    variantASubject: '',
-    variantBSubject: '',
-    variantAContent: '',
-    variantBContent: '',
-    testPercentage: 20,
-    winningCriteria: 'open_rate',
-    testDurationHours: 4,
   });
 
   // Charger la campagne existante pour le mode édition
@@ -94,7 +107,6 @@ const NouvelleCampagne = () => {
         whenToSend: "now",
         scheduledDate: "",
         scheduledTime: "",
-        testEmail: "",
       });
       if (existingCampaign.html_contenu) {
         setHtmlContent(existingCampaign.html_contenu);
@@ -108,21 +120,6 @@ const NouvelleCampagne = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("lists")
-        .select("*")
-        .eq("user_id", user?.id)
-        .order("nom", { ascending: true });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user,
-  });
-
-  // Charger les templates
-  const { data: templates } = useQuery({
-    queryKey: ["templates"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("templates")
         .select("*")
         .eq("user_id", user?.id)
         .order("nom", { ascending: true });
@@ -149,75 +146,24 @@ const NouvelleCampagne = () => {
 
   // Initialiser les valeurs par défaut
   useEffect(() => {
-    if (profile) {
+    if (profile && !isEditMode) {
       setFormData((prev) => ({
         ...prev,
-        expediteur_nom: profile.nom_entreprise || "",
-        expediteur_email: profile.email_envoi_defaut || user?.email || "",
+        expediteur_nom: prev.expediteur_nom || profile.nom_entreprise || "",
+        expediteur_email: prev.expediteur_email || profile.email_envoi_defaut || user?.email || "",
       }));
     }
-  }, [profile, user]);
-
-  // Calculer le nombre de destinataires
-  const { data: recipientCount } = useQuery({
-    queryKey: ["recipientCount", formData.list_id],
-    queryFn: async () => {
-      if (!formData.list_id || formData.list_id === "all") {
-        // Compter tous les contacts de l'utilisateur
-        const { count, error } = await supabase
-          .from("contacts")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", user?.id)
-          .eq("statut", "actif");
-        if (error) throw error;
-        return count || 0;
-      } else {
-        // Compter les contacts de la liste
-        const { count, error } = await supabase
-          .from("list_contacts")
-          .select("*", { count: "exact", head: true })
-          .eq("list_id", formData.list_id);
-        if (error) throw error;
-        return count || 0;
-      }
-    },
-    enabled: !!user,
-  });
-
-  // Charger le template sélectionné
-  const { data: selectedTemplate } = useQuery({
-    queryKey: ["template", selectedTemplateId],
-    queryFn: async () => {
-      if (!selectedTemplateId) return null;
-      const { data, error } = await supabase
-        .from("templates")
-        .select("*")
-        .eq("id", selectedTemplateId)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!selectedTemplateId,
-  });
-
-  // Mettre à jour le HTML quand un template est sélectionné
-  useEffect(() => {
-    if (selectedTemplate?.content_html) {
-      setHtmlContent(selectedTemplate.content_html);
-    }
-  }, [selectedTemplate]);
+  }, [profile, user, isEditMode]);
 
   // Mutation pour sauvegarder la campagne
   const saveMutation = useMutation({
     mutationFn: async (isDraft: boolean) => {
-      // Pour un brouillon, seul le nom de la campagne est requis
-      if (isDraft) {
-        if (!formData.nom_campagne.trim()) {
-          throw new Error("Veuillez saisir un nom pour la campagne");
-        }
-      } else {
-        // Pour l'envoi, tous les champs sont obligatoires
-        if (!formData.nom_campagne || !formData.sujet_email || !formData.expediteur_nom || !formData.expediteur_email) {
+      if (!formData.nom_campagne.trim()) {
+        throw new Error("Veuillez saisir un nom pour la campagne");
+      }
+
+      if (!isDraft) {
+        if (!formData.sujet_email || !formData.expediteur_nom || !formData.expediteur_email) {
           throw new Error("Veuillez remplir tous les champs obligatoires");
         }
 
@@ -227,20 +173,6 @@ const NouvelleCampagne = () => {
 
         if (!formData.list_id) {
           throw new Error("Veuillez sélectionner une liste de contacts");
-        }
-
-        // Validation A/B Test uniquement pour l'envoi
-        if (abTestSettings.enabled) {
-          if (abTestSettings.testType === 'subject' || abTestSettings.testType === 'both') {
-            if (!abTestSettings.variantASubject || !abTestSettings.variantBSubject) {
-              throw new Error("Veuillez remplir les sujets des deux variantes A/B");
-            }
-          }
-          if (abTestSettings.testType === 'content' || abTestSettings.testType === 'both') {
-            if (!abTestSettings.variantAContent || !abTestSettings.variantBContent) {
-              throw new Error("Veuillez remplir le contenu des deux variantes A/B");
-            }
-          }
         }
       }
 
@@ -254,15 +186,11 @@ const NouvelleCampagne = () => {
       const campaignData = {
         user_id: user?.id,
         nom_campagne: formData.nom_campagne || "Campagne sans nom",
-        sujet_email: abTestSettings.enabled && abTestSettings.testType !== 'content' 
-          ? (abTestSettings.variantASubject || formData.sujet_email || "")
-          : (formData.sujet_email || ""),
+        sujet_email: formData.sujet_email || "",
         expediteur_nom: formData.expediteur_nom || "",
         expediteur_email: formData.expediteur_email || user?.email || "",
         list_id: formData.list_id === "all" ? null : (formData.list_id || null),
-        html_contenu: abTestSettings.enabled && abTestSettings.testType !== 'subject'
-          ? (abTestSettings.variantAContent || htmlContent || null)
-          : (htmlContent || null),
+        html_contenu: htmlContent || null,
         statut: isDraft ? "brouillon" : formData.whenToSend === "now" ? "en_cours" : "en_attente",
         date_envoi: dateEnvoi,
       };
@@ -270,7 +198,6 @@ const NouvelleCampagne = () => {
       let data;
       let error;
 
-      // Mode édition : update, sinon insert
       if (isEditMode && campaignId) {
         const result = await supabase
           .from("campaigns")
@@ -292,49 +219,20 @@ const NouvelleCampagne = () => {
 
       if (error) throw error;
 
-      // Créer le test A/B si activé
-      if (abTestSettings.enabled && !isDraft && data) {
-        const abTestData = {
-          campaign_id: data.id,
-          user_id: user?.id,
-          test_type: abTestSettings.testType,
-          variant_a_subject: abTestSettings.testType !== 'content' ? abTestSettings.variantASubject : null,
-          variant_b_subject: abTestSettings.testType !== 'content' ? abTestSettings.variantBSubject : null,
-          variant_a_content: abTestSettings.testType !== 'subject' ? abTestSettings.variantAContent : null,
-          variant_b_content: abTestSettings.testType !== 'subject' ? abTestSettings.variantBContent : null,
-          test_percentage: abTestSettings.testPercentage,
-          winning_criteria: abTestSettings.winningCriteria,
-          test_duration_hours: abTestSettings.testDurationHours,
-          status: 'pending',
-        };
-
-        const { error: abError } = await supabase
-          .from("ab_tests")
-          .insert(abTestData);
-
-        if (abError) {
-          console.error("Erreur lors de la création du test A/B:", abError);
-          toast.warning("La campagne a été créée mais le test A/B n'a pas pu être configuré");
-        }
-      }
-
-      // Si ce n'est pas un brouillon, créer les destinataires
       if (!isDraft && data) {
-        await createRecipients(data.id, abTestSettings.enabled ? abTestSettings.testPercentage : null);
+        await createRecipients(data.id);
         
-        // Si envoi immédiat, lancer l'Edge Function
         if (formData.whenToSend === "now") {
           toast.info("Envoi de la campagne en cours...");
           const { data: sendResult, error: sendError } = await supabase.functions.invoke("send-email", {
             body: {
               campaignId: data.id,
-              abTestEnabled: abTestSettings.enabled,
             },
           });
 
           if (sendError) {
             console.error("Erreur lors de l'envoi:", sendError);
-            throw new Error("La campagne a été créée mais l'envoi a échoué. Veuillez réessayer depuis la liste des campagnes.");
+            throw new Error("La campagne a été créée mais l'envoi a échoué.");
           }
 
           if (!sendResult?.success) {
@@ -348,14 +246,17 @@ const NouvelleCampagne = () => {
     onSuccess: (data, isDraft) => {
       queryClient.invalidateQueries({ queryKey: ["campaigns"] });
       queryClient.invalidateQueries({ queryKey: ["campaign", campaignId] });
+      setHasUnsavedChanges(false);
       if (isDraft) {
-        toast.success(isEditMode ? "Campagne modifiée et enregistrée en brouillon" : "Campagne enregistrée en brouillon");
+        toast.success(isEditMode ? "Campagne modifiée et enregistrée" : "Campagne enregistrée");
       } else if (formData.whenToSend === "now") {
-        toast.success("Campagne envoyée avec succès ! Consultez les statistiques pour suivre les résultats.");
+        toast.success("Campagne envoyée avec succès !");
       } else {
         toast.success("Campagne programmée avec succès");
       }
-      navigate("/campagnes");
+      if (!isDraft && formData.whenToSend === "now") {
+        navigate("/campagnes");
+      }
     },
     onError: (error: any) => {
       toast.error(error.message || "Erreur lors de la sauvegarde de la campagne");
@@ -363,11 +264,10 @@ const NouvelleCampagne = () => {
   });
 
   // Créer les destinataires pour une campagne
-  const createRecipients = async (campaignId: string, abTestPercentage: number | null = null) => {
+  const createRecipients = async (campaignId: string) => {
     let contacts: any[] = [];
 
     if (formData.list_id === "all") {
-      // Tous les contacts actifs
       const { data, error } = await supabase
         .from("contacts")
         .select("id")
@@ -376,7 +276,6 @@ const NouvelleCampagne = () => {
       if (error) throw error;
       contacts = data || [];
     } else {
-      // Contacts de la liste
       const { data, error } = await supabase
         .from("list_contacts")
         .select("contact_id")
@@ -385,33 +284,12 @@ const NouvelleCampagne = () => {
       contacts = (data || []).map((lc: any) => ({ id: lc.contact_id }));
     }
 
-    // Créer les enregistrements de destinataires
     if (contacts.length > 0) {
-      // Mélanger les contacts de manière aléatoire pour le test A/B
-      const shuffledContacts = [...contacts].sort(() => Math.random() - 0.5);
-      
-      const recipients = shuffledContacts.map((contact, index) => {
-        let abVariant = null;
-        
-        if (abTestPercentage !== null) {
-          const testGroupSize = Math.floor(contacts.length * abTestPercentage / 100);
-          const halfTestSize = Math.floor(testGroupSize / 2);
-          
-          if (index < halfTestSize) {
-            abVariant = 'A';
-          } else if (index < testGroupSize) {
-            abVariant = 'B';
-          }
-          // Les autres restent null (recevront le gagnant)
-        }
-        
-        return {
-          campaign_id: campaignId,
-          contact_id: contact.id,
-          statut_envoi: "en_attente",
-          ab_variant: abVariant,
-        };
-      });
+      const recipients = contacts.map((contact) => ({
+        campaign_id: campaignId,
+        contact_id: contact.id,
+        statut_envoi: "en_attente",
+      }));
 
       const { error } = await supabase.from("campaign_recipients").insert(recipients);
       if (error) throw error;
@@ -429,7 +307,6 @@ const NouvelleCampagne = () => {
         throw new Error("Veuillez remplir les informations de l'expéditeur et le sujet");
       }
 
-      // Envoyer à chaque email de test
       const promises = emails.map((email) =>
         supabase.functions.invoke("send-email", {
           body: {
@@ -468,574 +345,456 @@ const NouvelleCampagne = () => {
     testEmailMutation.mutate(emails);
   };
 
-  const handleOpenEditor = () => {
-    setIsEditorOpen(true);
-  };
-
-  const handleCloseEditor = () => {
-    setIsEditorOpen(false);
-    setSelectedTemplateId(null);
-  };
-
-  const handleTemplateSelected = (templateId: string) => {
-    setSelectedTemplateId(templateId);
-    setIsEditorOpen(true);
-  };
-
-  const handleEditorSave = (html: string) => {
+  const handleEditorSave = useCallback((html: string) => {
     setHtmlContent(html);
-    toast.success("Contenu sauvegardé");
-  };
+    setHasUnsavedChanges(true);
+  }, []);
 
-  const handlePreview = () => {
-    if (!htmlContent.trim()) {
-      toast.error("Veuillez créer ou sélectionner un contenu pour votre email");
-      return;
-    }
-    setIsPreviewOpen(true);
-  };
-
-  const handleSaveDraft = () => {
+  const handleSave = () => {
     saveMutation.mutate(true);
   };
 
-  const handleSend = async () => {
-    if (!formData.list_id) {
-      toast.error("Veuillez sélectionner une liste de contacts");
-      setActiveTab("info");
-      return;
-    }
-
-    if (!htmlContent.trim()) {
-      toast.error("Veuillez créer ou sélectionner un contenu pour votre email");
-      setActiveTab("design");
-      return;
-    }
-
-    // Vérifier le quota avant d'envoyer
-    if (quota?.isBlocked) {
-      toast.error(
-        `Quota dépassé ! Vous avez utilisé ${quota.used.toLocaleString()} / ${quota.limit.toLocaleString()} emails ce mois-ci. L'envoi est bloqué jusqu'au ${quota.resetDate?.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}.`,
-        { duration: 6000 }
-      );
-      navigate("/dashboard");
-      return;
-    }
-
-    // Compter le nombre de destinataires
-    let recipientCount = 0;
-    try {
-      if (formData.list_id === "all") {
-        const { data: contacts } = await supabase
-          .from("contacts")
-          .select("id", { count: "exact" })
-          .eq("user_id", user?.id)
-          .eq("statut", "actif");
-        recipientCount = contacts?.length || 0;
-      } else {
-        const { data: listContacts } = await supabase
-          .from("list_contacts")
-          .select("contact_id", { count: "exact" })
-          .eq("list_id", formData.list_id);
-        recipientCount = listContacts?.length || 0;
-      }
-
-      // Vérifier si on peut envoyer à ce nombre de destinataires
-      if (!canSendEmails(recipientCount)) {
-        if (quota) {
-          toast.error(
-            `Quota insuffisant ! Vous avez ${quota.remaining.toLocaleString()} emails restants mais vous essayez d'envoyer à ${recipientCount.toLocaleString()} destinataires.`,
-            { duration: 6000 }
-          );
-        } else {
-          toast.error("Impossible de vérifier votre quota. Veuillez réessayer.");
-        }
-        navigate("/dashboard");
-        return;
-      }
-
-      // Avertir si proche de la limite
-      if (quota?.isNearLimit && !quota.isBlocked) {
-        toast.warning(
-          `Attention : Vous avez utilisé ${quota.percentage.toFixed(0)}% de votre quota mensuel. Il reste ${quota.remaining.toLocaleString()} emails disponibles.`,
-          { duration: 5000 }
-        );
-      }
-    } catch (error) {
-      console.error("Erreur lors de la vérification du quota:", error);
-      toast.error("Erreur lors de la vérification du quota. Veuillez réessayer.");
-      return;
-    }
-
-    saveMutation.mutate(false);
+  const handlePreviewAndTest = () => {
+    setIsTestDialogOpen(true);
   };
 
-  if (isEditorOpen) {
+  if (isLoadingCampaign) {
     return (
-      <TemplateEditor
-        templateId={selectedTemplateId}
-        onClose={handleCloseEditor}
-        onSave={handleEditorSave}
-      />
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
   }
 
+  // Blocs disponibles dans la sidebar
+  const contentBlocks = [
+    { id: "titre", label: "Titre", icon: Type, category: "contenu" },
+    { id: "texte", label: "Texte", icon: FileText, category: "contenu" },
+    { id: "image", label: "Image", icon: ImageIcon, category: "contenu" },
+    { id: "video", label: "Video", icon: Play, category: "contenu" },
+    { id: "bouton", label: "Bouton", icon: MousePointerClick, category: "contenu" },
+    { id: "logo", label: "Logo", icon: ImageIcon, category: "contenu" },
+    { id: "social", label: "Social", icon: Link2, category: "contenu" },
+    { id: "html", label: "HTML", icon: Code, category: "contenu" },
+    { id: "paiement", label: "Lien de paiement", icon: CreditCard, category: "contenu" },
+    { id: "diviseur", label: "Diviseur", icon: Minus, category: "contenu" },
+    { id: "produit", label: "Produit", icon: Shirt, category: "contenu" },
+    { id: "navigation", label: "Navigation", icon: Menu, category: "contenu" },
+    { id: "bloc-vide", label: "", icon: Square, category: "contenu" },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button 
-          variant="ghost" 
-          size="icon"
-          onClick={() => navigate("/campagnes")}
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-3xl font-heading font-bold text-foreground">
-            {isEditMode ? "Éditer la campagne" : "Nouvelle campagne"}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {isEditMode ? "Modifiez votre campagne" : "Créez et configurez votre campagne d'e-mailing"}
-          </p>
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
+      {/* Contenu principal */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Sidebar gauche - Style Brevo */}
+        <div className="w-80 border-r bg-[#f5f5f5] flex flex-col">
+          {/* Onglets horizontaux */}
+          <div className="border-b bg-white px-4 py-2 flex gap-1">
+            <button
+              onClick={() => setSidebarTab("blocs")}
+              className={`px-4 py-2 text-sm font-medium rounded transition-colors ${
+                sidebarTab === "blocs"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Blocs
+            </button>
+            <button
+              onClick={() => setSidebarTab("sections")}
+              className={`px-4 py-2 text-sm font-medium rounded transition-colors ${
+                sidebarTab === "sections"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Sections
+            </button>
+            <button
+              onClick={() => setSidebarTab("enregistres")}
+              className={`px-4 py-2 text-sm font-medium rounded transition-colors ${
+                sidebarTab === "enregistres"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Enregistrés
+            </button>
+          </div>
+
+          {/* Contenu de la sidebar */}
+          <div className="flex-1 flex overflow-hidden">
+            {/* Icônes verticales */}
+            <div className="w-16 border-r bg-white flex flex-col py-2">
+              <button
+                onClick={() => setSidebarIcon("contenu")}
+                className={`flex flex-col items-center gap-1 p-3 transition-colors ${
+                  sidebarIcon === "contenu"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                }`}
+                title="Contenu"
+              >
+                <Grid3x3 className="h-5 w-5" />
+                <span className="text-[10px] font-medium">Contenu</span>
+              </button>
+              <button
+                onClick={() => setSidebarIcon("style")}
+                className={`flex flex-col items-center gap-1 p-3 transition-colors ${
+                  sidebarIcon === "style"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                }`}
+                title="Style"
+              >
+                <Palette className="h-5 w-5" />
+                <span className="text-[10px] font-medium">Style</span>
+              </button>
+              <button
+                onClick={() => setSidebarIcon("aura")}
+                className={`flex flex-col items-center gap-1 p-3 transition-colors ${
+                  sidebarIcon === "aura"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                }`}
+                title="Aura AI"
+              >
+                <Sparkles className="h-5 w-5" />
+                <span className="text-[10px] font-medium">Aura AI</span>
+              </button>
+            </div>
+
+            {/* Zone de contenu */}
+            <div className="flex-1 overflow-y-auto bg-white">
+              {sidebarIcon === "contenu" && sidebarTab === "blocs" && (
+                <div className="p-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    {contentBlocks.map((block) => {
+                      const Icon = block.icon;
+                      return (
+                        <div
+                          key={block.id}
+                          className="group relative bg-white border rounded-lg p-4 cursor-move hover:border-primary hover:shadow-md transition-all"
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData("block-type", block.id);
+                          }}
+                        >
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="w-4 h-4 flex items-center justify-center">
+                                <div className="w-1 h-1 bg-muted-foreground rounded-full"></div>
+                                <div className="w-1 h-1 bg-muted-foreground rounded-full mx-0.5"></div>
+                                <div className="w-1 h-1 bg-muted-foreground rounded-full"></div>
+                              </div>
+                            </div>
+                            <Icon className="h-8 w-8 text-muted-foreground" />
+                            {block.label && (
+                              <span className="text-xs text-center text-muted-foreground font-medium">
+                                {block.label}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              
+              {sidebarIcon === "style" && (
+                <div className="p-4 space-y-4">
+                  {/* Bibliothèque de marques */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-foreground">Bibliothèque de marques</h3>
+                      <Badge className="bg-green-500 text-white text-xs">Nouveau</Badge>
+                    </div>
+                    
+                    {/* Éléments de marque */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="border rounded p-2 bg-white flex items-center justify-center h-16">
+                        <span className="text-xs font-semibold">iddéco</span>
+                      </div>
+                      <div className="border rounded p-2 bg-green-500 flex items-center justify-center h-16">
+                        <div className="w-8 h-6 bg-yellow-400 rounded"></div>
+                      </div>
+                      <div className="border rounded p-2 bg-white flex items-center justify-center gap-1 h-16">
+                        <Facebook className="h-4 w-4 text-blue-600" />
+                        <Instagram className="h-4 w-4 text-pink-600" />
+                      </div>
+                    </div>
+                    
+                    {/* Info box */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
+                      <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-blue-900">
+                        Nouveaux éléments de marque disponibles
+                      </p>
+                    </div>
+                    
+                    {/* Boutons */}
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" className="flex-1 text-xs">
+                        Modifier
+                      </Button>
+                      <Button size="sm" className="flex-1 text-xs bg-primary">
+                        Appliquer les éléments
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Template */}
+                  <div className="space-y-2">
+                    <button className="w-full flex items-center justify-between text-sm font-medium text-foreground hover:text-primary transition-colors">
+                      <span>Template</span>
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+                  </div>
+                  
+                  {/* Apparence du texte */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-foreground">Apparence du texte</h3>
+                    </div>
+                    
+                    {/* Info box */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
+                      <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-blue-900">
+                        Enregistrez les polices de votre marque pour créer des emails adaptés à votre image de marque encore plus rapidement.
+                      </p>
+                    </div>
+                    
+                    <Button variant="outline" size="sm" className="w-full text-xs">
+                      Enregistrer les polices
+                    </Button>
+                    
+                    {/* Paragraphe */}
+                    <div className="space-y-2 border-t pt-3">
+                      <h4 className="text-xs font-semibold text-foreground">Paragraphe</h4>
+                      <div className="space-y-2">
+                        <Select defaultValue="verdana">
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="verdana">Verdana</SelectItem>
+                            <SelectItem value="arial">Arial</SelectItem>
+                            <SelectItem value="helvetica">Helvetica</SelectItem>
+                            <SelectItem value="times">Times New Roman</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm" className="h-8 w-8 p-0">-</Button>
+                          <Input 
+                            value="15" 
+                            className="h-8 text-xs text-center"
+                            readOnly
+                          />
+                          <span className="text-xs text-muted-foreground">px</span>
+                          <Button variant="outline" size="sm" className="h-8 w-8 p-0">+</Button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded border-2 border-gray-300" style={{ backgroundColor: '#2d5016' }}></div>
+                          <Input 
+                            value="#2d5016" 
+                            className="h-8 text-xs flex-1"
+                            readOnly
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Titre 1 */}
+                    <div className="space-y-2 border-t pt-3">
+                      <h4 className="text-xs font-semibold text-foreground">Titre 1</h4>
+                      <div className="space-y-2">
+                        <Select defaultValue="courier">
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="courier">Courier New</SelectItem>
+                            <SelectItem value="verdana">Verdana</SelectItem>
+                            <SelectItem value="arial">Arial</SelectItem>
+                            <SelectItem value="helvetica">Helvetica</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm" className="h-8 w-8 p-0">-</Button>
+                          <Input 
+                            value="24" 
+                            className="h-8 text-xs text-center"
+                            readOnly
+                          />
+                          <span className="text-xs text-muted-foreground">px</span>
+                          <Button variant="outline" size="sm" className="h-8 w-8 p-0">+</Button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded border-2 border-gray-300" style={{ backgroundColor: '#f5f0e8' }}></div>
+                          <Input 
+                            value="#f5f0e8" 
+                            className="h-8 text-xs flex-1"
+                            readOnly
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {sidebarTab === "sections" && (
+                <div className="p-4">
+                  <div className="text-sm text-muted-foreground text-center py-8">
+                    Sections disponibles bientôt
+                  </div>
+                </div>
+              )}
+              
+              {sidebarTab === "enregistres" && (
+                <div className="p-4">
+                  <div className="text-sm text-muted-foreground text-center py-8">
+                    Blocs enregistrés bientôt
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="gap-2" onClick={handlePreview}>
-            <Eye className="h-4 w-4" />
-            Aperçu
-          </Button>
-          <Button 
-            variant="outline" 
-            className="gap-2"
-            onClick={handleSaveDraft}
-            disabled={saveMutation.isPending}
-          >
-            {saveMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4" />
-            )}
-            Enregistrer
-          </Button>
-          <Button 
-            className="gap-2"
-            onClick={handleSend}
-            disabled={saveMutation.isPending}
-          >
-            {saveMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-            Envoyer
-          </Button>
+
+        {/* Zone principale - Fond beige avec grille pointillée */}
+        <div className="flex-1 overflow-hidden bg-[#f5f0e8] relative">
+          {/* Grille pointillée en arrière-plan */}
+          <div 
+            className="absolute inset-0 opacity-30"
+            style={{
+              backgroundImage: `
+                radial-gradient(circle, #d4c5b0 1px, transparent 1px)
+              `,
+              backgroundSize: '20px 20px',
+            }}
+          />
+          
+          {/* Zone d'édition centrée */}
+          <div className="h-full overflow-auto p-8">
+            <div className={`mx-auto bg-white shadow-2xl transition-all ${
+              deviceView === "mobile" ? "max-w-sm" : "max-w-4xl"
+            }`}>
+              <TemplateEditorBrevo
+                initialContent={htmlContent}
+                onSave={handleEditorSave}
+                deviceView={deviceView}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full max-w-lg grid-cols-4">
-          <TabsTrigger value="info">Informations</TabsTrigger>
-          <TabsTrigger value="design">Design</TabsTrigger>
-          <TabsTrigger value="abtest" className="gap-1">
-            <FlaskConical className="h-3.5 w-3.5" />
-            A/B Test
-          </TabsTrigger>
-          <TabsTrigger value="envoi">Envoi</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="info" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Informations générales</CardTitle>
-              <CardDescription>
-                Configurez les détails de votre campagne
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="nom-campagne">Nom de la campagne *</Label>
-                <Input 
-                  id="nom-campagne"
-                  value={formData.nom_campagne}
-                  onChange={(e) => setFormData({ ...formData, nom_campagne: e.target.value })}
-                  placeholder="Ex: Newsletter Janvier 2024"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="sujet">Sujet de l'e-mail *</Label>
-                <Input 
-                  id="sujet"
-                  value={formData.sujet_email}
-                  onChange={(e) => setFormData({ ...formData, sujet_email: e.target.value })}
-                  placeholder="Le sujet qui apparaîtra dans la boîte mail"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="expediteur-nom">Nom de l'expéditeur *</Label>
-                  <Input 
-                    id="expediteur-nom"
-                    value={formData.expediteur_nom}
-                    onChange={(e) => setFormData({ ...formData, expediteur_nom: e.target.value })}
-                    placeholder="Votre entreprise"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="expediteur-email">Email de l'expéditeur *</Label>
-                  <Input 
-                    id="expediteur-email"
-                    type="email"
-                    value={formData.expediteur_email}
-                    onChange={(e) => setFormData({ ...formData, expediteur_email: e.target.value })}
-                    placeholder="contact@entreprise.com"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="liste-cible">Liste de contacts *</Label>
-                <Select 
-                  value={formData.list_id} 
-                  onValueChange={(value) => setFormData({ ...formData, list_id: value })}
-                >
-                  <SelectTrigger id="liste-cible">
-                    <SelectValue placeholder="Sélectionnez une liste" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous les contacts actifs</SelectItem>
-                    {lists?.map((list) => (
-                      <SelectItem key={list.id} value={list.id}>
-                        {list.nom}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {formData.list_id && (
-                  <p className="text-sm text-muted-foreground">
-                    {recipientCount || 0} destinataire{(recipientCount || 0) > 1 ? "s" : ""}
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="design" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Éditeur d'e-mail</CardTitle>
-              <CardDescription>
-                Créez le contenu de votre e-mail avec un template ou l'éditeur visuel
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="template">Utiliser un template</Label>
-                <Select 
-                  value={selectedTemplateId || ""} 
-                  onValueChange={(value) => {
-                    if (value === "blank") {
-                      setSelectedTemplateId(null);
-                      setHtmlContent("");
-                      handleOpenEditor();
-                    } else {
-                      handleTemplateSelected(value);
-                    }
-                  }}
-                >
-                  <SelectTrigger id="template">
-                    <SelectValue placeholder="Choisir un template ou partir de zéro" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="blank">Créer depuis zéro</SelectItem>
-                    {templates?.map((template) => (
-                      <SelectItem key={template.id} value={template.id}>
-                        {template.nom}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {htmlContent ? (
-                <div className="space-y-2">
-                  <Label>Contenu HTML</Label>
-                  <div className="border rounded-lg p-4 bg-muted/30 max-h-96 overflow-auto">
-                    <div 
-                      className="prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ __html: htmlContent }}
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={handleOpenEditor} className="flex-1">
-                      Modifier avec l'éditeur
-                    </Button>
-                    <Button variant="outline" onClick={() => setHtmlContent("")}>
-                      Effacer
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="border-2 border-dashed rounded-lg p-12 text-center">
-                  <p className="text-muted-foreground mb-4">
-                    Aucun contenu sélectionné
-                  </p>
-                  <Button onClick={handleOpenEditor}>
-                    Ouvrir l'éditeur visuel
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Onglet A/B Testing */}
-        <TabsContent value="abtest" className="space-y-6">
-          <ABTestConfig
-            settings={abTestSettings}
-            onSettingsChange={setAbTestSettings}
-            defaultSubject={formData.sujet_email}
-            defaultContent={htmlContent}
-          />
-
-          {abTestSettings.enabled && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  Vérification avant test
-                </CardTitle>
-                <CardDescription>
-                  Score de spam pour les deux variantes
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    Variante A
-                  </Badge>
-                  <SpamScoreCard
-                    subject={abTestSettings.testType !== 'content' ? abTestSettings.variantASubject : formData.sujet_email}
-                    htmlContent={abTestSettings.testType !== 'subject' ? abTestSettings.variantAContent : htmlContent}
-                    senderName={formData.expediteur_nom}
-                    senderEmail={formData.expediteur_email}
-                    className="border-blue-200"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                    Variante B
-                  </Badge>
-                  <SpamScoreCard
-                    subject={abTestSettings.testType !== 'content' ? abTestSettings.variantBSubject : formData.sujet_email}
-                    htmlContent={abTestSettings.testType !== 'subject' ? abTestSettings.variantBContent : htmlContent}
-                    senderName={formData.expediteur_nom}
-                    senderEmail={formData.expediteur_email}
-                    className="border-purple-200"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        <TabsContent value="envoi" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Paramètres d'envoi</CardTitle>
-              <CardDescription>
-                Choisissez le moment d'envoi de votre campagne
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <Label className="text-base font-semibold">Quand envoyer la campagne ?</Label>
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, whenToSend: "now" })}
-                    className={`flex flex-col items-center justify-center p-6 rounded-lg border-2 transition-all ${
-                      formData.whenToSend === "now"
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <Send className="h-8 w-8 mb-2" />
-                    <span className="font-medium">Envoyer maintenant</span>
-                    <span className="text-sm text-muted-foreground mt-1">Envoi immédiat</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, whenToSend: "schedule" })}
-                    className={`flex flex-col items-center justify-center p-6 rounded-lg border-2 transition-all ${
-                      formData.whenToSend === "schedule"
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <Calendar className="h-8 w-8 mb-2" />
-                    <span className="font-medium">Programmer l'envoi</span>
-                    <span className="text-sm text-muted-foreground mt-1">Choisir date et heure</span>
-                  </button>
-                </div>
-              </div>
-
-              {formData.whenToSend === "schedule" && (
-                <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/30">
-                  <div className="space-y-2">
-                    <Label htmlFor="scheduled-date">Date</Label>
-                    <Input
-                      id="scheduled-date"
-                      type="date"
-                      value={formData.scheduledDate}
-                      onChange={(e) => setFormData({ ...formData, scheduledDate: e.target.value })}
-                      min={new Date().toISOString().split("T")[0]}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="scheduled-time">Heure</Label>
-                    <Input
-                      id="scheduled-time"
-                      type="time"
-                      value={formData.scheduledTime}
-                      onChange={(e) => setFormData({ ...formData, scheduledTime: e.target.value })}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label>Envoyer un test à vos contacts de test</Label>
-                <Button 
-                  variant="outline"
-                  onClick={() => setIsTestDialogOpen(true)}
-                  disabled={!htmlContent || !formData.sujet_email || !formData.expediteur_nom || !formData.expediteur_email}
-                  className="w-full gap-2"
-                >
-                  <Mail className="h-4 w-4" />
-                  Envoyer un test
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  Vérifiez le rendu avant d'envoyer à tous vos contacts. Configurez vos contacts de test dans la page Contacts.
-                </p>
-              </div>
-
-              {/* Score de spam */}
-              <SpamScoreCard
-                subject={formData.sujet_email}
-                htmlContent={htmlContent}
-                senderName={formData.expediteur_nom}
-                senderEmail={formData.expediteur_email}
-              />
-
-              <div className="pt-4 border-t">
-                <h4 className="font-medium mb-2">Récapitulatif</h4>
-                <dl className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Destinataires :</dt>
-                    <dd className="font-medium">
-                      {recipientCount?.toLocaleString() || 0} contact{(recipientCount || 0) > 1 ? "s" : ""}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Envoi :</dt>
-                    <dd className="font-medium">
-                      {formData.whenToSend === "now" 
-                        ? "Immédiat" 
-                        : formData.scheduledDate && formData.scheduledTime
-                        ? new Date(`${formData.scheduledDate}T${formData.scheduledTime}`).toLocaleString("fr-FR")
-                        : "Non programmé"}
-                    </dd>
-                  </div>
-                  {abTestSettings.enabled && (
-                    <div className="flex justify-between">
-                      <dt className="text-muted-foreground">Test A/B :</dt>
-                      <dd className="font-medium">
-                        <Badge variant="secondary" className="gap-1">
-                          <FlaskConical className="h-3 w-3" />
-                          Activé ({abTestSettings.testPercentage}%)
-                        </Badge>
-                      </dd>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Contenu :</dt>
-                    <dd className="font-medium">
-                      {htmlContent ? (
-                        <Badge variant="default">Prêt</Badge>
-                      ) : (
-                        <Badge variant="secondary">Non défini</Badge>
-                      )}
-                    </dd>
-                  </div>
-                </dl>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="flex justify-between">
-            <Button variant="outline" onClick={() => setActiveTab("design")}>
-              Retour
-            </Button>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                className="gap-2"
-                onClick={handleSaveDraft}
-                disabled={saveMutation.isPending}
-              >
-                {saveMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4" />
-                )}
-                Enregistrer en brouillon
-              </Button>
-              <Button 
-                className="gap-2"
-                onClick={handleSend}
-                disabled={saveMutation.isPending}
-              >
-                {saveMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : formData.whenToSend === "schedule" ? (
-                  <Calendar className="h-4 w-4" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-                {formData.whenToSend === "schedule" ? "Programmer l'envoi" : "Envoyer maintenant"}
-              </Button>
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      {/* Dialog Aperçu */}
-      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
+      {/* Dialog Paramètres */}
+      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Aperçu de l'email</DialogTitle>
+            <DialogTitle>Paramètres de la campagne</DialogTitle>
             <DialogDescription>
-              Voici comment votre email apparaîtra pour vos destinataires
+              Configurez les informations de votre campagne
             </DialogDescription>
           </DialogHeader>
-          <div className="overflow-auto max-h-[70vh]">
-            <div className="border rounded-lg p-4 bg-white">
-              <div className="mb-4 pb-4 border-b">
-                <p className="text-sm text-muted-foreground">De: {formData.expediteur_nom} &lt;{formData.expediteur_email}&gt;</p>
-                <p className="text-sm text-muted-foreground">À: destinataire@example.com</p>
-                <p className="font-semibold mt-2">Sujet: {formData.sujet_email || "(Sujet non défini)"}</p>
-              </div>
-              <div 
-                className="prose prose-sm max-w-none"
-                dangerouslySetInnerHTML={{ __html: htmlContent || "<p>Aucun contenu</p>" }}
+          <div className="space-y-6 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="nom-campagne">Nom de la campagne *</Label>
+              <Input 
+                id="nom-campagne"
+                value={formData.nom_campagne}
+                onChange={(e) => {
+                  setFormData({ ...formData, nom_campagne: e.target.value });
+                  setHasUnsavedChanges(true);
+                }}
+                placeholder="Ex: Newsletter Janvier 2024"
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="sujet">Sujet de l'e-mail *</Label>
+              <Input 
+                id="sujet"
+                value={formData.sujet_email}
+                onChange={(e) => {
+                  setFormData({ ...formData, sujet_email: e.target.value });
+                  setHasUnsavedChanges(true);
+                }}
+                placeholder="Le sujet qui apparaîtra dans la boîte mail"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="expediteur-nom">Nom de l'expéditeur *</Label>
+                <Input 
+                  id="expediteur-nom"
+                  value={formData.expediteur_nom}
+                  onChange={(e) => {
+                    setFormData({ ...formData, expediteur_nom: e.target.value });
+                    setHasUnsavedChanges(true);
+                  }}
+                  placeholder="Votre entreprise"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="expediteur-email">Email de l'expéditeur *</Label>
+                <Input 
+                  id="expediteur-email"
+                  type="email"
+                  value={formData.expediteur_email}
+                  onChange={(e) => {
+                    setFormData({ ...formData, expediteur_email: e.target.value });
+                    setHasUnsavedChanges(true);
+                  }}
+                  placeholder="contact@entreprise.com"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="liste-cible">Liste de contacts *</Label>
+              <Select 
+                value={formData.list_id} 
+                onValueChange={(value) => {
+                  setFormData({ ...formData, list_id: value });
+                  setHasUnsavedChanges(true);
+                }}
+              >
+                <SelectTrigger id="liste-cible">
+                  <SelectValue placeholder="Sélectionnez une liste" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les contacts actifs</SelectItem>
+                  {lists?.map((list) => (
+                    <SelectItem key={list.id} value={list.id}>
+                      {list.nom}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={() => setIsSettingsOpen(false)}>
+              Fermer
+            </Button>
+            <Button onClick={() => {
+              saveMutation.mutate(true);
+              setIsSettingsOpen(false);
+            }}>
+              Enregistrer
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
 
+      {/* Dialog Test Email */}
       <TestEmailDialog
         open={isTestDialogOpen}
         onOpenChange={setIsTestDialogOpen}

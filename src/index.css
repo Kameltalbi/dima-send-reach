@@ -745,6 +745,40 @@ All colors MUST be HSL.
   margin-bottom: 10px;
 }
 
+/* Masquer les panneaux GrapesJS par défaut */
+.gjs-pn-panels {
+  display: none !important;
+}
+
+.gjs-pn-panel {
+  display: none !important;
+}
+
+.gjs-pn-devices-c {
+  display: none !important;
+}
+
+.gjs-pn-commands {
+  display: none !important;
+}
+
+.gjs-pn-options {
+  display: none !important;
+}
+
+.gjs-cv-canvas {
+  border: none !important;
+}
+
+/* Masquer la toolbar du canvas */
+.gjs-cv-toolbar {
+  display: none !important;
+}
+
+.gjs-cv-toolbar-c {
+  display: none !important;
+}
+
 /* Layers */
 .gjs-layer-item {
   padding: 8px;
