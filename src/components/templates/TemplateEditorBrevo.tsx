@@ -195,6 +195,10 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       panels: {
         defaults: []
       },
+      // Configurer le TraitsManager pour afficher les propriétés (href, etc.)
+      traitsManager: {
+        appendTo: "#grapesjs-traits-panel",
+      },
       // Configurer le styleManager
       styleManager: {
         sectors: [
@@ -360,6 +364,77 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
     
     editor.DomComponents.getType('default').model.prototype.defaults.toolbar = defaultToolbar;
 
+    // Configuration pour les composants de type "link" (boutons avec liens)
+    // Permettre l'édition de l'attribut href dans le panneau de propriétés
+    const linkType = editor.DomComponents.getType('link');
+    if (linkType) {
+      linkType.model.prototype.defaults.traits = [
+        {
+          type: 'text',
+          name: 'href',
+          label: 'Lien (URL)',
+          placeholder: 'https://exemple.com',
+          changeProp: 1, // Mettre à jour immédiatement
+        },
+        {
+          type: 'checkbox',
+          name: 'target',
+          label: 'Ouvrir dans un nouvel onglet',
+          changeProp: 1,
+        },
+      ];
+    }
+
+    // Alternative: Si le type "link" n'existe pas, configurer directement les éléments <a>
+    editor.DomComponents.addType('link', {
+      model: {
+        defaults: {
+          traits: [
+            {
+              type: 'text',
+              name: 'href',
+              label: 'Lien (URL)',
+              placeholder: 'https://exemple.com',
+              changeProp: 1,
+            },
+            {
+              type: 'checkbox',
+              name: 'target',
+              label: 'Ouvrir dans un nouvel onglet',
+              changeProp: 1,
+            },
+          ],
+        },
+      },
+    });
+
+    // S'assurer que les éléments <a> avec data-gjs-type="link" utilisent cette configuration
+    editor.on('component:add', (component: any) => {
+      if (component.get('tagName') === 'a' || component.get('type') === 'link') {
+        // Forcer le type à 'link' pour que les traits soient appliqués
+        if (component.get('tagName') === 'a') {
+          component.set('type', 'link');
+        }
+        if (!component.get('traits') || component.get('traits').length === 0) {
+          component.set('traits', [
+            {
+              type: 'text',
+              name: 'href',
+              label: 'Lien (URL)',
+              placeholder: 'https://exemple.com',
+              changeProp: 1,
+            },
+            {
+              type: 'checkbox',
+              name: 'target',
+              label: 'Ouvrir dans un nouvel onglet',
+              changeProp: 1,
+            },
+          ]);
+        }
+      }
+    });
+
     editorRef.current = editor;
 
     // Exposer une fonction pour récupérer le HTML actuel immédiatement
@@ -466,6 +541,33 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
 
     // S'assurer que tous les composants ont une toolbar
     editor.on('component:selected', (component: any) => {
+      // Si c'est un lien (<a>), s'assurer qu'il a les traits href et target
+      if (component.get('tagName') === 'a' || component.get('type') === 'link') {
+        // Forcer le type à 'link' pour que les traits soient appliqués
+        if (component.get('tagName') === 'a') {
+          component.set('type', 'link');
+        }
+        // Vérifier et ajouter les traits si nécessaire
+        const currentTraits = component.get('traits');
+        if (!currentTraits || currentTraits.length === 0) {
+          component.set('traits', [
+            {
+              type: 'text',
+              name: 'href',
+              label: 'Lien (URL)',
+              placeholder: 'https://exemple.com',
+              changeProp: 1,
+            },
+            {
+              type: 'checkbox',
+              name: 'target',
+              label: 'Ouvrir dans un nouvel onglet',
+              changeProp: 1,
+            },
+          ]);
+        }
+      }
+      
       const currentToolbar = component.get('toolbar');
       if (!currentToolbar || currentToolbar.length === 0) {
         component.set('toolbar', [
@@ -473,6 +575,28 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
           { attributes: { class: 'fa fa-clone', title: 'Dupliquer' }, command: 'tlb-clone' },
           { attributes: { class: 'fa fa-trash-o', title: 'Supprimer' }, command: 'tlb-delete' },
         ]);
+      }
+      
+      // S'assurer que les éléments <a> (boutons avec liens) ont les traits pour éditer le href
+      if (component.get('tagName') === 'a' || component.get('type') === 'link') {
+        const currentTraits = component.get('traits');
+        if (!currentTraits || currentTraits.length === 0) {
+          component.set('traits', [
+            {
+              type: 'text',
+              name: 'href',
+              label: 'Lien (URL)',
+              placeholder: 'https://exemple.com',
+              changeProp: 1,
+            },
+            {
+              type: 'checkbox',
+              name: 'target',
+              label: 'Ouvrir dans un nouvel onglet',
+              changeProp: 1,
+            },
+          ]);
+        }
       }
       
       component.set('editable', true);
@@ -910,7 +1034,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
   }, [initialContent, loadHtmlIntoEditor]);
 
   return (
-    <div className="relative">
+    <div className="relative h-full flex flex-col">
       {/* Bouton Aperçu flottant */}
       <Button
         onClick={handlePreview}
@@ -922,13 +1046,14 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
         Aperçu
       </Button>
 
-      <div 
+      <div
         ref={containerRef}
-        className="w-full min-h-[600px] grapesjs-dotted-bg"
+        className="w-full flex-1 grapesjs-dotted-bg"
         style={{ 
           backgroundColor: '#f8f9fa',
           backgroundImage: 'radial-gradient(circle, #cbd5e1 1px, transparent 1px)',
           backgroundSize: '20px 20px',
+          minHeight: 0,
         }}
       />
 

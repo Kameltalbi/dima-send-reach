@@ -1131,6 +1131,17 @@ const NouvelleCampagne = () => {
                 style={{ position: sidebarIcon === "style" ? "relative" : "absolute", left: "-9999px" }}
               ></div>
               
+              {/* Panneau de traits GrapesJS (pour éditer href, target, etc.) - toujours présent dans le DOM */}
+              <div 
+                id="grapesjs-traits-panel" 
+                className={`${sidebarIcon === "style" ? "block p-4 border-b" : "hidden"}`}
+                style={{ position: sidebarIcon === "style" ? "relative" : "absolute", left: "-9999px" }}
+              >
+                {sidebarIcon === "style" && (
+                  <h3 className="text-xs font-semibold text-foreground mb-3">Propriétés</h3>
+                )}
+              </div>
+              
               {sidebarIcon === "contenu" && sidebarTab === "blocs" && (
                 <div className="p-4 space-y-4">
                   {/* Bouton pour choisir un template */}
@@ -2243,11 +2254,9 @@ const NouvelleCampagne = () => {
             }}
           />
           
-          {/* Zone d'édition centrée */}
-          <div className="h-full overflow-auto p-8">
-            <div className={`mx-auto bg-white shadow-2xl transition-all ${
-              deviceView === "mobile" ? "max-w-sm" : "max-w-4xl"
-            }`}>
+          {/* Zone d'édition - pleine largeur */}
+          <div className="h-full overflow-auto">
+            <div className="bg-white shadow-2xl h-full flex flex-col w-full">
               <TemplateEditorBrevo
                 key={`editor-v${editorVersion}`}
                 initialContent={htmlContent}
