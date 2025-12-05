@@ -153,16 +153,9 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       panels: {
         defaults: []
       },
-      // Configurer le styleManager pour qu'il s'affiche dans la sidebar (optionnel)
-      styleManager: (() => {
-        const stylePanel = document.getElementById("grapesjs-style-panel");
-        if (!stylePanel) {
-          // Si le panneau n'existe pas encore, ne pas configurer le styleManager
-          return undefined;
-        }
-        return {
-          appendTo: stylePanel,
-          sectors: [
+      // Configurer le styleManager
+      styleManager: {
+        sectors: [
           {
             name: "Dimensions",
             open: true,
@@ -239,8 +232,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
             ],
           },
         ],
-        };
-      })(),
+      },
       // Masquer la toolbar du canvas
       canvas: {
         styles: [
@@ -359,26 +351,40 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       if (el) {
         const styles = component.getStyle();
         Object.keys(styles).forEach(prop => {
-          el.style[prop] = styles[prop];
+          const camelProp = prop.replace(/-([a-z])/g, (g: string) => g[1].toUpperCase());
+          el.style[camelProp] = styles[prop];
         });
       }
     });
 
-    // Écouter les changements de style du StyleManager
-    editor.on('style:property:update', (property: any, value: any) => {
+    // Écouter les changements de style du StyleManager - plusieurs événements
+    const applyStylesToElement = (component: any) => {
+      const el = component?.getEl();
+      if (el) {
+        const styles = component.getStyle();
+        Object.keys(styles).forEach(prop => {
+          const camelProp = prop.replace(/-([a-z])/g, (g: string) => g[1].toUpperCase());
+          el.style[camelProp] = styles[prop];
+        });
+        console.log("Styles appliqués:", styles);
+      }
+    };
+
+    editor.on('style:property:update', () => {
       const selected = editor.getSelected();
       if (selected) {
-        const el = selected.getEl();
-        if (el && property && property.get) {
-          const propName = property.get('property');
-          const propValue = property.getFullValue();
-          if (propName && propValue !== undefined) {
-            // Convertir le nom CSS en camelCase pour le style JS
-            const camelProp = propName.replace(/-([a-z])/g, (g: string) => g[1].toUpperCase());
-            el.style[camelProp] = propValue;
-            console.log(`Style appliqué: ${propName} = ${propValue}`);
-          }
-        }
+        applyStylesToElement(selected);
+      }
+    });
+
+    editor.on('component:update', (component: any) => {
+      applyStylesToElement(component);
+    });
+
+    // Écouter aussi style:target pour le changement de cible
+    editor.on('style:target', (target: any) => {
+      if (target) {
+        setTimeout(() => applyStylesToElement(target), 50);
       }
     });
     
@@ -405,6 +411,16 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
     // Attendre que l'éditeur soit complètement chargé avant de charger le contenu
     editor.on('load', () => {
       console.log("Événement 'load' de GrapesJS déclenché");
+      
+      // Rendre le StyleManager dans le panneau personnalisé
+      const stylePanel = document.getElementById("grapesjs-style-panel");
+      if (stylePanel) {
+        const sm = editor.StyleManager;
+        stylePanel.innerHTML = '';
+        stylePanel.appendChild(sm.render());
+        console.log("StyleManager rendu dans le panneau");
+      }
+      
       // Utiliser la ref pour avoir la dernière valeur de initialContent
       const contentToLoad = initialContentRef.current;
       console.log("Contenu à charger:", contentToLoad ? `${contentToLoad.length} caractères` : "aucun");
@@ -425,9 +441,26 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
         clearTimeout(saveTimeoutRef.current);
       }
       saveTimeoutRef.current = setTimeout(() => {
-        const html = editor.getHtml();
-        const css = editor.getCss();
-        const fullHtml = `<!DOCTYPE html>
+        // Utiliser gjs-get-inlined-html pour avoir les styles inline (important pour emails)
+        try {
+          const inlinedHtml = editor.Commands.run('gjs-get-inlined-html');
+          if (inlinedHtml) {
+            const fullHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  ${inlinedHtml}
+</body>
+</html>`;
+            onSave(fullHtml);
+          } else {
+            // Fallback si la commande n'existe pas
+            const html = editor.getHtml();
+            const css = editor.getCss();
+            const fullHtml = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -438,7 +471,25 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
   ${html}
 </body>
 </html>`;
-        onSave(fullHtml);
+            onSave(fullHtml);
+          }
+        } catch (e) {
+          console.warn("Erreur gjs-get-inlined-html, utilisation du fallback:", e);
+          const html = editor.getHtml();
+          const css = editor.getCss();
+          const fullHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>${css}</style>
+</head>
+<body>
+  ${html}
+</body>
+</html>`;
+          onSave(fullHtml);
+        }
       }, 500); // Debounce de 500ms
     });
 
