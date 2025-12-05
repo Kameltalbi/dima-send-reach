@@ -200,10 +200,6 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
           modalBtnImport: 'Importer',
         }
       },
-      // Désactiver les panneaux par défaut de GrapesJS
-      panels: {
-        defaults: []
-      },
       // Configurer le TraitsManager pour afficher les propriétés (href, etc.)
       traitManager: {
         appendTo: "#grapesjs-traits-panel",
