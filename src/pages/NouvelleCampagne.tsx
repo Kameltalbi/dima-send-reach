@@ -1143,11 +1143,37 @@ const NouvelleCampagne = () => {
                     </Button>
                   </div>
                   
-                  {/* Conteneur pour les blocs GrapesJS - drag & drop natif */}
+                  {/* Blocs disponibles */}
                   <div className="space-y-2">
                     <h3 className="text-xs font-semibold text-foreground">Blocs disponibles</h3>
-                    <p className="text-xs text-muted-foreground">Glissez-déposez les blocs dans l'éditeur</p>
-                    <div id="grapesjs-blocks-container" className="gjs-blocks-container"></div>
+                    <p className="text-xs text-muted-foreground mb-2">Sélectionnez un élément puis cliquez sur un bloc</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {contentBlocks.map((block) => {
+                        const Icon = block.icon;
+                        return (
+                          <div
+                            key={block.id}
+                            className="group relative bg-white border rounded-lg p-4 cursor-pointer hover:border-primary hover:shadow-md transition-all"
+                            onClick={() => {
+                              if (addBlockRef.current) {
+                                addBlockRef.current(block.id);
+                              } else {
+                                toast.error("L'éditeur n'est pas encore prêt");
+                              }
+                            }}
+                          >
+                            <div className="flex flex-col items-center gap-2">
+                              <Icon className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
+                              {block.label && (
+                                <span className="text-xs text-center text-muted-foreground font-medium group-hover:text-primary transition-colors">
+                                  {block.label}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               )}
