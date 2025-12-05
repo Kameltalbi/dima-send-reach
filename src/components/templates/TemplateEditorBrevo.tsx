@@ -1185,18 +1185,26 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
     let isProcessingDrop = false; // Flag pour éviter les doubles drops
     
     const handleDrop = (e: DragEvent) => {
-      // Vérifier si c'est un drop depuis notre sidebar (avec nos données personnalisées)
+      // Récupérer les données du drag
       const blockType = e.dataTransfer?.getData("block-type");
       const sectionHtml = e.dataTransfer?.getData("text/html");
       const sectionType = e.dataTransfer?.getData("section-type");
       
+      console.log("=== DROP EVENT ===");
+      console.log("blockType:", blockType);
+      console.log("sectionType:", sectionType);
+      console.log("sectionHtml length:", sectionHtml?.length || 0);
+      console.log("dataTransfer types:", Array.from(e.dataTransfer?.types || []));
+      
       // Si ce n'est pas un drop depuis notre sidebar, laisser GrapesJS gérer
       if (!blockType && !sectionHtml && !sectionType) {
+        console.log("Pas de données custom, GrapesJS gère le drop");
         return;
       }
       
       // Si on est déjà en train de traiter un drop, ignorer
       if (isProcessingDrop) {
+        console.log("Drop déjà en cours, ignoré");
         e.preventDefault();
         e.stopPropagation();
         return;
@@ -1206,14 +1214,18 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       e.stopPropagation();
       isProcessingDrop = true;
       
-      console.log("Drop détecté depuis sidebar - blockType:", blockType, "sectionHtml:", sectionHtml?.substring(0, 100));
+      // Retirer l'indicateur visuel
+      const frame = editor.Canvas?.getFrameEl();
+      if (frame) {
+        frame.style.outline = 'none';
+      }
+      
+      console.log("Drop traité depuis sidebar - blockType:", blockType, "sectionType:", sectionType);
       
       // Trouver le composant cible à la position du drop
-      let targetComponent = null;
       let insertIndex = -1;
       
       try {
-        const frame = editor.Canvas?.getFrameEl();
         if (frame && frame.contentDocument) {
           const dropX = e.clientX;
           const dropY = e.clientY;
@@ -1232,7 +1244,6 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
             for (let i = 0; i < allComponents.length; i++) {
               const comp = allComponents[i];
               if (comp.getEl() === elementAtPoint || comp.getEl()?.contains(elementAtPoint)) {
-                targetComponent = comp;
                 // Calculer si on doit insérer avant ou après
                 const compRect = comp.getEl()?.getBoundingClientRect();
                 if (compRect) {
@@ -1278,14 +1289,20 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
     };
 
     const handleDragOver = (e: DragEvent) => {
-      // Vérifier si c'est un drag depuis notre sidebar
-      const types = e.dataTransfer?.types || [];
-      const hasCustomData = types.includes("text/html") || types.includes("text/plain");
+      // Toujours permettre le drop dans la zone d'édition
+      e.preventDefault();
       
-      // Si c'est notre drag, empêcher le comportement par défaut
-      if (hasCustomData) {
-        e.preventDefault();
-        e.stopPropagation();
+      // Ajouter un indicateur visuel
+      const frame = editor.Canvas?.getFrameEl();
+      if (frame) {
+        frame.style.outline = '2px dashed #667eea';
+      }
+    };
+    
+    const handleDragLeave = (e: DragEvent) => {
+      const frame = editor.Canvas?.getFrameEl();
+      if (frame) {
+        frame.style.outline = 'none';
       }
     };
 
@@ -1293,6 +1310,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
     // Cela permet d'intercepter avant que GrapesJS ne traite l'événement
     containerRef.current?.addEventListener('drop', handleDrop, true);
     containerRef.current?.addEventListener('dragover', handleDragOver, true);
+    containerRef.current?.addEventListener('dragleave', handleDragLeave, true);
     
     // NE PAS attacher à l'iframe pour éviter les conflits avec GrapesJS
     // GrapesJS gère déjà le drop dans son canvas
@@ -1388,9 +1406,21 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
         case 'paiement':
           blockContent = '<a href="#" data-gjs-type="link" style="display: inline-block; padding: 14px 28px; background: #28a745; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: bold;">💳 Payer maintenant</a>';
           break;
+        case 'produit':
+          blockContent = '<div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;"><img src="https://via.placeholder.com/200x200?text=Produit" alt="Produit" style="max-width: 200px; height: auto; margin-bottom: 15px;" /><h3 style="margin: 0 0 10px 0; font-size: 18px;">Nom du produit</h3><p style="color: #667eea; font-weight: bold; margin: 0 0 15px 0;">29.99€</p><a href="#" style="display: inline-block; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 4px;">Acheter</a></div>';
+          break;
+        case 'navigation':
+          blockContent = '<div style="background: #f8f9fa; padding: 15px 20px; margin: 20px 0;"><nav style="display: flex; justify-content: center; gap: 30px;"><a href="#" style="color: #333; text-decoration: none; font-weight: 500;">Accueil</a><a href="#" style="color: #333; text-decoration: none; font-weight: 500;">Produits</a><a href="#" style="color: #333; text-decoration: none; font-weight: 500;">À propos</a><a href="#" style="color: #333; text-decoration: none; font-weight: 500;">Contact</a></nav></div>';
+          break;
+        case 'bloc-vide':
+          blockContent = '<div data-gjs-type="default" style="min-height: 100px; padding: 20px; margin: 20px 0; background: #fafafa; border: 2px dashed #ddd; display: flex; align-items: center; justify-content: center;"><span style="color: #999;">Zone vide - Déposez du contenu ici</span></div>';
+          break;
         default:
           blockContent = '<div data-gjs-type="text" style="padding: 20px;">Nouveau bloc</div>';
       }
+
+      console.log("addBlockToEditor appelé:", blockType, "insertIndex:", insertIndex);
+      console.log("blockContent:", blockContent.substring(0, 100));
 
       if (insertIndex >= 0) {
         wrapper.components().add(blockContent, { at: insertIndex });
@@ -1415,6 +1445,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       }
       containerRef.current?.removeEventListener('drop', handleDrop, true);
       containerRef.current?.removeEventListener('dragover', handleDragOver, true);
+      containerRef.current?.removeEventListener('dragleave', handleDragLeave, true);
       if (editorRef.current) {
         editorRef.current.destroy();
       }
