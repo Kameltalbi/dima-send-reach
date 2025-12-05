@@ -14,6 +14,12 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
   const editorRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const initialContentRef = useRef<string | undefined>(initialContent);
+  
+  // Garder la ref à jour avec la dernière valeur de initialContent
+  useEffect(() => {
+    initialContentRef.current = initialContent;
+  }, [initialContent]);
 
   // Fonction pour charger le HTML dans l'éditeur
   const loadHtmlIntoEditor = useCallback((editorInstance: any, html: string) => {
@@ -457,10 +463,14 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
     // Attendre que l'éditeur soit complètement chargé avant de charger le contenu
     editor.on('load', () => {
       console.log("Événement 'load' de GrapesJS déclenché");
+      // Utiliser la ref pour avoir la dernière valeur de initialContent
+      const contentToLoad = initialContentRef.current;
+      console.log("Contenu à charger:", contentToLoad ? `${contentToLoad.length} caractères` : "aucun");
+      
       // Charger le contenu initial une fois que l'éditeur est prêt
-      if (initialContent && initialContent.trim()) {
+      if (contentToLoad && contentToLoad.trim()) {
         console.log("Chargement du contenu initial depuis l'événement load");
-        loadHtmlIntoEditor(editor, initialContent);
+        loadHtmlIntoEditor(editor, contentToLoad);
       } else {
         console.log("Pas de contenu initial, chargement du template par défaut");
         setDefaultTemplate(editor);
