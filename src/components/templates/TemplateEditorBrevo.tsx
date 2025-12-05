@@ -136,7 +136,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
 
     const editor = grapesjs.init({
       container: containerRef.current,
-      height: "600px",
+      height: "100%",
       width: "100%",
       storageManager: false,
       // Forcer les styles inline pour les emails
@@ -761,7 +761,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
   return (
     <div 
       ref={containerRef}
-      className="w-full min-h-[600px]"
+      className="w-full h-full min-h-[calc(100vh-200px)]"
       style={{ 
         backgroundColor: '#ffffff',
       }}
