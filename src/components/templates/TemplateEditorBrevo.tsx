@@ -331,41 +331,67 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       // Ajouter des styles personnalisés pour le canvas avec fond à points
       cssIcons: '',
       blockManager: {
+        appendTo: '#grapesjs-blocks-container',
         blocks: [
           {
-            id: 'section',
-            label: 'Section',
-            category: 'Layout',
-            content: '<div data-gjs-type="section" style="padding: 20px; background: #ffffff;"></div>',
-          },
-          {
-            id: 'column',
-            label: 'Colonne',
-            category: 'Layout',
-            content: '<div data-gjs-type="column" style="padding: 10px;"></div>',
-          },
-          {
-            id: 'text',
-            label: 'Texte',
+            id: 'titre',
+            label: '<div class="gjs-block-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16"/><path d="M4 18V6"/><path d="M20 18V6"/></svg><span>Titre</span></div>',
             category: 'Contenu',
-            content: '<div data-gjs-type="text">Votre texte ici</div>',
+            content: '<h1 data-gjs-type="text" style="font-size: 32px; font-weight: 700; margin: 20px 0; color: #333;">Votre titre</h1>',
+          },
+          {
+            id: 'texte',
+            label: '<div class="gjs-block-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 6.1H3"/><path d="M21 12.1H3"/><path d="M15.1 18H3"/></svg><span>Texte</span></div>',
+            category: 'Contenu',
+            content: '<p data-gjs-type="text" style="font-size: 16px; line-height: 1.6; margin: 20px 0; color: #333;">Votre texte ici</p>',
           },
           {
             id: 'image',
-            label: 'Image',
+            label: '<div class="gjs-block-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg><span>Image</span></div>',
             category: 'Contenu',
-            content: {
-              type: 'image',
-              style: { 'max-width': '100%', 'height': 'auto', 'display': 'block' },
-              resizable: true,
-            },
-            activate: true,
+            content: '<img src="https://via.placeholder.com/600x300" alt="Image" style="max-width: 100%; height: auto; display: block; margin: 20px auto;" />',
           },
           {
-            id: 'button',
-            label: 'Bouton',
+            id: 'bouton',
+            label: '<div class="gjs-block-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="10" x="3" y="7" rx="2"/></svg><span>Bouton</span></div>',
             category: 'Contenu',
-            content: '<a href="#" data-gjs-type="link" style="display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 6px;">Cliquez ici</a>',
+            content: '<a href="#" data-gjs-type="link" style="display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0;">Bouton</a>',
+          },
+          {
+            id: 'video',
+            label: '<div class="gjs-block-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="6 3 20 12 6 21 6 3"/></svg><span>Video</span></div>',
+            category: 'Contenu',
+            content: '<div style="position: relative; padding-bottom: 56.25%; height: 0; margin: 20px 0;"><iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" frameborder="0" allowfullscreen></iframe></div>',
+          },
+          {
+            id: 'logo',
+            label: '<div class="gjs-block-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 9h6v6H9z"/></svg><span>Logo</span></div>',
+            category: 'Contenu',
+            content: '<img src="https://via.placeholder.com/200x80?text=Logo" alt="Logo" style="max-width: 200px; height: auto; display: block; margin: 20px auto;" />',
+          },
+          {
+            id: 'social',
+            label: '<div class="gjs-block-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg><span>Social</span></div>',
+            category: 'Contenu',
+            content: '<div style="text-align: center; margin: 20px 0;"><a href="#" style="margin: 0 10px; display: inline-block;"><img src="https://via.placeholder.com/32x32?text=f" alt="Facebook" /></a><a href="#" style="margin: 0 10px; display: inline-block;"><img src="https://via.placeholder.com/32x32?text=t" alt="Twitter" /></a><a href="#" style="margin: 0 10px; display: inline-block;"><img src="https://via.placeholder.com/32x32?text=in" alt="LinkedIn" /></a></div>',
+          },
+          {
+            id: 'html',
+            label: '<div class="gjs-block-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg><span>HTML</span></div>',
+            category: 'Contenu',
+            content: '<div data-gjs-type="text" style="padding: 20px; background: #f5f5f5; border: 1px dashed #ccc; margin: 20px 0;">Code HTML personnalisé</div>',
+          },
+          {
+            id: 'diviseur',
+            label: '<div class="gjs-block-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18"/></svg><span>Diviseur</span></div>',
+            category: 'Contenu',
+            content: '<hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;"/>',
+          },
+          {
+            id: 'paiement',
+            label: '<div class="gjs-block-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg><span>Paiement</span></div>',
+            category: 'Contenu',
+            content: '<a href="#" data-gjs-type="link" style="display: inline-block; padding: 14px 28px; background: #28a745; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: bold;">💳 Payer maintenant</a>',
           },
         ],
       },
@@ -1242,8 +1268,20 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       // Rendre le BlockManager visible après le chargement
       const bm = editor.BlockManager;
       if (bm) {
-        bm.render();
-        console.log("BlockManager rendu");
+        // Attendre que le conteneur externe soit prêt
+        setTimeout(() => {
+          const container = document.getElementById('grapesjs-blocks-container');
+          if (container) {
+            const blocksEl = bm.render();
+            container.innerHTML = '';
+            container.appendChild(blocksEl);
+            console.log("BlockManager rendu dans le conteneur externe");
+          } else {
+            console.warn("Conteneur grapesjs-blocks-container non trouvé");
+            // Fallback: rendre quand même
+            bm.render();
+          }
+        }, 100);
       }
     });
 

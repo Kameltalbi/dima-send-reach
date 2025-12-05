@@ -1143,47 +1143,11 @@ const NouvelleCampagne = () => {
                     </Button>
                   </div>
                   
-                  {/* Blocs disponibles */}
+                  {/* Conteneur pour les blocs GrapesJS - drag & drop natif */}
                   <div className="space-y-2">
                     <h3 className="text-xs font-semibold text-foreground">Blocs disponibles</h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      {contentBlocks.map((block) => {
-                        const Icon = block.icon;
-                        return (
-                          <div
-                            key={block.id}
-                            className="group relative bg-white border rounded-lg p-4 cursor-pointer hover:border-primary hover:shadow-md transition-all"
-                            draggable
-                            onDragStart={(e) => {
-                              e.dataTransfer.setData("block-type", block.id);
-                            }}
-                            onClick={() => {
-                              if (addBlockRef.current) {
-                                addBlockRef.current(block.id);
-                              } else {
-                                toast.error("L'éditeur n'est pas encore prêt");
-                              }
-                            }}
-                          >
-                            <div className="flex flex-col items-center gap-2">
-                              <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <div className="w-4 h-4 flex items-center justify-center">
-                                  <div className="w-1 h-1 bg-muted-foreground rounded-full"></div>
-                                  <div className="w-1 h-1 bg-muted-foreground rounded-full mx-0.5"></div>
-                                  <div className="w-1 h-1 bg-muted-foreground rounded-full"></div>
-                                </div>
-                              </div>
-                              <Icon className="h-8 w-8 text-muted-foreground" />
-                              {block.label && (
-                                <span className="text-xs text-center text-muted-foreground font-medium">
-                                  {block.label}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <p className="text-xs text-muted-foreground">Glissez-déposez les blocs dans l'éditeur</p>
+                    <div id="grapesjs-blocks-container" className="gjs-blocks-container"></div>
                   </div>
                 </div>
               )}
