@@ -1051,6 +1051,16 @@ All colors MUST be HSL.
   color: inherit !important;
 }
 
+/* Style pour l'icône de lien dans la toolbar */
+.gjs-link-btn {
+  color: white !important;
+}
+
+.gjs-link-btn:hover {
+  background: hsl(var(--primary)) !important;
+  color: white !important;
+}
+
 /* Component resizer */
 .gjs-resizer-c {
   z-index: 99 !important;

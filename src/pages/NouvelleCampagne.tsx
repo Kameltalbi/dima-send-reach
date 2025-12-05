@@ -51,7 +51,8 @@ import {
   Mail,
   HelpCircle,
   GripVertical,
-  X as XIcon
+  X as XIcon,
+  RectangleHorizontal
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Toggle } from "@/components/ui/toggle";
@@ -943,7 +944,7 @@ const NouvelleCampagne = () => {
     { id: "texte", label: "Texte", icon: FileText, category: "contenu" },
     { id: "image", label: "Image", icon: ImageIcon, category: "contenu" },
     { id: "video", label: "Video", icon: Play, category: "contenu" },
-    { id: "bouton", label: "Bouton", icon: MousePointerClick, category: "contenu" },
+    { id: "bouton", label: "Bouton", icon: RectangleHorizontal, category: "contenu" },
     { id: "logo", label: "Logo", icon: ImageIcon, category: "contenu" },
     { id: "social", label: "Social", icon: Link2, category: "contenu" },
     { id: "html", label: "HTML", icon: Code, category: "contenu" },
@@ -1132,15 +1133,21 @@ const NouvelleCampagne = () => {
               ></div>
               
               {/* Panneau de traits GrapesJS (pour éditer href, target, etc.) - toujours présent dans le DOM */}
-              <div 
-                id="grapesjs-traits-panel" 
-                className={`${sidebarIcon === "style" ? "block p-4 border-b" : "hidden"}`}
-                style={{ position: sidebarIcon === "style" ? "relative" : "absolute", left: "-9999px" }}
-              >
-                {sidebarIcon === "style" && (
+              {sidebarIcon === "style" && (
+                <div className="p-4 border-b">
                   <h3 className="text-xs font-semibold text-foreground mb-3">Propriétés</h3>
-                )}
-              </div>
+                  <div 
+                    id="grapesjs-traits-panel" 
+                    className="block"
+                  ></div>
+                </div>
+              )}
+              {/* Panneau caché pour que GrapesJS puisse toujours l'utiliser */}
+              <div 
+                id="grapesjs-traits-panel-hidden" 
+                className="hidden"
+                style={{ position: "absolute", left: "-9999px" }}
+              ></div>
               
               {sidebarIcon === "contenu" && sidebarTab === "blocs" && (
                 <div className="p-4 space-y-4">

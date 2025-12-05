@@ -3,13 +3,16 @@ import { toast } from "sonner";
 import grapesjs from "grapesjs";
 import "grapesjs/dist/css/grapes.min.css";
 import newsletterPreset from "grapesjs-preset-newsletter";
-import { Eye, X, Monitor, Smartphone } from "lucide-react";
+import { Eye, X, Monitor, Smartphone, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 
 interface TemplateEditorBrevoProps {
@@ -27,6 +30,10 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
   const [showPreview, setShowPreview] = useState(false);
   const [previewHtml, setPreviewHtml] = useState("");
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [selectedComponent, setSelectedComponent] = useState<any>(null);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkTarget, setLinkTarget] = useState(false);
 
   const handlePreview = useCallback(() => {
     if (editorRef.current) {
@@ -437,6 +444,19 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
 
     editorRef.current = editor;
 
+    // Vérifier que le TraitsManager est bien initialisé
+    setTimeout(() => {
+      const traitsManager = editor.Traits;
+      const traitsPanel = document.getElementById('grapesjs-traits-panel');
+      console.log('TraitsManager:', traitsManager);
+      console.log('Panneau de traits:', traitsPanel);
+      if (traitsManager && traitsPanel) {
+        console.log('TraitsManager et panneau trouvés');
+      } else {
+        console.warn('TraitsManager ou panneau non trouvé');
+      }
+    }, 500);
+
     // Exposer une fonction pour récupérer le HTML actuel immédiatement
     const getCurrentHtml = () => {
       const currentEditor = editorRef.current;
@@ -516,6 +536,57 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       }
     });
 
+    // Fonction helper pour trouver récursivement un élément <a> dans un composant
+    // Utiliser function au lieu de const pour le hoisting
+    function findLinkInComponent(comp: any): any {
+      if (!comp) return null;
+      if (comp.get && typeof comp.get === 'function') {
+        if (comp.get('tagName') === 'a' || comp.get('type') === 'link') {
+          return comp;
+        }
+      }
+      // Chercher dans les enfants
+      try {
+        if (comp.components && typeof comp.components === 'function') {
+          const children = comp.components();
+          if (children && children.length && children.length > 0) {
+            for (let i = 0; i < children.length; i++) {
+              const child = children.at(i);
+              const found = findLinkInComponent(child);
+              if (found) return found;
+            }
+          }
+        }
+      } catch (e) {
+        // Ignorer les erreurs
+      }
+      return null;
+    }
+
+    // Commande pour ouvrir le dialog de lien
+    editor.Commands.add('open-link-dialog', {
+      run(ed: any, sender: any, options: any) {
+        let component = options?.component;
+        
+        // Si pas de composant fourni, chercher dans le composant sélectionné
+        if (!component) {
+          const selected = ed.getSelected();
+          component = findLinkInComponent(selected);
+        }
+        
+        if (component && (component.get('tagName') === 'a' || component.get('type') === 'link')) {
+          console.log('Ouverture du dialog de lien pour:', component.get('tagName'));
+          setSelectedComponent(component);
+          setLinkUrl(component.getAttributes().href || '');
+          setLinkTarget(component.getAttributes().target === '_blank');
+          setLinkDialogOpen(true);
+        } else {
+          console.warn('Aucun lien trouvé pour ouvrir le dialog');
+          toast.error('Aucun lien trouvé dans ce composant');
+        }
+      }
+    });
+
     // Double-click sur image ouvre asset manager
     editor.on('component:dblclick', (component: any) => {
       if (component.get('type') === 'image') {
@@ -547,57 +618,66 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
         if (component.get('tagName') === 'a') {
           component.set('type', 'link');
         }
-        // Vérifier et ajouter les traits si nécessaire
-        const currentTraits = component.get('traits');
-        if (!currentTraits || currentTraits.length === 0) {
-          component.set('traits', [
-            {
-              type: 'text',
-              name: 'href',
-              label: 'Lien (URL)',
-              placeholder: 'https://exemple.com',
-              changeProp: 1,
-            },
-            {
-              type: 'checkbox',
-              name: 'target',
-              label: 'Ouvrir dans un nouvel onglet',
-              changeProp: 1,
-            },
-          ]);
-        }
-      }
-      
-      const currentToolbar = component.get('toolbar');
-      if (!currentToolbar || currentToolbar.length === 0) {
-        component.set('toolbar', [
-          { attributes: { class: 'fa fa-arrows', draggable: true, title: 'Déplacer' }, command: 'tlb-move' },
-          { attributes: { class: 'fa fa-clone', title: 'Dupliquer' }, command: 'tlb-clone' },
-          { attributes: { class: 'fa fa-trash-o', title: 'Supprimer' }, command: 'tlb-delete' },
+        // Toujours forcer les traits pour les liens
+        component.set('traits', [
+          {
+            type: 'text',
+            name: 'href',
+            label: 'Lien (URL)',
+            placeholder: 'https://exemple.com',
+            changeProp: 1,
+          },
+          {
+            type: 'checkbox',
+            name: 'target',
+            label: 'Ouvrir dans un nouvel onglet',
+            changeProp: 1,
+          },
         ]);
+        
+        console.log('Traits appliqués au bouton:', component.get('traits'));
+        
+        // Forcer la mise à jour du TraitsManager
+        setTimeout(() => {
+          const traitsManager = editor.Traits;
+          if (traitsManager) {
+            console.log('Mise à jour du TraitsManager');
+            traitsManager.update();
+          } else {
+            console.warn('TraitsManager non trouvé');
+          }
+        }, 100);
       }
       
-      // S'assurer que les éléments <a> (boutons avec liens) ont les traits pour éditer le href
-      if (component.get('tagName') === 'a' || component.get('type') === 'link') {
-        const currentTraits = component.get('traits');
-        if (!currentTraits || currentTraits.length === 0) {
-          component.set('traits', [
-            {
-              type: 'text',
-              name: 'href',
-              label: 'Lien (URL)',
-              placeholder: 'https://exemple.com',
-              changeProp: 1,
-            },
-            {
-              type: 'checkbox',
-              name: 'target',
-              label: 'Ouvrir dans un nouvel onglet',
-              changeProp: 1,
-            },
-          ]);
-        }
+      // Utiliser la fonction helper définie plus haut
+
+      // Configurer la toolbar selon le type de composant
+      let toolbarConfig = [
+        { attributes: { class: 'fa fa-arrows', draggable: true, title: 'Déplacer' }, command: 'tlb-move' },
+        { attributes: { class: 'fa fa-clone', title: 'Dupliquer' }, command: 'tlb-clone' },
+        { attributes: { class: 'fa fa-trash-o', title: 'Supprimer' }, command: 'tlb-delete' },
+      ];
+
+      // Chercher un élément <a> dans le composant sélectionné ou ses enfants
+      const linkComponent = findLinkInComponent(component);
+      
+      // Ajouter l'icône de lien si on trouve un lien
+      if (linkComponent) {
+        console.log('Lien trouvé dans le composant:', linkComponent.get('tagName'), linkComponent.get('type'));
+        toolbarConfig.unshift({
+          attributes: { 
+            class: 'gjs-link-btn fa fa-link', 
+            title: 'Modifier le lien',
+            style: 'cursor: pointer;'
+          }, 
+          command: 'open-link-dialog',
+          commandOptions: { component: linkComponent }
+        });
+      } else {
+        console.log('Aucun lien trouvé. tagName:', component.get('tagName'), 'type:', component.get('type'));
       }
+
+      component.set('toolbar', toolbarConfig);
       
       component.set('editable', true);
       component.set('selectable', true);
@@ -618,8 +698,11 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
 
     // Écouter les changements de style du StyleManager - plusieurs événements
     const applyStylesToElement = (component: any) => {
-      const el = component?.getEl();
-      if (el) {
+      if (!component || typeof component.getEl !== 'function') {
+        return;
+      }
+      const el = component.getEl();
+      if (el && typeof component.getStyle === 'function') {
         const styles = component.getStyle();
         Object.keys(styles).forEach(prop => {
           const camelProp = prop.replace(/-([a-z])/g, (g: string) => g[1].toUpperCase());
@@ -1033,6 +1116,27 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
     return () => clearTimeout(timer);
   }, [initialContent, loadHtmlIntoEditor]);
 
+  // Fonction pour sauvegarder le lien
+  const handleLinkSave = () => {
+    if (selectedComponent && editorRef.current) {
+      const attributes: any = {};
+      if (linkUrl.trim()) {
+        attributes.href = linkUrl.trim();
+      } else {
+        attributes.href = '#';
+      }
+      if (linkTarget) {
+        attributes.target = '_blank';
+      } else {
+        attributes.target = '';
+      }
+      selectedComponent.setAttributes(attributes);
+      editorRef.current.refresh();
+      setLinkDialogOpen(false);
+      toast.success('Lien mis à jour');
+    }
+  };
+
   return (
     <div className="relative h-full flex flex-col">
       {/* Bouton Aperçu flottant */}
@@ -1056,6 +1160,56 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
           minHeight: 0,
         }}
       />
+
+      {/* Dialog pour modifier le lien */}
+      <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifier le lien</DialogTitle>
+            <DialogDescription>
+              Entrez l'URL du lien pour ce bouton
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="link-url">URL du lien</Label>
+              <Input
+                id="link-url"
+                type="url"
+                placeholder="https://exemple.com"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleLinkSave();
+                  }
+                }}
+                autoFocus
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="link-target"
+                checked={linkTarget}
+                onChange={(e) => setLinkTarget(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              <Label htmlFor="link-target" className="text-sm font-normal cursor-pointer">
+                Ouvrir dans un nouvel onglet
+              </Label>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setLinkDialogOpen(false)}>
+                Annuler
+              </Button>
+              <Button onClick={handleLinkSave}>
+                Enregistrer
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal d'aperçu */}
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
