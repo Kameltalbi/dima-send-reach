@@ -193,6 +193,28 @@ serve(async (req) => {
       throw new Error("Vous n'avez pas l'autorisation d'envoyer cette campagne");
     }
 
+    // Récupérer les variantes A/B si la campagne en a
+    let variants: any[] = [];
+    let winnerVariant: any = null;
+    if (campaign.is_ab_test) {
+      const { data: variantsData, error: variantsError } = await supabaseClient
+        .from("campaign_variants")
+        .select("*")
+        .eq("campaign_id", campaignId)
+        .order("variant_name");
+
+      if (variantsError) {
+        console.error("Erreur lors de la récupération des variantes:", variantsError);
+      } else if (variantsData) {
+        variants = variantsData;
+        
+        // Si un gagnant a été sélectionné, le récupérer
+        if (campaign.ab_test_winner_variant_id) {
+          winnerVariant = variants.find((v: any) => v.id === campaign.ab_test_winner_variant_id);
+        }
+      }
+    }
+
     // Compter d'abord le total de destinataires pour vérifier le quota
     const { count: totalRecipientsCount, error: countError } = await supabaseClient
       .from("campaign_recipients")
@@ -257,7 +279,7 @@ serve(async (req) => {
     while (offset < totalRecipientsCount) {
       console.log(`Processing batch: ${offset} to ${offset + PROCESSING_BATCH_SIZE - 1}`);
 
-      // Récupérer un batch de destinataires
+      // Récupérer un batch de destinataires (inclure variant_id pour A/B)
       const { data: recipients, error: recipientsError } = await supabaseClient
         .from("campaign_recipients")
         .select("*, contacts(*)")
@@ -342,8 +364,39 @@ serve(async (req) => {
             continue;
           }
 
+          // Déterminer la variante à utiliser pour ce destinataire
+          let variantToUse: any = null;
+          let subjectToUse = campaign.sujet_email;
+          let htmlToUse = campaign.html_contenu || "";
+
+          if (campaign.is_ab_test && variants.length > 0) {
+            // Si le destinataire a un variant_id assigné, utiliser cette variante
+            if (recipient.variant_id) {
+              variantToUse = variants.find((v: any) => v.id === recipient.variant_id);
+            } 
+            // Si pas de variant_id mais qu'un gagnant a été sélectionné, utiliser le gagnant
+            else if (winnerVariant) {
+              variantToUse = winnerVariant;
+            }
+            // Sinon, utiliser la première variante par défaut (pour les tests en cours)
+            else if (variants.length > 0) {
+              variantToUse = variants[0];
+            }
+
+            if (variantToUse) {
+              // Utiliser le sujet de la variante si le test porte sur le sujet ou les deux
+              if (campaign.ab_test_type === "subject" || campaign.ab_test_type === "both") {
+                subjectToUse = variantToUse.sujet_email || campaign.sujet_email;
+              }
+              // Utiliser le contenu de la variante si le test porte sur le contenu ou les deux
+              if (campaign.ab_test_type === "content" || campaign.ab_test_type === "both") {
+                htmlToUse = variantToUse.html_contenu || campaign.html_contenu || "";
+              }
+            }
+          }
+
           // Prepare HTML with tracking
-          let trackedHtml = campaign.html_contenu || "";
+          let trackedHtml = htmlToUse;
           
           // 1. Add open tracking pixel
           const trackOpenUrl = `${SUPABASE_URL}/functions/v1/track-open?r=${recipient.id}`;
@@ -389,7 +442,7 @@ serve(async (req) => {
             to_email: email,
             from_name: campaign.expediteur_nom,
             from_email: campaign.expediteur_email,
-            subject: campaign.sujet_email,
+            subject: subjectToUse,
             html: trackedHtml,
             status: 'pending',
             attempts: 0,

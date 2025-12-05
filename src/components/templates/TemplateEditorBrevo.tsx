@@ -555,13 +555,31 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
     });
 
     // Gérer le drag and drop depuis la sidebar
+    let isProcessingDrop = false; // Flag pour éviter les doubles drops
+    
     const handleDrop = (e: DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+      // Vérifier si c'est un drop depuis notre sidebar (avec nos données personnalisées)
       const blockType = e.dataTransfer?.getData("block-type");
       const sectionHtml = e.dataTransfer?.getData("text/html");
+      const sectionType = e.dataTransfer?.getData("section-type");
       
-      console.log("Drop détecté - blockType:", blockType, "sectionHtml:", sectionHtml?.substring(0, 100));
+      // Si ce n'est pas un drop depuis notre sidebar, laisser GrapesJS gérer
+      if (!blockType && !sectionHtml && !sectionType) {
+        return;
+      }
+      
+      // Si on est déjà en train de traiter un drop, ignorer
+      if (isProcessingDrop) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      
+      e.preventDefault();
+      e.stopPropagation();
+      isProcessingDrop = true;
+      
+      console.log("Drop détecté depuis sidebar - blockType:", blockType, "sectionHtml:", sectionHtml?.substring(0, 100));
       
       // Trouver le composant cible à la position du drop
       let targetComponent = null;
@@ -603,54 +621,54 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
         console.warn("Erreur lors de la détection de position:", err);
       }
       
-      if (sectionHtml && editor) {
-        // Ajouter une section complète
-        try {
-          const wrapper = editor.getWrapper();
-          if (insertIndex >= 0) {
-            wrapper.components().add(sectionHtml, { at: insertIndex });
-          } else {
-            wrapper.components().add(sectionHtml);
+      // Utiliser setTimeout pour s'assurer que le drop n'est traité qu'une fois
+      setTimeout(() => {
+        if (sectionHtml && editor) {
+          // Ajouter une section complète
+          try {
+            const wrapper = editor.getWrapper();
+            if (insertIndex >= 0) {
+              wrapper.components().add(sectionHtml, { at: insertIndex });
+            } else {
+              wrapper.components().add(sectionHtml);
+            }
+            editor.refresh();
+            toast.success("Section ajoutée avec succès");
+          } catch (error) {
+            console.error("Error adding section:", error);
+            toast.error("Erreur lors de l'ajout de la section");
           }
-          editor.refresh();
-          toast.success("Section ajoutée avec succès");
-        } catch (error) {
-          console.error("Error adding section:", error);
-          toast.error("Erreur lors de l'ajout de la section");
+        } else if (blockType && editor) {
+          // Ajouter un bloc simple à la position détectée
+          addBlockToEditor(editor, blockType, insertIndex);
         }
-      } else if (blockType && editor) {
-        // Ajouter un bloc simple à la position détectée
-        addBlockToEditor(editor, blockType, insertIndex);
-      }
+        
+        // Réinitialiser le flag après un court délai
+        setTimeout(() => {
+          isProcessingDrop = false;
+        }, 100);
+      }, 10);
     };
 
     const handleDragOver = (e: DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+      // Vérifier si c'est un drag depuis notre sidebar
+      const types = e.dataTransfer?.types || [];
+      const hasCustomData = types.includes("text/html") || types.includes("text/plain");
+      
+      // Si c'est notre drag, empêcher le comportement par défaut
+      if (hasCustomData) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
     };
 
-    // Attacher les événements au conteneur
-    containerRef.current?.addEventListener('drop', handleDrop);
-    containerRef.current?.addEventListener('dragover', handleDragOver);
+    // Attacher les événements uniquement au conteneur principal avec useCapture
+    // Cela permet d'intercepter avant que GrapesJS ne traite l'événement
+    containerRef.current?.addEventListener('drop', handleDrop, true);
+    containerRef.current?.addEventListener('dragover', handleDragOver, true);
     
-    // Attacher aussi à l'iframe du canvas GrapesJS
-    setTimeout(() => {
-      try {
-        const frame = editor.Canvas?.getFrameEl();
-        if (frame) {
-          frame.addEventListener('dragover', handleDragOver);
-          frame.addEventListener('drop', handleDrop);
-          
-          // Aussi sur le document de l'iframe
-          if (frame.contentDocument) {
-            frame.contentDocument.addEventListener('dragover', handleDragOver);
-            frame.contentDocument.addEventListener('drop', handleDrop);
-          }
-        }
-      } catch (e) {
-        console.warn("Erreur lors de l'attachement des événements à l'iframe:", e);
-      }
-    }, 500);
+    // NE PAS attacher à l'iframe pour éviter les conflits avec GrapesJS
+    // GrapesJS gère déjà le drop dans son canvas
 
     function setDefaultTemplate(editorInstance: any) {
       // Vérifier que l'éditeur est prêt avant d'appeler getComponents
@@ -757,8 +775,8 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
-      containerRef.current?.removeEventListener('drop', handleDrop);
-      containerRef.current?.removeEventListener('dragover', handleDragOver);
+      containerRef.current?.removeEventListener('drop', handleDrop, true);
+      containerRef.current?.removeEventListener('dragover', handleDragOver, true);
       if (editorRef.current) {
         editorRef.current.destroy();
       }

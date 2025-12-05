@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -13,7 +15,6 @@ import {
   FileText,
   Search,
   Mail,
-  Layout,
   Filter,
   Grid3x3,
   List,
@@ -22,15 +23,16 @@ import {
   Copy,
   Trash2,
   Clock,
-  Tag,
   ChevronDown,
   ArrowRight,
-  Menu
+  Menu,
+  Loader2,
+  Code,
+  Save
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { TemplateEditor } from "@/components/templates/TemplateEditor";
-import { useSeedTemplates } from "@/hooks/useSeedTemplates";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,27 +51,41 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useNavigate } from "react-router-dom";
 
 export default function Templates() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState("saved");
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState<"recent" | "name" | "type">("recent");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<any>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { seedTemplates } = useSeedTemplates();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+
+  // États pour le formulaire de création
+  const [newTemplateName, setNewTemplateName] = useState("");
+  const [newTemplateDescription, setNewTemplateDescription] = useState("");
+  const [newTemplateType, setNewTemplateType] = useState("newsletter");
+  const [newTemplateHtml, setNewTemplateHtml] = useState("");
 
   const { data: templates, isLoading, refetch } = useQuery({
     queryKey: ["templates"],
@@ -81,6 +97,45 @@ export default function Templates() {
 
       if (error) throw error;
       return data;
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("Non authentifié");
+
+      if (!newTemplateName.trim()) {
+        throw new Error("Le nom du template est obligatoire");
+      }
+
+      if (!newTemplateHtml.trim()) {
+        throw new Error("Le contenu HTML est obligatoire");
+      }
+
+      const { error } = await supabase.from("templates").insert({
+        user_id: userData.user.id,
+        nom: newTemplateName.trim(),
+        description: newTemplateDescription.trim() || null,
+        type: newTemplateType,
+        content_html: newTemplateHtml.trim(),
+        content_json: {},
+      });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["templates"] });
+      toast.success("Template créé avec succès");
+      setShowCreateDialog(false);
+      // Réinitialiser le formulaire
+      setNewTemplateName("");
+      setNewTemplateDescription("");
+      setNewTemplateType("newsletter");
+      setNewTemplateHtml("");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Erreur lors de la création du template");
     },
   });
 
@@ -111,7 +166,7 @@ export default function Templates() {
         description: template.description,
         type: template.type,
         content_html: template.content_html,
-        content_json: template.content_json,
+        content_json: template.content_json || {},
       });
 
       if (error) throw error;
@@ -125,43 +180,438 @@ export default function Templates() {
     },
   });
 
-  const handleCreateNew = () => {
-    setSelectedTemplateId(null);
-    setIsEditorOpen(true);
-    setShowCreateModal(false);
-  };
-
-  const handleUseTemplate = (templateId: string) => {
-    setSelectedTemplateId(templateId);
-    setIsEditorOpen(true);
-    setShowCreateModal(false);
-  };
-
-  const handleCloseEditor = () => {
-    setIsEditorOpen(false);
-    setSelectedTemplateId(null);
-    refetch();
-  };
-
   const handleLoadExamples = async () => {
-    const result = await seedTemplates();
-    if (result.success) {
-      toast.success("3 templates d'exemple ont été ajoutés à votre collection");
-      refetch();
-    } else if (result.error === "Templates already exist") {
-      toast.info("Vous avez déjà des templates dans votre collection. Les nouveaux templates seront ajoutés.");
-      // Forcer l'ajout même si des templates existent déjà
-      try {
-        const { data: userData } = await supabase.auth.getUser();
-        if (userData.user) {
-          // Ajouter les templates même s'il en existe déjà
-          const { error } = await supabase.from("templates").insert([
-            {
-              user_id: userData.user.id,
-              nom: "Newsletter Moderne",
-              description: "Template professionnel pour vos newsletters mensuelles avec design épuré et responsive",
-              type: "newsletter",
-              content_html: `<!DOCTYPE html>
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        toast.error("Vous devez être connecté");
+        return;
+      }
+
+      const { error } = await supabase.from("templates").insert([
+        {
+          user_id: userData.user.id,
+          nom: "Template B2B Complet Pro",
+          description: "Template B2B professionnel complet avec titre, image, corps, bouton CTA et footer avec réseaux sociaux",
+          type: "newsletter",
+          content_html: `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Template B2B Professionnel</title>
+  <!--[if mso]>
+  <style type="text/css">
+    body, table, td {font-family: Arial, sans-serif !important;}
+  </style>
+  <![endif]-->
+</head>
+<body style="margin: 0; padding: 0; background-color: #f5f7fa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <!-- Wrapper -->
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f5f7fa;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <!-- Container -->
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          
+          <!-- Header avec titre -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 50px 40px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.2;">Votre Titre Principal</h1>
+              <p style="margin: 15px 0 0 0; color: #e0e7ff; font-size: 16px; line-height: 1.5;">Sous-titre ou description courte</p>
+            </td>
+          </tr>
+
+          <!-- Image Hero -->
+          <tr>
+            <td style="padding: 0;">
+              <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?w=600&h=300&fit=crop" alt="Image principale" width="600" height="300" style="display: block; width: 100%; max-width: 600px; height: auto; border: 0; outline: none; text-decoration: none;" />
+            </td>
+          </tr>
+
+          <!-- Corps du mail -->
+          <tr>
+            <td style="padding: 40px 40px 30px 40px;">
+              <h2 style="margin: 0 0 20px 0; color: #111827; font-size: 24px; font-weight: 600; line-height: 1.3;">Titre de section</h2>
+              
+              <p style="margin: 0 0 20px 0; color: #4b5563; font-size: 16px; line-height: 1.7;">
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.
+              </p>
+              
+              <p style="margin: 0 0 30px 0; color: #4b5563; font-size: 16px; line-height: 1.7;">
+                Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+              </p>
+
+              <!-- Liste à puces -->
+              <ul style="margin: 0 0 30px 0; padding-left: 20px; color: #4b5563; font-size: 16px; line-height: 1.8;">
+                <li style="margin-bottom: 10px;">Point clé numéro un avec description</li>
+                <li style="margin-bottom: 10px;">Point clé numéro deux avec description</li>
+                <li style="margin-bottom: 10px;">Point clé numéro trois avec description</li>
+              </ul>
+
+              <!-- Bouton CTA -->
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td align="center" style="padding: 10px 0;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td align="center" style="background-color: #3b82f6; border-radius: 6px;">
+                          <a href="#" style="display: inline-block; padding: 16px 40px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; border-radius: 6px; background-color: #3b82f6;">Appel à l'action</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Séparateur -->
+          <tr>
+            <td style="padding: 0 40px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td style="border-top: 1px solid #e5e7eb;"></td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer avec réseaux sociaux -->
+          <tr>
+            <td style="background-color: #f9fafb; padding: 40px 40px 30px 40px; text-align: center;">
+              <!-- Logo ou nom de l'entreprise -->
+              <h3 style="margin: 0 0 20px 0; color: #111827; font-size: 20px; font-weight: 600;">Votre Entreprise</h3>
+              
+              <!-- Réseaux sociaux -->
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto 30px auto;">
+                <tr>
+                  <td style="padding: 0 8px;">
+                    <a href="#" style="display: inline-block; width: 40px; height: 40px; background-color: #3b82f6; border-radius: 50%; text-align: center; line-height: 40px; text-decoration: none;">
+                      <span style="color: #ffffff; font-size: 18px;">f</span>
+                    </a>
+                  </td>
+                  <td style="padding: 0 8px;">
+                    <a href="#" style="display: inline-block; width: 40px; height: 40px; background-color: #1da1f2; border-radius: 50%; text-align: center; line-height: 40px; text-decoration: none;">
+                      <span style="color: #ffffff; font-size: 18px;">t</span>
+                    </a>
+                  </td>
+                  <td style="padding: 0 8px;">
+                    <a href="#" style="display: inline-block; width: 40px; height: 40px; background-color: #0077b5; border-radius: 50%; text-align: center; line-height: 40px; text-decoration: none;">
+                      <span style="color: #ffffff; font-size: 18px;">in</span>
+                    </a>
+                  </td>
+                  <td style="padding: 0 8px;">
+                    <a href="#" style="display: inline-block; width: 40px; height: 40px; background-color: #000000; border-radius: 50%; text-align: center; line-height: 40px; text-decoration: none;">
+                      <span style="color: #ffffff; font-size: 18px;">ig</span>
+                    </a>
+                  </td>
+                  <td style="padding: 0 8px;">
+                    <a href="#" style="display: inline-block; width: 40px; height: 40px; background-color: #ff0000; border-radius: 50%; text-align: center; line-height: 40px; text-decoration: none;">
+                      <span style="color: #ffffff; font-size: 18px;">yt</span>
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Informations de contact -->
+              <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                123 Rue de l'Exemple<br />
+                75000 Paris, France<br />
+                Tél: +33 1 23 45 67 89<br />
+                Email: contact@entreprise.com
+              </p>
+
+              <!-- Liens légaux -->
+              <p style="margin: 20px 0 10px 0; color: #9ca3af; font-size: 12px; line-height: 1.6;">
+                <a href="#" style="color: #3b82f6; text-decoration: none; margin: 0 10px;">Mentions légales</a>
+                <span style="color: #d1d5db;">|</span>
+                <a href="#" style="color: #3b82f6; text-decoration: none; margin: 0 10px;">Politique de confidentialité</a>
+                <span style="color: #d1d5db;">|</span>
+                <a href="#" style="color: #3b82f6; text-decoration: none; margin: 0 10px;">CGU</a>
+              </p>
+
+              <!-- Désabonnement -->
+              <p style="margin: 20px 0 0 0; color: #9ca3af; font-size: 12px;">
+                © 2025 Votre Entreprise. Tous droits réservés.<br />
+                <a href="#" style="color: #3b82f6; text-decoration: underline;">Se désabonner</a> | 
+                <a href="#" style="color: #3b82f6; text-decoration: underline;">Gérer mes préférences</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`,
+          content_json: {}
+        },
+        {
+          user_id: userData.user.id,
+          nom: "Newsletter B2B Professionnelle",
+          description: "Template B2B épuré et professionnel pour newsletters d'entreprise",
+          type: "newsletter",
+          content_html: `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Newsletter B2B</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f7fa;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f5f7fa;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table role="presentation" style="max-width: 600px; width: 100%; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 40px 30px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">Newsletter Entreprise</h1>
+              <p style="margin: 10px 0 0 0; color: #e0e7ff; font-size: 14px;">Janvier 2025</p>
+            </td>
+          </tr>
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px 30px;">
+              <h2 style="margin: 0 0 20px 0; color: #1e293b; font-size: 24px; font-weight: 600;">Actualités et insights</h2>
+              <p style="margin: 0 0 20px 0; color: #64748b; font-size: 16px; line-height: 1.6;">Découvrez les dernières tendances et innovations dans votre secteur d'activité.</p>
+              <table role="presentation" style="width: 100%; margin: 30px 0;">
+                <tr>
+                  <td style="padding: 20px; background-color: #f8fafc; border-left: 4px solid #3b82f6; border-radius: 4px;">
+                    <h3 style="margin: 0 0 10px 0; color: #1e293b; font-size: 18px; font-weight: 600;">Tendances du marché</h3>
+                    <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.6;">Analyse approfondie des évolutions récentes et opportunités à saisir.</p>
+                  </td>
+                </tr>
+              </table>
+              <table role="presentation" style="width: 100%; margin: 20px 0;">
+                <tr>
+                  <td align="center" style="padding: 15px 0;">
+                    <a href="#" style="display: inline-block; background-color: #3b82f6; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">En savoir plus</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+              <p style="margin: 0 0 10px 0; color: #64748b; font-size: 12px;">© 2025 Votre Entreprise. Tous droits réservés.</p>
+              <p style="margin: 0;"><a href="#" style="color: #3b82f6; text-decoration: none; font-size: 12px;">Se désabonner</a></p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`,
+          content_json: {}
+        },
+        {
+          user_id: userData.user.id,
+          nom: "Email B2B - Présentation Produit",
+          description: "Template professionnel pour présenter un produit ou service B2B",
+          type: "annonce",
+          content_html: `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Présentation Produit B2B</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #ffffff;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 60px 20px;">
+        <table role="presentation" style="max-width: 600px; width: 100%; border-collapse: collapse; background-color: #ffffff;">
+          <!-- Header -->
+          <tr>
+            <td style="padding: 0 0 40px 0; text-align: center; border-bottom: 2px solid #e5e7eb;">
+              <h1 style="margin: 0; color: #111827; font-size: 32px; font-weight: 700;">Nouvelle Solution</h1>
+              <p style="margin: 15px 0 0 0; color: #6b7280; font-size: 18px;">Découvrez notre dernière innovation</p>
+            </td>
+          </tr>
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 40px 0;">
+              <h2 style="margin: 0 0 20px 0; color: #111827; font-size: 24px; font-weight: 600;">Transformez votre façon de travailler</h2>
+              <p style="margin: 0 0 25px 0; color: #374151; font-size: 16px; line-height: 1.7;">Notre nouvelle solution vous permet d'optimiser vos processus et d'augmenter votre productivité de manière significative.</p>
+              
+              <!-- Features -->
+              <table role="presentation" style="width: 100%; margin: 30px 0;">
+                <tr>
+                  <td style="padding: 20px 0; border-bottom: 1px solid #e5e7eb;">
+                    <table role="presentation" style="width: 100%;">
+                      <tr>
+                        <td style="width: 50px; vertical-align: top;">
+                          <div style="width: 40px; height: 40px; background-color: #3b82f6; border-radius: 8px; display: inline-block; text-align: center; line-height: 40px; color: #ffffff; font-size: 20px;">✓</div>
+                        </td>
+                        <td style="vertical-align: top;">
+                          <h3 style="margin: 0 0 5px 0; color: #111827; font-size: 18px; font-weight: 600;">Performance optimale</h3>
+                          <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.6;">Augmentez votre efficacité opérationnelle</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 20px 0; border-bottom: 1px solid #e5e7eb;">
+                    <table role="presentation" style="width: 100%;">
+                      <tr>
+                        <td style="width: 50px; vertical-align: top;">
+                          <div style="width: 40px; height: 40px; background-color: #3b82f6; border-radius: 8px; display: inline-block; text-align: center; line-height: 40px; color: #ffffff; font-size: 20px;">✓</div>
+                        </td>
+                        <td style="vertical-align: top;">
+                          <h3 style="margin: 0 0 5px 0; color: #111827; font-size: 18px; font-weight: 600;">Sécurité renforcée</h3>
+                          <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.6;">Protection avancée de vos données</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 20px 0;">
+                    <table role="presentation" style="width: 100%;">
+                      <tr>
+                        <td style="width: 50px; vertical-align: top;">
+                          <div style="width: 40px; height: 40px; background-color: #3b82f6; border-radius: 8px; display: inline-block; text-align: center; line-height: 40px; color: #ffffff; font-size: 20px;">✓</div>
+                        </td>
+                        <td style="vertical-align: top;">
+                          <h3 style="margin: 0 0 5px 0; color: #111827; font-size: 18px; font-weight: 600;">Support dédié</h3>
+                          <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.6;">Équipe d'experts à votre service</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA -->
+              <table role="presentation" style="width: 100%; margin: 40px 0;">
+                <tr>
+                  <td align="center">
+                    <a href="#" style="display: inline-block; background-color: #111827; color: #ffffff; padding: 16px 40px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">Demander une démo</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 30px 0; border-top: 1px solid #e5e7eb; text-align: center;">
+              <p style="margin: 0 0 10px 0; color: #9ca3af; font-size: 12px;">© 2025 Votre Entreprise</p>
+              <p style="margin: 0;"><a href="#" style="color: #3b82f6; text-decoration: none; font-size: 12px;">Se désabonner</a></p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`,
+          content_json: {}
+        },
+        {
+          user_id: userData.user.id,
+          nom: "Email B2B - Invitation Événement",
+          description: "Template professionnel pour inviter à un événement B2B (webinaire, conférence, etc.)",
+          type: "annonce",
+          content_html: `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invitation Événement B2B</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f9fafb;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 50px 20px;">
+        <table role="presentation" style="max-width: 600px; width: 100%; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+          <!-- Header avec image -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 50px 30px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 700;">Webinaire Exclusif</h1>
+              <p style="margin: 15px 0 0 0; color: #dbeafe; font-size: 18px;">Rejoignez-nous pour une session enrichissante</p>
+            </td>
+          </tr>
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px 30px;">
+              <h2 style="margin: 0 0 20px 0; color: #111827; font-size: 26px; font-weight: 600;">Vous êtes invité</h2>
+              <p style="margin: 0 0 30px 0; color: #4b5563; font-size: 16px; line-height: 1.7;">Nous avons le plaisir de vous inviter à notre prochain webinaire où nous partagerons des insights exclusifs sur les tendances du marché.</p>
+              
+              <!-- Event Details -->
+              <table role="presentation" style="width: 100%; background-color: #f3f4f6; border-radius: 8px; padding: 25px; margin: 30px 0;">
+                <tr>
+                  <td>
+                    <table role="presentation" style="width: 100%;">
+                      <tr>
+                        <td style="padding: 10px 0; border-bottom: 1px solid #e5e7eb;">
+                          <strong style="color: #111827; font-size: 14px;">📅 Date :</strong>
+                          <span style="color: #4b5563; font-size: 14px; margin-left: 10px;">15 Février 2025</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 10px 0; border-bottom: 1px solid #e5e7eb;">
+                          <strong style="color: #111827; font-size: 14px;">⏰ Heure :</strong>
+                          <span style="color: #4b5563; font-size: 14px; margin-left: 10px;">14h00 - 15h30 (CET)</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 10px 0;">
+                          <strong style="color: #111827; font-size: 14px;">🌐 Format :</strong>
+                          <span style="color: #4b5563; font-size: 14px; margin-left: 10px;">En ligne (Zoom)</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Agenda -->
+              <h3 style="margin: 30px 0 15px 0; color: #111827; font-size: 20px; font-weight: 600;">Au programme</h3>
+              <ul style="margin: 0; padding-left: 20px; color: #4b5563; font-size: 15px; line-height: 1.8;">
+                <li style="margin-bottom: 10px;">Analyse des tendances du marché</li>
+                <li style="margin-bottom: 10px;">Cas d'usage et meilleures pratiques</li>
+                <li style="margin-bottom: 10px;">Session Q&A avec nos experts</li>
+              </ul>
+
+              <!-- CTA -->
+              <table role="presentation" style="width: 100%; margin: 40px 0 20px 0;">
+                <tr>
+                  <td align="center">
+                    <a href="#" style="display: inline-block; background-color: #3b82f6; color: #ffffff; padding: 16px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">Réserver ma place</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin: 0; text-align: center; color: #6b7280; font-size: 13px;">Places limitées - Inscription gratuite</p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0 0 10px 0; color: #9ca3af; font-size: 12px;">© 2025 Votre Entreprise</p>
+              <p style="margin: 0;"><a href="#" style="color: #3b82f6; text-decoration: none; font-size: 12px;">Se désabonner</a></p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`,
+          content_json: {}
+        },
+        {
+          user_id: userData.user.id,
+          nom: "Newsletter Moderne",
+          description: "Template professionnel pour vos newsletters mensuelles avec design épuré et responsive",
+          type: "newsletter",
+          content_html: `<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
@@ -186,14 +636,14 @@ export default function Templates() {
   </div>
 </body>
 </html>`,
-              content_json: {}
-            },
-            {
-              user_id: userData.user.id,
-              nom: "Promotion Flash",
-              description: "Template accrocheur pour vos promotions et offres spéciales avec design moderne",
-              type: "promotion",
-              content_html: `<!DOCTYPE html>
+          content_json: {}
+        },
+        {
+          user_id: userData.user.id,
+          nom: "Promotion Flash",
+          description: "Template accrocheur pour vos promotions et offres spéciales avec design moderne",
+          type: "promotion",
+          content_html: `<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
@@ -218,14 +668,14 @@ export default function Templates() {
   </div>
 </body>
 </html>`,
-              content_json: {}
-            },
-            {
-              user_id: userData.user.id,
-              nom: "Email de Bienvenue",
-              description: "Template chaleureux pour accueillir vos nouveaux clients et utilisateurs",
-              type: "annonce",
-              content_html: `<!DOCTYPE html>
+          content_json: {}
+        },
+        {
+          user_id: userData.user.id,
+          nom: "Email de Bienvenue",
+          description: "Template chaleureux pour accueillir vos nouveaux clients et utilisateurs",
+          type: "annonce",
+          content_html: `<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
@@ -256,19 +706,16 @@ export default function Templates() {
   </div>
 </body>
 </html>`,
-              content_json: {}
-            }
-          ]);
-          if (error) throw error;
-          toast.success("3 nouveaux templates ont été ajoutés à votre collection");
-          refetch();
+          content_json: {}
         }
-      } catch (error) {
-        console.error("Error adding templates:", error);
-        toast.error("Erreur lors de l'ajout des templates");
-      }
-    } else {
-      toast.error("Erreur lors du chargement des templates d'exemple");
+      ]);
+
+      if (error) throw error;
+      toast.success("3 templates d'exemple ont été ajoutés");
+      refetch();
+    } catch (error: any) {
+      console.error("Error adding templates:", error);
+      toast.error("Erreur lors de l'ajout des templates");
     }
   };
 
@@ -283,13 +730,17 @@ export default function Templates() {
     duplicateMutation.mutate(template);
   };
 
+  const handleUseInCampaign = (templateId: string) => {
+    navigate(`/campagnes/nouvelle?template=${templateId}`);
+  };
+
   const filteredTemplates = templates?.filter(template => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       return (
         template.nom?.toLowerCase().includes(query) ||
-        template.id?.toString().includes(query) ||
-        template.description?.toLowerCase().includes(query)
+        template.description?.toLowerCase().includes(query) ||
+        template.type?.toLowerCase().includes(query)
       );
     }
     return true;
@@ -306,321 +757,274 @@ export default function Templates() {
     }
   });
 
-  if (isEditorOpen) {
-    return (
-      <TemplateEditor
-        templateId={selectedTemplateId}
-        onClose={handleCloseEditor}
-      />
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-[1600px] mx-auto px-6 py-6 space-y-6">
-        {/* Header moderne et compact */}
-        <div className="flex items-center justify-between pb-4 border-b border-border/40">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-border">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">
-              Email Templates
+            <h1 className="text-3xl font-bold text-foreground mb-2">
+              {t("templates.title")}
             </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-              Design and manage professional email templates
-          </p>
-        </div>
+            <p className="text-sm text-muted-foreground">
+              Créez et gérez vos templates d'email. Vous pourrez les modifier lors de la création de campagne.
+            </p>
+          </div>
           <div className="flex items-center gap-3">
             <Button 
               onClick={handleLoadExamples} 
-              variant="ghost" 
-              size="sm"
-              className="gap-2 text-muted-foreground hover:text-foreground"
+              variant="outline" 
+              size="default"
+              className="gap-2"
               disabled={isLoading}
             >
-              <Sparkles className="h-4 w-4" />
-              Load Examples
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              Charger des exemples
             </Button>
             <Button 
-              onClick={() => setShowCreateModal(true)} 
-              size="sm"
-              className="gap-2 bg-primary hover:bg-primary/90"
+              onClick={() => setShowCreateDialog(true)} 
+              size="default"
+              className="gap-2"
             >
               <Plus className="h-4 w-4" />
-              New Template
-          </Button>
+              {t("templates.newTemplate")}
+            </Button>
+          </div>
         </div>
-      </div>
 
-        {/* Barre de recherche moderne et épurée */}
-        <div className="flex items-center gap-4 bg-muted/30 rounded-lg p-2 border border-border/40">
+        {/* Barre de recherche et filtres */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-card rounded-lg p-4 border border-border shadow-sm">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder={isMobile ? "Search..." : "Search templates..."}
+              placeholder={t("templates.search")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-9 bg-background border-0 focus-visible:ring-1 focus-visible:ring-primary"
+              className="pl-10 h-10 bg-background"
             />
           </div>
-          {!isMobile ? (
+          {!isMobile && (
             <div className="flex items-center gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-2 h-9 text-muted-foreground hover:text-foreground">
+                  <Button variant="outline" size="default" className="gap-2 h-10">
                     <Filter className="h-4 w-4" />
-                    <span className="text-xs">Sort</span>
+                    Trier
                     <ChevronDown className="h-3 w-3" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem 
                     onClick={() => setSortBy("recent")}
-                    className={sortBy === "recent" ? "bg-primary/10" : ""}
+                    className={sortBy === "recent" ? "bg-primary/10 font-medium" : ""}
                   >
-                    Most Recent
+                    Plus récents
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     onClick={() => setSortBy("name")}
-                    className={sortBy === "name" ? "bg-primary/10" : ""}
+                    className={sortBy === "name" ? "bg-primary/10 font-medium" : ""}
                   >
-                    By Name
+                    Par nom
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     onClick={() => setSortBy("type")}
-                    className={sortBy === "type" ? "bg-primary/10" : ""}
+                    className={sortBy === "type" ? "bg-primary/10 font-medium" : ""}
                   >
-                    By Type
+                    Par type
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <div className="flex items-center gap-1 bg-background rounded-md p-0.5 border border-border/40">
+              <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1 border border-border">
                 <Button
                   variant={viewMode === "grid" ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setViewMode("grid")}
-                  className="h-7 w-7 p-0"
+                  className="h-8 w-8 p-0"
+                  title="Vue grille"
                 >
-                  <Grid3x3 className="h-3.5 w-3.5" />
+                  <Grid3x3 className="h-4 w-4" />
                 </Button>
                 <Button
                   variant={viewMode === "list" ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setViewMode("list")}
-                  className="h-7 w-7 p-0"
+                  className="h-8 w-8 p-0"
+                  title="Vue liste"
                 >
-                  <List className="h-3.5 w-3.5" />
+                  <List className="h-4 w-4" />
                 </Button>
               </div>
             </div>
-          ) : (
-            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent>
-                <SheetHeader>
-                  <SheetTitle>Options</SheetTitle>
-                </SheetHeader>
-                <div className="flex flex-col gap-4 mt-6">
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">Actions</p>
-                    <div className="flex flex-col gap-2">
-                      <Button 
-                        onClick={() => {
-                          setShowCreateModal(true);
-                          setMobileMenuOpen(false);
-                        }} 
-                        className="w-full justify-start gap-2"
-                      >
-                        <Plus className="h-4 w-4" />
-                        New Template
-                      </Button>
-                      <Button 
-                        variant="outline"
-                        onClick={() => {
-                          handleLoadExamples();
-                          setMobileMenuOpen(false);
-                        }} 
-                        className="w-full justify-start gap-2"
-                        disabled={isLoading}
-                      >
-                        <Sparkles className="h-4 w-4" />
-                        Load Examples
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">Sort By</p>
-                    <div className="flex flex-col gap-2">
-                      <Button
-                        variant={sortBy === "recent" ? "secondary" : "outline"}
-                        onClick={() => {
-                          setSortBy("recent");
-                          setMobileMenuOpen(false);
-                        }}
-                        className="w-full justify-start"
-                      >
-                        Most Recent
-                      </Button>
-                      <Button
-                        variant={sortBy === "name" ? "secondary" : "outline"}
-                        onClick={() => {
-                          setSortBy("name");
-                          setMobileMenuOpen(false);
-                        }}
-                        className="w-full justify-start"
-                      >
-                        By Name
-                      </Button>
-                      <Button
-                        variant={sortBy === "type" ? "secondary" : "outline"}
-                        onClick={() => {
-                          setSortBy("type");
-                          setMobileMenuOpen(false);
-                        }}
-                        className="w-full justify-start"
-                      >
-                        By Type
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">View Mode</p>
-                    <div className="flex gap-2">
-                      <Button
-                        variant={viewMode === "grid" ? "secondary" : "outline"}
-                        onClick={() => {
-                          setViewMode("grid");
-                          setMobileMenuOpen(false);
-                        }}
-                        className="flex-1 gap-2"
-                      >
-                        <Grid3x3 className="h-4 w-4" />
-                        Grid
-                      </Button>
-                      <Button
-                        variant={viewMode === "list" ? "secondary" : "outline"}
-                        onClick={() => {
-                          setViewMode("list");
-                          setMobileMenuOpen(false);
-                        }}
-                        className="flex-1 gap-2"
-                      >
-                        <List className="h-4 w-4" />
-                        List
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet>
           )}
         </div>
 
-        {/* Contenu principal */}
-        {!showCreateModal ? (
-          <div>
-             {isLoading ? (
-              <div className={`grid gap-4 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"}`}>
-                {[...Array(8)].map((_, i) => (
-                  <Card key={i} className="animate-pulse border-border/40 overflow-hidden">
-                    <div className="aspect-[4/3] bg-muted/50"></div>
-                    <div className="p-4 space-y-2">
-                      <div className="h-4 bg-muted/50 rounded w-3/4"></div>
-                      <div className="h-3 bg-muted/50 rounded w-1/2"></div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : sortedTemplates.length === 0 ? (
-              <Card className="border-border/40 border-dashed bg-muted/10">
-                <CardContent className="flex flex-col items-center justify-center py-16">
-                  <div className="rounded-full bg-muted/50 p-4 mb-4">
-                    <FileText className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-base font-medium text-foreground mb-1">
-                    No templates yet
-                  </p>
-                  <p className="text-sm text-muted-foreground mb-6">
-                    Create your first template or load examples to get started
-                  </p>
-                  <div className="flex gap-3">
-                    <Button onClick={handleCreateNew} size="sm" className="gap-2">
-                      <Plus className="h-4 w-4" />
-                      New Template
-                    </Button>
-                    <Button onClick={handleLoadExamples} variant="outline" size="sm" className="gap-2">
-                      <Sparkles className="h-4 w-4" />
-                      Load Examples
-                    </Button>
-                  </div>
-                </CardContent>
+        {/* Liste des templates */}
+        {isLoading ? (
+          <div className={`grid gap-4 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"}`}>
+            {[...Array(8)].map((_, i) => (
+              <Card key={i} className="animate-pulse border-border overflow-hidden">
+                <div className="aspect-[4/3] bg-muted/50"></div>
+                <div className="p-4 space-y-2">
+                  <div className="h-4 bg-muted/50 rounded w-3/4"></div>
+                  <div className="h-3 bg-muted/50 rounded w-1/2"></div>
+                </div>
               </Card>
-            ) : viewMode === "grid" ? (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {sortedTemplates.map((template) => (
-                  <Card 
-                    key={template.id} 
-                    className="group cursor-pointer hover:shadow-md transition-all duration-200 border-border/40 overflow-hidden bg-card"
-                    onClick={() => handleUseTemplate(template.id)}
-                  >
-                    {/* Preview Image */}
-                    <div className="relative aspect-[4/3] bg-muted/30 overflow-hidden">
-                      {template.thumbnail_url ? (
-                        <img
-                          src={template.thumbnail_url}
-                          alt={template.nom}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Mail className="h-12 w-12 text-muted-foreground/30" />
-                        </div>
-                      )}
-                      {/* Hover overlay */}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          className="gap-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleUseTemplate(template.id);
-                          }}
-                        >
-                          <Eye className="h-4 w-4" />
-                          Edit
-                        </Button>
-                      </div>
+            ))}
+          </div>
+        ) : sortedTemplates.length === 0 ? (
+          <Card className="border-border border-dashed bg-muted/10">
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <div className="rounded-full bg-muted/50 p-4 mb-4">
+                <FileText className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <p className="text-base font-medium text-foreground mb-1">
+                Aucun template
+              </p>
+              <p className="text-sm text-muted-foreground mb-6 text-center">
+                Créez votre premier template ou chargez des exemples pour commencer
+              </p>
+              <div className="flex gap-3">
+                <Button onClick={() => setShowCreateDialog(true)} size="sm" className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Nouveau template
+                </Button>
+                <Button onClick={handleLoadExamples} variant="outline" size="sm" className="gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  Charger des exemples
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : viewMode === "grid" ? (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {sortedTemplates.map((template) => (
+              <Card 
+                key={template.id} 
+                className="group cursor-pointer hover:shadow-lg transition-all duration-200 border-border overflow-hidden bg-card"
+              >
+                {/* Preview */}
+                <div className="relative aspect-[4/3] bg-muted/30 overflow-hidden">
+                  {template.thumbnail_url ? (
+                    <img
+                      src={template.thumbnail_url}
+                      alt={template.nom}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Mail className="h-12 w-12 text-muted-foreground/30" />
                     </div>
-                    
-                    {/* Card Content */}
-                    <div className="p-4">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <h4 className="font-medium text-sm line-clamp-1 text-foreground">
+                  )}
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="gap-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUseInCampaign(template.id);
+                      }}
+                    >
+                      <Eye className="h-4 w-4" />
+                      Utiliser
+                    </Button>
+                  </div>
+                </div>
+                
+                {/* Card Content */}
+                <div className="p-4">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <h4 className="font-medium text-sm line-clamp-1 text-foreground flex-1">
+                      {template.nom}
+                    </h4>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 -mr-2">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuItem onClick={(e) => {
+                          e.stopPropagation();
+                          handleUseInCampaign(template.id);
+                        }}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          Utiliser
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => handleDuplicate(template, e)}>
+                          <Copy className="h-4 w-4 mr-2" />
+                          Dupliquer
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          className="text-destructive focus:text-destructive"
+                          onClick={(e) => handleDelete(template, e)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Supprimer
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
+                    {template.description || "Pas de description"}
+                  </p>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <Badge variant="outline" className="text-xs font-normal border-border">
+                      {template.type}
+                    </Badge>
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {new Date(template.updated_at).toLocaleDateString("fr-FR", {
+                        month: "short",
+                        day: "numeric"
+                      })}
+                    </span>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {sortedTemplates.map((template) => (
+              <Card 
+                key={template.id}
+                className="hover:shadow-md transition-all duration-200 cursor-pointer border-border bg-card"
+                onClick={() => handleUseInCampaign(template.id)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-lg bg-muted/50 flex items-center justify-center flex-shrink-0">
+                      <Mail className="h-8 w-8 text-muted-foreground/50" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between mb-1">
+                        <h4 className="font-medium text-sm">
                           {template.nom}
                         </h4>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 -mr-2">
+                            <Button variant="ghost" size="icon" className="h-7 w-7">
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-40">
                             <DropdownMenuItem onClick={(e) => {
                               e.stopPropagation();
-                              setSelectedTemplateId(template.id);
-                              setIsEditorOpen(true);
+                              handleUseInCampaign(template.id);
                             }}>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit
+                              <Eye className="h-4 w-4 mr-2" />
+                              Utiliser
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={(e) => handleDuplicate(template, e)}>
                               <Copy className="h-4 w-4 mr-2" />
-                              Duplicate
+                              Dupliquer
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 
@@ -628,413 +1032,145 @@ export default function Templates() {
                               onClick={(e) => handleDelete(template, e)}
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
+                              Supprimer
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
-                        {template.description || "No description"}
+                      <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
+                        {template.description || "Pas de description"}
                       </p>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <Badge variant="outline" className="text-xs font-normal border-border/40">
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <Badge variant="outline" className="text-xs font-normal border-border">
                           {template.type}
                         </Badge>
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          {new Date(template.updated_at).toLocaleDateString("en-US", {
+                          {new Date(template.updated_at).toLocaleDateString("fr-FR", {
                             month: "short",
                             day: "numeric"
                           })}
                         </span>
                       </div>
                     </div>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {sortedTemplates.map((template) => (
-                  <Card 
-                    key={template.id}
-                    className="hover:shadow-md transition-all duration-200 cursor-pointer border-border/40 bg-card"
-                    onClick={() => handleUseTemplate(template.id)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 rounded-lg bg-muted/50 flex items-center justify-center flex-shrink-0">
-                          <Mail className="h-8 w-8 text-muted-foreground/50" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between mb-1">
-                            <h4 className="font-medium text-sm">
-                              {template.nom}
-                            </h4>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                <Button variant="ghost" size="icon" className="h-7 w-7">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-40">
-                                <DropdownMenuItem onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedTemplateId(template.id);
-                                  setIsEditorOpen(true);
-                                }}>
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={(e) => handleDuplicate(template, e)}>
-                                  <Copy className="h-4 w-4 mr-2" />
-                                  Duplicate
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem 
-                                  className="text-destructive focus:text-destructive"
-                                  onClick={(e) => handleDelete(template, e)}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                          <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
-                            {template.description || "No description"}
-                          </p>
-                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                            <Badge variant="outline" className="text-xs font-normal border-border/40">
-                              {template.type}
-                            </Badge>
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {new Date(template.updated_at).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric"
-                              })}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          /* Modal de création professionnel */
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md animate-in fade-in-0">
-            <div className="bg-background rounded-2xl shadow-2xl w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col border-2 animate-in slide-in-from-bottom-4">
-              {/* Header du modal */}
-              <div className="flex items-center justify-between px-8 py-6 border-b-2 bg-gradient-to-r from-card to-card/50">
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground">Créer un email</h2>
-                  <p className="text-sm text-muted-foreground mt-1.5">
-                    Choisissez un template ou créez-en un nouveau
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowCreateModal(false)}
-                  className="h-10 w-10 hover:bg-destructive/10 hover:text-destructive"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
-
-              {/* Contenu du modal */}
-              <div className="flex flex-1 overflow-hidden">
-                {/* Sidebar gauche - Catégories */}
-                <div className="w-72 border-r-2 bg-muted/30 p-6 space-y-6 overflow-y-auto">
-                  {/* Bouton créer depuis zéro */}
-                  <div>
-                    <Button 
-                      onClick={handleCreateNew}
-                      className="w-full justify-between bg-foreground text-background hover:bg-foreground/90 h-12 font-semibold shadow-lg"
-                      size="lg"
-                    >
-                      <span>Créer à partir de zéro</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                    <p className="text-xs text-muted-foreground mt-2 px-1">
-                      Commencez avec un template vide
-                    </p>
                   </div>
-
-                  <div className="space-y-5">
-                    {/* Vos emails */}
-                    <div className="space-y-2">
-                      <h3 className="text-xs font-bold text-foreground uppercase tracking-wider px-2">
-                        Vos emails
-                      </h3>
-                      <div className="space-y-1">
-                        <button
-                          onClick={() => setSelectedCategory("saved")}
-                          className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                            selectedCategory === "saved"
-                              ? "bg-primary text-primary-foreground shadow-md"
-                              : "hover:bg-muted text-foreground"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <FileText className="h-4 w-4" />
-                            Templates enregistrés
-                          </div>
-                          {selectedCategory === "saved" && templates && (
-                            <span className="text-xs opacity-90 ml-7 block mt-1">
-                              {templates.length} template{templates.length > 1 ? 's' : ''}
-                            </span>
-                          )}
-                        </button>
-                        <button
-                          onClick={() => setSelectedCategory("campaigns")}
-                          className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                            selectedCategory === "campaigns"
-                              ? "bg-primary text-primary-foreground shadow-md"
-                              : "hover:bg-muted text-foreground"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <Mail className="h-4 w-4" />
-                            Campagnes email
-                          </div>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Templates prédéfinis */}
-                    <div className="space-y-2">
-                      <h3 className="text-xs font-bold text-foreground uppercase tracking-wider px-2">
-                        Templates prédéfinis
-                      </h3>
-                      <div className="space-y-1">
-                        <button
-                          onClick={() => setSelectedCategory("basic")}
-                          className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                            selectedCategory === "basic"
-                              ? "bg-primary text-primary-foreground shadow-md"
-                              : "hover:bg-muted text-foreground"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <Layout className="h-4 w-4" />
-                            Templates de base
-                          </div>
-                        </button>
-                        <button
-                          onClick={() => setSelectedCategory("ready")}
-                          className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                            selectedCategory === "ready"
-                              ? "bg-primary text-primary-foreground shadow-md"
-                              : "hover:bg-muted text-foreground"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <Sparkles className="h-4 w-4" />
-                            Prêt à l'emploi
-                          </div>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Zone principale - Liste des templates */}
-                <div className="flex-1 flex flex-col overflow-hidden bg-background">
-                  <div className="px-8 py-6 border-b-2 bg-card/50">
-                    <div className="mb-5">
-                      <h3 className="text-xl font-bold mb-2">
-                        {selectedCategory === "saved" && "Tous les templates enregistrés"}
-                        {selectedCategory === "campaigns" && "Campagnes email"}
-                        {selectedCategory === "basic" && "Templates de base"}
-                        {selectedCategory === "ready" && "Templates prêts à l'emploi"}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {selectedCategory === "saved" 
-                          ? "Commencez à créer votre email à l'aide d'un template précédemment enregistré."
-                          : "Sélectionnez un template pour commencer."}
-                      </p>
-                    </div>
-
-                    {/* Barre de recherche dans le modal */}
-                    <div className="flex gap-3">
-                      <div className="relative flex-1">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Nom ou ID du template"
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="pl-11 h-11 text-base border-2"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Grille de templates */}
-                  <div className="flex-1 overflow-y-auto p-8">
-                    {selectedCategory === "saved" && (
-                      <>
-                        {isLoading ? (
-                          <div className="grid grid-cols-3 gap-6">
-                            {[...Array(6)].map((_, i) => (
-                              <Card key={i} className="animate-pulse border-2">
-                                <CardContent className="p-0">
-                                  <div className="aspect-[4/3] bg-muted"></div>
-                                  <div className="p-6 space-y-3">
-                                    <div className="h-5 bg-muted rounded w-3/4"></div>
-                                    <div className="h-4 bg-muted rounded w-1/2"></div>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            ))}
-                          </div>
-                        ) : sortedTemplates.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center py-20">
-                            <div className="p-5 rounded-2xl bg-primary/10 mb-6">
-                              <FileText className="h-12 w-12 text-primary" />
-                            </div>
-                            <p className="text-lg font-semibold text-foreground mb-2">
-                              Aucun template enregistré
-                            </p>
-                            <p className="text-sm text-muted-foreground mb-8 text-center max-w-md">
-                              Créez votre premier template pour commencer à envoyer des emails professionnels
-                            </p>
-                            <div className="flex gap-3">
-                              <Button onClick={handleCreateNew} size="lg" className="gap-2">
-                                Créer un template
-                              </Button>
-                              {(!templates || templates.length === 0) && (
-                                <Button onClick={handleLoadExamples} variant="outline" size="lg" className="gap-2">
-                                  <Sparkles className="h-4 w-4" />
-                                  Charger des exemples
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="grid grid-cols-3 gap-6">
-                            {sortedTemplates.map((template) => (
-                              <Card 
-                                key={template.id} 
-                                className="group cursor-pointer hover:shadow-2xl transition-all duration-300 border-2 hover:border-primary/50 overflow-hidden bg-card"
-                                onClick={() => handleUseTemplate(template.id)}
-                              >
-                                <CardContent className="p-0">
-                                  {/* Preview */}
-                                  <div className="relative aspect-[4/3] bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 overflow-hidden">
-                                    {template.thumbnail_url ? (
-                                      <img
-                                        src={template.thumbnail_url}
-                                        alt={template.nom}
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                      />
-                                    ) : (
-                                      <div className="w-full h-full flex items-center justify-center">
-                                        <div className="text-center space-y-4">
-                                          <div className="w-20 h-20 bg-primary/20 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
-                                            <Mail className="h-10 w-10 text-primary" />
-                                          </div>
-                                          <p className="text-xs text-muted-foreground font-medium">
-                                            Aperçu non disponible
-                                          </p>
-                                        </div>
-                                      </div>
-                                    )}
-                                    {/* Overlay au survol */}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
-                                      <Button
-                                        variant="secondary"
-                                        size="sm"
-                                        className="gap-2 shadow-lg"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleUseTemplate(template.id);
-                                        }}
-                                      >
-                                        <Eye className="h-4 w-4" />
-                                        Utiliser
-                                        <ArrowRight className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                    {/* Badge ID */}
-                                    <div className="absolute top-4 left-4">
-                                      <Badge variant="secondary" className="text-xs font-mono bg-black/50 text-white border-0">
-                                        #{template.id.slice(0, 8)}
-                                      </Badge>
-                                    </div>
-                                  </div>
-                                  {/* Info */}
-                                  <div className="p-6 space-y-3">
-                                    <div>
-                                      <h4 className="font-semibold text-sm mb-1.5 line-clamp-1 group-hover:text-primary transition-colors">
-                                        {template.nom}
-                                      </h4>
-                                      <p className="text-xs text-muted-foreground line-clamp-2">
-                                        {template.description || "Pas de description"}
-                                      </p>
-                                    </div>
-                                    <div className="flex items-center justify-between pt-3 border-t">
-                                      <Badge variant="outline" className="text-xs">
-                                        {template.type}
-                                      </Badge>
-                                      <span className="text-xs text-muted-foreground">
-                                        {new Date(template.updated_at).toLocaleDateString("fr-FR", {
-                                          day: "numeric",
-                                          month: "short"
-                                        })}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            ))}
-                          </div>
-                        )}
-                      </>
-                    )}
-
-                    {/* Templates prédéfinis - Placeholder */}
-                    {(selectedCategory === "basic" || selectedCategory === "ready") && (
-                      <div className="flex flex-col items-center justify-center py-20">
-                        <div className="p-5 rounded-2xl bg-primary/10 mb-6">
-                          <Layout className="h-12 w-12 text-primary" />
-                        </div>
-                        <p className="text-lg font-semibold text-foreground mb-2">
-                          Templates prédéfinis
-                        </p>
-                        <p className="text-sm text-muted-foreground mb-8 text-center max-w-md">
-                          Cette fonctionnalité sera bientôt disponible. Créez vos propres templates en attendant.
-                        </p>
-                        <Button onClick={handleCreateNew} size="lg" className="gap-2">
-                          Créer depuis zéro
-                        </Button>
-                      </div>
-                    )}
-
-                    {/* Campagnes email - Placeholder */}
-                    {selectedCategory === "campaigns" && (
-                      <div className="flex flex-col items-center justify-center py-20">
-                        <div className="p-5 rounded-2xl bg-primary/10 mb-6">
-                          <Mail className="h-12 w-12 text-primary" />
-                        </div>
-                        <p className="text-lg font-semibold text-foreground mb-2">
-                          Campagnes email
-                        </p>
-                        <p className="text-sm text-muted-foreground mb-8 text-center max-w-md">
-                          Vos campagnes précédentes apparaîtront ici une fois que vous aurez créé et envoyé des campagnes.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         )}
       </div>
+
+      {/* Dialog de création simplifié */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Créer un nouveau template</DialogTitle>
+            <DialogDescription>
+              Collez votre HTML ou créez un template simple. Vous pourrez le modifier lors de la création de campagne.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="template-name">Nom du template *</Label>
+              <Input
+                id="template-name"
+                value={newTemplateName}
+                onChange={(e) => setNewTemplateName(e.target.value)}
+                placeholder="Ex: Newsletter Janvier 2025"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="template-description">Description (optionnel)</Label>
+              <Input
+                id="template-description"
+                value={newTemplateDescription}
+                onChange={(e) => setNewTemplateDescription(e.target.value)}
+                placeholder="Description du template"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="template-type">Type</Label>
+              <Select value={newTemplateType} onValueChange={setNewTemplateType}>
+                <SelectTrigger id="template-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newsletter">Newsletter</SelectItem>
+                  <SelectItem value="promotion">Promotion</SelectItem>
+                  <SelectItem value="annonce">Annonce</SelectItem>
+                  <SelectItem value="transactionnel">Transactionnel</SelectItem>
+                  <SelectItem value="autre">Autre</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="template-html">Contenu HTML *</Label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-2 h-8"
+                  onClick={() => {
+                    setNewTemplateHtml(`<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${newTemplateName || "Template"}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f4;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px;">
+    <h1 style="color: #333333; font-size: 24px; margin: 0 0 20px 0;">Votre contenu ici</h1>
+    <p style="color: #666666; font-size: 16px; line-height: 1.6;">Modifiez ce template lors de la création de votre campagne.</p>
+  </div>
+</body>
+</html>`);
+                  }}
+                >
+                  <Code className="h-3 w-3" />
+                  Template de base
+                </Button>
+              </div>
+              <Textarea
+                id="template-html"
+                value={newTemplateHtml}
+                onChange={(e) => setNewTemplateHtml(e.target.value)}
+                placeholder="Collez votre HTML ici ou utilisez le bouton 'Template de base' pour commencer"
+                className="font-mono text-sm min-h-[300px]"
+              />
+              <p className="text-xs text-muted-foreground">
+                Vous pourrez modifier ce template lors de la création de votre campagne avec l'éditeur visuel.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+              Annuler
+            </Button>
+            <Button 
+              onClick={() => createMutation.mutate()} 
+              disabled={createMutation.isPending || !newTemplateName.trim() || !newTemplateHtml.trim()}
+              className="gap-2"
+            >
+              {createMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Création...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Créer le template
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog de suppression */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

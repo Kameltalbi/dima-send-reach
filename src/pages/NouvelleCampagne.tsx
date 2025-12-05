@@ -76,6 +76,10 @@ const NouvelleCampagne = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  
+  // Récupérer le paramètre template de l'URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const templateIdFromUrl = urlParams.get('template');
   const { quota, canSendEmails } = useEmailQuota();
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   const [htmlContent, setHtmlContent] = useState("");
@@ -143,6 +147,16 @@ const NouvelleCampagne = () => {
     scheduledDate: "",
     scheduledTime: "",
   });
+
+  // États pour le test A/B
+  const [isAbTestEnabled, setIsAbTestEnabled] = useState(false);
+  const [abTestType, setAbTestType] = useState<"subject" | "content" | "both">("subject");
+  const [abTestPercentage, setAbTestPercentage] = useState(20);
+  const [abTestDuration, setAbTestDuration] = useState(24);
+  const [abVariants, setAbVariants] = useState([
+    { name: "A", sujet: "", html: "" },
+    { name: "B", sujet: "", html: "" },
+  ]);
 
   // Charger la campagne existante pour le mode édition
   const { data: existingCampaign, isLoading: isLoadingCampaign } = useQuery({
@@ -215,15 +229,33 @@ const NouvelleCampagne = () => {
     }
   }, [existingCampaign]);
 
+  // Charger le template depuis l'URL si présent
+  useEffect(() => {
+    if (templateIdFromUrl && templates && templates.length > 0 && !htmlContent) {
+      const template = templates.find((t) => t.id === templateIdFromUrl);
+      if (template && template.content_html) {
+        setHtmlContent(template.content_html);
+        setHasUnsavedChanges(true);
+        toast.success(`Template "${template.nom}" chargé avec succès`);
+        // Nettoyer l'URL
+        window.history.replaceState({}, '', window.location.pathname);
+        // Attendre que le state soit mis à jour avant de forcer le remontage
+        setTimeout(() => {
+          setEditorVersion(v => v + 1);
+        }, 100);
+      }
+    }
+  }, [templateIdFromUrl, templates, htmlContent]);
+
   // Ouvrir automatiquement le dialog de configuration en mode création
   useEffect(() => {
     if (!isEditMode && !existingCampaign && templates !== undefined && !isLoadingCampaign && !isInitialConfigDone) {
       // Ouvrir le dialog de configuration au lieu du template
-      if (!htmlContent) {
+      if (!htmlContent && !templateIdFromUrl) {
         setIsSettingsOpen(true);
       }
     }
-  }, [isEditMode, existingCampaign, templates, isLoadingCampaign, htmlContent, isInitialConfigDone]);
+  }, [isEditMode, existingCampaign, templates, isLoadingCampaign, htmlContent, isInitialConfigDone, templateIdFromUrl]);
 
   // Fonction pour charger un template dans l'éditeur
   const handleLoadTemplate = async (templateId: string) => {
@@ -291,6 +323,16 @@ const NouvelleCampagne = () => {
         if (!formData.list_id) {
           throw new Error("Veuillez sélectionner une liste de contacts");
         }
+
+        // Validation pour le test A/B
+        if (isAbTestEnabled) {
+          if (abVariants.some(v => !v.sujet.trim() && (abTestType === "subject" || abTestType === "both"))) {
+            throw new Error("Veuillez remplir les sujets de toutes les variantes");
+          }
+          if (abVariants.some(v => !v.html.trim() && (abTestType === "content" || abTestType === "both"))) {
+            throw new Error("Veuillez créer le contenu de toutes les variantes");
+          }
+        }
       }
 
       let dateEnvoi = null;
@@ -300,7 +342,7 @@ const NouvelleCampagne = () => {
         dateEnvoi = new Date().toISOString();
       }
 
-      const campaignData = {
+      const campaignData: any = {
         user_id: user?.id,
         nom_campagne: formData.nom_campagne || "Campagne sans nom",
         sujet_email: formData.sujet_email || "",
@@ -311,6 +353,18 @@ const NouvelleCampagne = () => {
         statut: isDraft ? "brouillon" : formData.whenToSend === "now" ? "en_cours" : "en_attente",
         date_envoi: dateEnvoi,
       };
+
+      // Ajouter les champs A/B si activé
+      if (isAbTestEnabled) {
+        campaignData.is_ab_test = true;
+        campaignData.ab_test_type = abTestType;
+        campaignData.ab_test_percentage = abTestPercentage;
+        campaignData.ab_test_duration_hours = abTestDuration;
+        campaignData.ab_test_status = isDraft ? null : "testing";
+        if (!isDraft && formData.whenToSend === "now") {
+          campaignData.ab_test_started_at = new Date().toISOString();
+        }
+      }
 
       let data;
       let error;
@@ -336,8 +390,39 @@ const NouvelleCampagne = () => {
 
       if (error) throw error;
 
+      // Créer les variantes A/B si activé
+      if (isAbTestEnabled && data) {
+        // Supprimer les anciennes variantes si en mode édition
+        if (isEditMode) {
+          await supabase
+            .from("campaign_variants")
+            .delete()
+            .eq("campaign_id", data.id);
+        }
+
+        // Créer les nouvelles variantes
+        const variantsToInsert = abVariants.map((variant, index) => {
+          const variantData: any = {
+            campaign_id: data.id,
+            variant_name: variant.name,
+            sujet_email: variant.sujet || formData.sujet_email,
+            html_contenu: variant.html || htmlContent,
+          };
+          return variantData;
+        });
+
+        const { error: variantsError } = await supabase
+          .from("campaign_variants")
+          .insert(variantsToInsert);
+
+        if (variantsError) {
+          console.error("Erreur lors de la création des variantes:", variantsError);
+          throw new Error("Erreur lors de la création des variantes A/B");
+        }
+      }
+
       if (!isDraft && data) {
-        await createRecipients(data.id);
+        await createRecipients(data.id, isAbTestEnabled);
         
         if (formData.whenToSend === "now") {
           toast.info("Envoi de la campagne en cours...");
@@ -382,7 +467,7 @@ const NouvelleCampagne = () => {
   });
 
   // Créer les destinataires pour une campagne
-  const createRecipients = async (campaignId: string) => {
+  const createRecipients = async (campaignId: string, isAbTest: boolean = false) => {
     let contacts: any[] = [];
 
     if (formData.list_id === "all") {
@@ -403,11 +488,68 @@ const NouvelleCampagne = () => {
     }
 
     if (contacts.length > 0) {
-      const recipients = contacts.map((contact) => ({
-        campaign_id: campaignId,
-        contact_id: contact.id,
-        statut_envoi: "en_attente",
-      }));
+      let recipients: any[] = [];
+
+      if (isAbTest) {
+        // Récupérer les variantes
+        const { data: variants, error: variantsError } = await supabase
+          .from("campaign_variants")
+          .select("id, variant_name")
+          .eq("campaign_id", campaignId)
+          .order("variant_name");
+
+        if (variantsError) throw variantsError;
+
+        if (variants && variants.length >= 2) {
+          // Calculer le nombre de contacts pour chaque variante (basé sur le pourcentage)
+          const testContactsCount = Math.floor((contacts.length * abTestPercentage) / 100);
+          const contactsPerVariant = Math.floor(testContactsCount / variants.length);
+
+          // Mélanger les contacts pour une distribution aléatoire
+          const shuffledContacts = [...contacts].sort(() => Math.random() - 0.5);
+
+          // Assigner les variantes aux contacts de test
+          let contactIndex = 0;
+          variants.forEach((variant, variantIndex) => {
+            const startIndex = contactIndex;
+            const endIndex = Math.min(startIndex + contactsPerVariant, testContactsCount);
+            
+            for (let i = startIndex; i < endIndex && i < shuffledContacts.length; i++) {
+              recipients.push({
+                campaign_id: campaignId,
+                contact_id: shuffledContacts[i].id,
+                statut_envoi: "en_attente",
+                variant_id: variant.id,
+              });
+            }
+            contactIndex = endIndex;
+          });
+
+          // Les contacts restants seront assignés après la sélection du gagnant
+          for (let i = contactIndex; i < shuffledContacts.length; i++) {
+            recipients.push({
+              campaign_id: campaignId,
+              contact_id: shuffledContacts[i].id,
+              statut_envoi: "en_attente",
+              variant_id: null, // Sera assigné après sélection du gagnant
+            });
+          }
+        } else {
+          // Fallback si pas assez de variantes
+          recipients = contacts.map((contact) => ({
+            campaign_id: campaignId,
+            contact_id: contact.id,
+            statut_envoi: "en_attente",
+          }));
+        }
+      } else {
+        // Pas de test A/B, assigner tous les contacts normalement
+        recipients = contacts.map((contact) => ({
+          campaign_id: campaignId,
+          contact_id: contact.id,
+          statut_envoi: "en_attente",
+        }));
+      }
 
       const { error } = await supabase.from("campaign_recipients").insert(recipients);
       if (error) throw error;
@@ -2183,6 +2325,144 @@ const NouvelleCampagne = () => {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Test A/B */}
+            <div className="space-y-4 pt-4 border-t">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="ab-test">Test A/B</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Testez différentes variantes pour optimiser vos performances
+                  </p>
+                </div>
+                <Switch
+                  id="ab-test"
+                  checked={isAbTestEnabled}
+                  onCheckedChange={(checked) => {
+                    setIsAbTestEnabled(checked);
+                    setHasUnsavedChanges(true);
+                    if (!checked) {
+                      // Réinitialiser les variantes si désactivé
+                      setAbVariants([
+                        { name: "A", sujet: formData.sujet_email, html: htmlContent },
+                        { name: "B", sujet: "", html: "" },
+                      ]);
+                    } else {
+                      // Initialiser les variantes avec les valeurs actuelles
+                      setAbVariants([
+                        { name: "A", sujet: formData.sujet_email, html: htmlContent },
+                        { name: "B", sujet: "", html: "" },
+                      ]);
+                    }
+                  }}
+                />
+              </div>
+
+              {isAbTestEnabled && (
+                <div className="space-y-4 pl-4 border-l-2 border-primary/20">
+                  <div className="space-y-2">
+                    <Label>Type de test</Label>
+                    <Select value={abTestType} onValueChange={(value: "subject" | "content" | "both") => {
+                      setAbTestType(value);
+                      setHasUnsavedChanges(true);
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="subject">Sujet uniquement</SelectItem>
+                        <SelectItem value="content">Contenu uniquement</SelectItem>
+                        <SelectItem value="both">Sujet et contenu</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="ab-percentage">Pourcentage de test (%)</Label>
+                      <Input
+                        id="ab-percentage"
+                        type="number"
+                        min="10"
+                        max="50"
+                        value={abTestPercentage}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          if (val >= 10 && val <= 50) {
+                            setAbTestPercentage(val);
+                            setHasUnsavedChanges(true);
+                          }
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {abTestPercentage}% de votre liste recevra chaque variante
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ab-duration">Durée du test (heures)</Label>
+                      <Input
+                        id="ab-duration"
+                        type="number"
+                        min="1"
+                        max="168"
+                        value={abTestDuration}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          if (val >= 1 && val <= 168) {
+                            setAbTestDuration(val);
+                            setHasUnsavedChanges(true);
+                          }
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Durée avant de sélectionner le gagnant
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Variantes */}
+                  <div className="space-y-4">
+                    <Label>Variantes</Label>
+                    {abVariants.map((variant, index) => (
+                      <Card key={variant.name} className="p-4">
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <Badge variant="outline">Variante {variant.name}</Badge>
+                          </div>
+                          
+                          {(abTestType === "subject" || abTestType === "both") && (
+                            <div className="space-y-2">
+                              <Label>Sujet {variant.name}</Label>
+                              <Input
+                                value={variant.sujet}
+                                onChange={(e) => {
+                                  const newVariants = [...abVariants];
+                                  newVariants[index].sujet = e.target.value;
+                                  setAbVariants(newVariants);
+                                  setHasUnsavedChanges(true);
+                                }}
+                                placeholder={`Sujet pour la variante ${variant.name}`}
+                              />
+                            </div>
+                          )}
+
+                          {(abTestType === "content" || abTestType === "both") && (
+                            <div className="space-y-2">
+                              <Label>Contenu {variant.name}</Label>
+                              <p className="text-xs text-muted-foreground">
+                                {variant.name === "A" 
+                                  ? "Le contenu actuel de l'éditeur sera utilisé pour la variante A"
+                                  : "Créez le contenu de la variante B dans l'éditeur après avoir sauvegardé"}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-4 border-t">
