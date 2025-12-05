@@ -32,6 +32,19 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
         return;
       }
       
+      // Extraire les styles avant de nettoyer le HTML
+      let extractedCss = '';
+      const styleMatches = htmlContent.match(/<style[^>]*>([\s\S]*?)<\/style>/gi);
+      if (styleMatches) {
+        styleMatches.forEach(styleTag => {
+          const cssMatch = styleTag.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
+          if (cssMatch && cssMatch[1]) {
+            extractedCss += cssMatch[1] + '\n';
+          }
+        });
+        console.log("CSS extrait, longueur:", extractedCss.length);
+      }
+      
       // Extraire le contenu du body si présent (plusieurs fois pour être sûr)
       let bodyMatch;
       let extractionCount = 0;
@@ -60,24 +73,15 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
         console.log("Contenu extrait du html");
       }
       
-      // Supprimer les balises DOCTYPE, html, head, style restantes
+      // Supprimer les balises DOCTYPE, html, head restantes (mais garder les styles inline)
       htmlContent = htmlContent.replace(/<!DOCTYPE[^>]*>/gi, '');
       htmlContent = htmlContent.replace(/<\/?html[^>]*>/gi, '');
-      htmlContent = htmlContent.replace(/<\/?head[^>]*>[\s\S]*?<\/head>/gi, '');
+      htmlContent = htmlContent.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '');
+      // Supprimer les balises style (le CSS a déjà été extrait)
       htmlContent = htmlContent.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
       
       // Nettoyer les espaces en début et fin
       htmlContent = htmlContent.trim();
-      
-      // Vérifier si le contenu a déjà un wrapper ou des sections GrapesJS
-      const hasWrapper = htmlContent.includes('data-gjs-type="wrapper"');
-      const hasSection = htmlContent.includes('data-gjs-type="section"');
-      
-      // Si le contenu n'a pas de structure GrapesJS, en ajouter un wrapper
-      if (!hasWrapper && !hasSection) {
-        htmlContent = `<div data-gjs-type="wrapper">${htmlContent}</div>`;
-        console.log("Wrapper GrapesJS ajouté");
-      }
       
       console.log("Chargement du contenu dans GrapesJS, longueur finale:", htmlContent.length);
       console.log("Aperçu du contenu (premiers 200 caractères):", htmlContent.substring(0, 200));
@@ -88,6 +92,12 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       // Charger le contenu avec setComponents (méthode recommandée par GrapesJS)
       editorInstance.setComponents(htmlContent);
       console.log("setComponents appelé");
+      
+      // Appliquer les styles extraits
+      if (extractedCss) {
+        editorInstance.setStyle(extractedCss);
+        console.log("Styles CSS appliqués");
+      }
       
       // Attendre que le contenu soit chargé puis forcer le rendu avec refresh()
       setTimeout(() => {
