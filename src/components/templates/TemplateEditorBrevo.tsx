@@ -422,14 +422,18 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
     // Gérer le drag and drop depuis la sidebar
     const handleDrop = (e: DragEvent) => {
       e.preventDefault();
+      e.stopPropagation();
       const blockType = e.dataTransfer?.getData("block-type");
       const sectionHtml = e.dataTransfer?.getData("text/html");
+      
+      console.log("Drop détecté - blockType:", blockType, "sectionHtml:", sectionHtml?.substring(0, 100));
       
       if (sectionHtml && editor) {
         // Ajouter une section complète
         try {
           const wrapper = editor.getWrapper();
           wrapper.components().add(sectionHtml);
+          editor.refresh();
           toast.success("Section ajoutée avec succès");
         } catch (error) {
           console.error("Error adding section:", error);
@@ -443,10 +447,31 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
 
     const handleDragOver = (e: DragEvent) => {
       e.preventDefault();
+      e.stopPropagation();
     };
 
+    // Attacher les événements au conteneur
     containerRef.current?.addEventListener('drop', handleDrop);
     containerRef.current?.addEventListener('dragover', handleDragOver);
+    
+    // Attacher aussi à l'iframe du canvas GrapesJS
+    setTimeout(() => {
+      try {
+        const frame = editor.Canvas?.getFrameEl();
+        if (frame) {
+          frame.addEventListener('dragover', handleDragOver);
+          frame.addEventListener('drop', handleDrop);
+          
+          // Aussi sur le document de l'iframe
+          if (frame.contentDocument) {
+            frame.contentDocument.addEventListener('dragover', handleDragOver);
+            frame.contentDocument.addEventListener('drop', handleDrop);
+          }
+        }
+      } catch (e) {
+        console.warn("Erreur lors de l'attachement des événements à l'iframe:", e);
+      }
+    }, 500);
 
     function setDefaultTemplate(editorInstance: any) {
       // Vérifier que l'éditeur est prêt avant d'appeler getComponents
@@ -513,12 +538,29 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
         case 'diviseur':
           blockContent = '<hr data-gjs-type="default" style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;"/>';
           break;
+        case 'video':
+          blockContent = '<div style="position: relative; padding-bottom: 56.25%; height: 0; margin: 20px 0;"><iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" frameborder="0" allowfullscreen></iframe></div>';
+          break;
+        case 'logo':
+          blockContent = '<img src="https://via.placeholder.com/200x80?text=Logo" alt="Logo" style="max-width: 200px; height: auto; display: block; margin: 20px auto;" />';
+          break;
+        case 'social':
+          blockContent = '<div style="text-align: center; margin: 20px 0;"><a href="#" style="margin: 0 10px; display: inline-block;"><img src="https://via.placeholder.com/32x32?text=f" alt="Facebook" /></a><a href="#" style="margin: 0 10px; display: inline-block;"><img src="https://via.placeholder.com/32x32?text=t" alt="Twitter" /></a><a href="#" style="margin: 0 10px; display: inline-block;"><img src="https://via.placeholder.com/32x32?text=in" alt="LinkedIn" /></a></div>';
+          break;
+        case 'html':
+          blockContent = '<div data-gjs-type="text" style="padding: 20px; background: #f5f5f5; border: 1px dashed #ccc; margin: 20px 0;">Code HTML personnalisé</div>';
+          break;
+        case 'paiement':
+          blockContent = '<a href="#" data-gjs-type="link" style="display: inline-block; padding: 14px 28px; background: #28a745; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: bold;">💳 Payer maintenant</a>';
+          break;
         default:
           blockContent = '<div data-gjs-type="text" style="padding: 20px;">Nouveau bloc</div>';
       }
 
       wrapper.components().add(blockContent);
+      editorInstance.refresh();
       toast.success(`Bloc "${blockType}" ajouté`);
+      console.log("Bloc ajouté:", blockType);
     }
 
     // Ajuster la largeur selon le device view
