@@ -3,6 +3,14 @@ import { toast } from "sonner";
 import grapesjs from "grapesjs";
 import "grapesjs/dist/css/grapes.min.css";
 import newsletterPreset from "grapesjs-preset-newsletter";
+import { Eye, X, Monitor, Smartphone } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface TemplateEditorBrevoProps {
   initialContent?: string;
@@ -15,6 +23,39 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
   const containerRef = useRef<HTMLDivElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const initialContentRef = useRef<string | undefined>(initialContent);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState("");
+  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
+
+  const handlePreview = useCallback(() => {
+    if (editorRef.current) {
+      try {
+        // Essayer d'obtenir le HTML avec styles inline
+        let html = '';
+        try {
+          html = editorRef.current.Commands.run('gjs-get-inlined-html');
+        } catch {
+          // Fallback
+          const rawHtml = editorRef.current.getHtml();
+          const css = editorRef.current.getCss();
+          html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>${css}</style>
+</head>
+<body>${rawHtml}</body>
+</html>`;
+        }
+        setPreviewHtml(html);
+        setShowPreview(true);
+      } catch (error) {
+        console.error("Erreur preview:", error);
+        toast.error("Erreur lors de la génération de l'aperçu");
+      }
+    }
+  }, []);
   
   // Garder la ref à jour avec la dernière valeur de initialContent
   useEffect(() => {
@@ -759,15 +800,71 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
   }, [initialContent, loadHtmlIntoEditor]);
 
   return (
-    <div 
-      ref={containerRef}
-      className="w-full min-h-[600px] grapesjs-dotted-bg"
-      style={{ 
-        backgroundColor: '#f8f9fa',
-        backgroundImage: 'radial-gradient(circle, #cbd5e1 1px, transparent 1px)',
-        backgroundSize: '20px 20px',
-      }}
-    />
+    <div className="relative">
+      {/* Bouton Aperçu flottant */}
+      <Button
+        onClick={handlePreview}
+        variant="secondary"
+        size="sm"
+        className="absolute top-2 right-2 z-50 shadow-lg"
+      >
+        <Eye className="h-4 w-4 mr-2" />
+        Aperçu
+      </Button>
+
+      <div 
+        ref={containerRef}
+        className="w-full min-h-[600px] grapesjs-dotted-bg"
+        style={{ 
+          backgroundColor: '#f8f9fa',
+          backgroundImage: 'radial-gradient(circle, #cbd5e1 1px, transparent 1px)',
+          backgroundSize: '20px 20px',
+        }}
+      />
+
+      {/* Modal d'aperçu */}
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
+          <DialogHeader className="p-4 border-b flex-row items-center justify-between">
+            <DialogTitle>Aperçu de l'email</DialogTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={previewDevice === "desktop" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setPreviewDevice("desktop")}
+              >
+                <Monitor className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={previewDevice === "mobile" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setPreviewDevice("mobile")}
+              >
+                <Smartphone className="h-4 w-4" />
+              </Button>
+            </div>
+          </DialogHeader>
+          <div className="p-4 bg-muted overflow-auto" style={{ maxHeight: 'calc(90vh - 80px)' }}>
+            <div 
+              className="mx-auto bg-white shadow-lg transition-all duration-300"
+              style={{ 
+                width: previewDevice === "mobile" ? "375px" : "100%",
+                maxWidth: previewDevice === "mobile" ? "375px" : "800px",
+              }}
+            >
+              <iframe
+                srcDoc={previewHtml}
+                title="Email Preview"
+                className="w-full border-0"
+                style={{ 
+                  height: previewDevice === "mobile" ? "667px" : "600px",
+                }}
+              />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
 
