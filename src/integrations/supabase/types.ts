@@ -924,6 +924,42 @@ export type Database = {
         }
         Relationships: []
       }
+      unsubscribe_preferences: {
+        Row: {
+          contact_id: string
+          created_at: string
+          email: string
+          id: string
+          preferences: Json | null
+          reason: string | null
+          unsubscribe_all: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contact_id: string
+          created_at?: string
+          email: string
+          id?: string
+          preferences?: Json | null
+          reason?: string | null
+          unsubscribe_all?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string
+          email?: string
+          id?: string
+          preferences?: Json | null
+          reason?: string | null
+          unsubscribe_all?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_invitations: {
         Row: {
           created_at: string
