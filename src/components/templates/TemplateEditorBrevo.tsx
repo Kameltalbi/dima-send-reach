@@ -25,186 +25,95 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
   const loadHtmlIntoEditor = useCallback((editorInstance: any, html: string) => {
     try {
       console.log("loadHtmlIntoEditor appelé avec HTML de longueur:", html.length);
-      let htmlContent = html.trim();
       
-      if (!htmlContent) {
-        console.error("Le contenu HTML est vide après trim");
+      if (!html || !html.trim()) {
+        console.error("Le contenu HTML est vide");
         return;
       }
       
-      // Extraire les styles avant de nettoyer le HTML
-      let extractedCss = '';
-      const styleMatches = htmlContent.match(/<style[^>]*>([\s\S]*?)<\/style>/gi);
+      // Désactiver temporairement l'événement update
+      editorInstance.off('update');
+      
+      // Extraire les styles
+      let css = '';
+      const styleMatches = html.match(/<style[^>]*>([\s\S]*?)<\/style>/gi);
       if (styleMatches) {
         styleMatches.forEach(styleTag => {
           const cssMatch = styleTag.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
           if (cssMatch && cssMatch[1]) {
-            extractedCss += cssMatch[1] + '\n';
+            css += cssMatch[1] + '\n';
           }
         });
-        console.log("CSS extrait, longueur:", extractedCss.length);
+        console.log("CSS extrait, longueur:", css.length);
       }
       
-      // Extraire le contenu du body si présent (plusieurs fois pour être sûr)
-      let bodyMatch;
-      let extractionCount = 0;
-      while ((bodyMatch = htmlContent.match(/<body[^>]*>([\s\S]*)<\/body>/i))) {
-        htmlContent = bodyMatch[1];
-        extractionCount++;
-        console.log(`Contenu extrait du body (itération ${extractionCount})`);
+      // Extraire le contenu du body
+      let bodyContent = html;
+      const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+      if (bodyMatch) {
+        bodyContent = bodyMatch[1];
+        console.log("Contenu body extrait");
       }
       
-      // Supprimer toute balise body restante (ouvrante ou fermante) - plusieurs fois pour être sûr
-      let previousLength = htmlContent.length;
-      htmlContent = htmlContent.replace(/<\/?body[^>]*>/gi, '');
-      while (htmlContent.length !== previousLength) {
-        previousLength = htmlContent.length;
-        htmlContent = htmlContent.replace(/<\/?body[^>]*>/gi, '');
+      // Supprimer les balises inutiles
+      bodyContent = bodyContent.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+      bodyContent = bodyContent.replace(/<!DOCTYPE[^>]*>/gi, '');
+      bodyContent = bodyContent.replace(/<\/?html[^>]*>/gi, '');
+      bodyContent = bodyContent.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '');
+      bodyContent = bodyContent.replace(/<\/?body[^>]*>/gi, '');
+      bodyContent = bodyContent.trim();
+      
+      console.log("Contenu nettoyé, longueur:", bodyContent.length);
+      console.log("Aperçu:", bodyContent.substring(0, 300));
+      
+      // Charger le contenu
+      editorInstance.setComponents(bodyContent);
+      if (css) {
+        editorInstance.setStyle(css);
       }
+      console.log("setComponents et setStyle appelés");
       
-      if (extractionCount > 0 || previousLength !== htmlContent.length) {
-        console.log("Toutes les balises body ont été supprimées");
-      }
-      
-      // Extraire le contenu du html si présent
-      const htmlMatch = htmlContent.match(/<html[^>]*>([\s\S]*)<\/html>/i);
-      if (htmlMatch) {
-        htmlContent = htmlMatch[1];
-        console.log("Contenu extrait du html");
-      }
-      
-      // Supprimer les balises DOCTYPE, html, head restantes (mais garder les styles inline)
-      htmlContent = htmlContent.replace(/<!DOCTYPE[^>]*>/gi, '');
-      htmlContent = htmlContent.replace(/<\/?html[^>]*>/gi, '');
-      htmlContent = htmlContent.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '');
-      // Supprimer les balises style (le CSS a déjà été extrait)
-      htmlContent = htmlContent.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
-      
-      // Nettoyer les espaces en début et fin
-      htmlContent = htmlContent.trim();
-      
-      console.log("Chargement du contenu dans GrapesJS, longueur finale:", htmlContent.length);
-      console.log("Aperçu du contenu (premiers 200 caractères):", htmlContent.substring(0, 200));
-      
-      // Désactiver temporairement l'événement update pour éviter la boucle infinie
-      editorInstance.off('update');
-      
-      // Charger le contenu avec setComponents (méthode recommandée par GrapesJS)
-      editorInstance.setComponents(htmlContent);
-      console.log("setComponents appelé");
-      
-      // Appliquer les styles extraits
-      if (extractedCss) {
-        editorInstance.setStyle(extractedCss);
-        console.log("Styles CSS appliqués");
-      }
-      
-      // Attendre que le contenu soit chargé puis forcer le rendu avec refresh()
+      // Forcer le rendu après un délai
       setTimeout(() => {
         try {
-          const components = editorInstance.getComponents();
-          // GrapesJS utilise components.length() comme méthode, pas comme propriété
-          const componentCount = components && typeof components.length === 'function' ? components.length() : (components ? 1 : 0);
-          console.log(`Nombre de composants chargés: ${componentCount}`);
+          // Vérifier si le contenu est chargé
+          const wrapper = editorInstance.getWrapper();
+          const components = wrapper?.components();
+          const count = components?.length ? components.length() : 0;
+          console.log("Nombre de composants:", count);
           
-          if (componentCount === 0) {
-            console.warn("Aucun composant chargé, tentative de rechargement...");
-            // Réessayer avec setComponents
-            editorInstance.setComponents(htmlContent);
-          }
+          // Forcer le refresh
+          editorInstance.refresh();
+          console.log("refresh() appelé");
           
-          // Utiliser refresh() comme dans TemplateEditor.tsx pour forcer le rendu
-          try {
-            // Vérifier que le canvas est prêt avant d'appeler refresh()
-            const canvas = editorInstance.Canvas;
-            if (canvas && canvas.getFrameEl) {
-              const frame = canvas.getFrameEl();
-              if (frame && frame.contentDocument) {
-                // Appeler refresh() pour forcer le rendu du contenu dans le frame
-                editorInstance.refresh();
-                console.log("refresh() appelé pour forcer le rendu");
-                
-                // Vérifier que le contenu est maintenant dans le frame
-                setTimeout(() => {
-                  const frameBody = frame.contentDocument?.body;
-                  if (frameBody) {
-                    const bodyContent = frameBody.innerHTML;
-                    console.log("Contenu du frame body après refresh:", bodyContent.substring(0, 200));
-                  }
-                }, 100);
-              }
-            } else {
-              // Si le canvas n'est pas encore prêt, essayer refresh() quand même
-              editorInstance.refresh();
-              console.log("refresh() appelé (canvas peut ne pas être prêt)");
+          // Réactiver l'événement update
+          const updateHandler = () => {
+            if (saveTimeoutRef.current) {
+              clearTimeout(saveTimeoutRef.current);
             }
-          } catch (refreshError) {
-            console.warn("Erreur lors de l'appel à refresh():", refreshError);
-            // Essayer une alternative : sélectionner puis désélectionner le wrapper
-            try {
-              const wrapper = editorInstance.getWrapper();
-              if (wrapper) {
-                editorInstance.select(wrapper);
-                setTimeout(() => {
-                  editorInstance.select(null);
-                  console.log("Wrapper sélectionné puis désélectionné pour forcer le rendu");
-                }, 50);
-              }
-            } catch (selectError) {
-              console.warn("Erreur lors de la sélection du wrapper:", selectError);
-            }
-          }
-        } catch (error) {
-          console.warn("Erreur lors de la vérification du chargement:", error);
-        }
-      }, 300);
-      
-      // Attendre que le contenu soit rendu
-      setTimeout(() => {
-        try {
-          // Ne pas appeler refresh() car cela cause des erreurs si le canvas n'est pas prêt
-          // Le contenu devrait s'afficher automatiquement après setComponents
-          
-          const components = editorInstance.getComponents();
-          if (components && typeof components.each === 'function') {
-            console.log("Rendu des composants éditables");
-            components.each((component: any) => {
-              makeComponentEditable(component);
-            });
-          } else {
-            console.warn("getComponents() ne retourne pas un objet avec each()");
-          }
-          
-          // Réactiver l'événement update après le chargement (avec un délai pour éviter la boucle)
-          setTimeout(() => {
-            const updateHandler = () => {
-              if (saveTimeoutRef.current) {
-                clearTimeout(saveTimeoutRef.current);
-              }
-              saveTimeoutRef.current = setTimeout(() => {
-                const html = editorInstance.getHtml();
-                const css = editorInstance.getCss();
-                const fullHtml = `<!DOCTYPE html>
+            saveTimeoutRef.current = setTimeout(() => {
+              const htmlOut = editorInstance.getHtml();
+              const cssOut = editorInstance.getCss();
+              const fullHtml = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>${css}</style>
+  <style>${cssOut}</style>
 </head>
 <body>
-  ${html}
+  ${htmlOut}
 </body>
 </html>`;
-                onSave(fullHtml);
-              }, 500);
-            };
-            editorInstance.on('update', updateHandler);
-            console.log("Événement update réactivé");
-          }, 1000);
+              onSave(fullHtml);
+            }, 500);
+          };
+          editorInstance.on('update', updateHandler);
+          console.log("Événement update réactivé");
         } catch (error) {
-          console.error('Error accessing components after HTML load:', error);
+          console.error("Erreur lors du chargement:", error);
         }
-      }, 500);
+      }, 300);
     } catch (error) {
       console.error("Error loading HTML:", error);
     }
