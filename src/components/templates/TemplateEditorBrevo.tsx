@@ -136,7 +136,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
 
     const editor = grapesjs.init({
       container: containerRef.current,
-      height: "100%",
+      height: "600px",
       width: "100%",
       storageManager: false,
       // Forcer les styles inline pour les emails
@@ -413,14 +413,12 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       console.log("Événement 'load' de GrapesJS déclenché");
       
       // Rendre le StyleManager dans le panneau personnalisé
-      const stylePanel = document.getElementById("grapesjs-style-panel-content");
+      const stylePanel = document.getElementById("grapesjs-style-panel");
       if (stylePanel) {
         const sm = editor.StyleManager;
         stylePanel.innerHTML = '';
         stylePanel.appendChild(sm.render());
         console.log("StyleManager rendu dans le panneau");
-      } else {
-        console.warn("Panneau grapesjs-style-panel-content non trouvé");
       }
       
       // Utiliser la ref pour avoir la dernière valeur de initialContent
@@ -761,7 +759,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
   return (
     <div 
       ref={containerRef}
-      className="w-full h-full min-h-[calc(100vh-200px)]"
+      className="w-full min-h-[600px]"
       style={{ 
         backgroundColor: '#ffffff',
       }}

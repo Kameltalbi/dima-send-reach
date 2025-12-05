@@ -822,6 +822,13 @@ const NouvelleCampagne = () => {
 
             {/* Zone de contenu */}
             <div className="flex-1 overflow-y-auto bg-white">
+              {/* Panneau de propriétés GrapesJS - toujours présent dans le DOM */}
+              <div 
+                id="grapesjs-style-panel" 
+                className={`${sidebarIcon === "style" ? "block" : "hidden"}`}
+                style={{ position: sidebarIcon === "style" ? "relative" : "absolute", left: "-9999px" }}
+              ></div>
+              
               {sidebarIcon === "contenu" && sidebarTab === "blocs" && (
                 <div className="p-4 space-y-4">
                   {/* Bouton pour choisir un template */}
@@ -877,16 +884,137 @@ const NouvelleCampagne = () => {
               
               {sidebarIcon === "style" && (
                 <div className="p-4 space-y-4 overflow-y-auto">
-                  {/* Message d'aide pour sélectionner un élément */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
-                    <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                    <p className="text-xs text-blue-900">
-                      <strong>Sélectionnez un élément</strong> dans l'éditeur pour modifier ses styles (couleur, taille, police, etc.)
-                    </p>
+                  {/* Bibliothèque de marques */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-foreground">Bibliothèque de marques</h3>
+                      <Badge className="bg-green-500 text-white text-xs">Nouveau</Badge>
+                    </div>
+                    
+                    {/* Éléments de marque - 4 éléments */}
+                    <div className="grid grid-cols-4 gap-2">
+                      <div className="border rounded-lg p-2 bg-white flex items-center justify-center h-16 cursor-pointer hover:border-primary transition-colors">
+                        <span className="text-xs font-semibold">Iddéco</span>
+                      </div>
+                      <div className="border rounded-lg p-2 bg-[#2d5016] flex items-center justify-center h-16 cursor-pointer hover:border-primary transition-colors"></div>
+                      <div className="border rounded-lg p-2 bg-[#f5f0e8] flex items-center justify-center h-16 cursor-pointer hover:border-primary transition-colors"></div>
+                      <div className="border rounded-lg p-2 bg-white flex items-center justify-center gap-1 h-16 cursor-pointer hover:border-primary transition-colors">
+                        <Facebook className="h-4 w-4 text-blue-600" />
+                        <Instagram className="h-4 w-4 text-pink-600" />
+                      </div>
+                    </div>
+                    
+                    {/* Info box */}
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 flex items-start gap-2">
+                      <Info className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-purple-900">
+                        Nouveaux éléments de marque disponibles
+                      </p>
+                    </div>
+                    
+                    {/* Boutons */}
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" className="flex-1 text-xs h-8">
+                        Modifier
+                      </Button>
+                      <Button size="sm" className="flex-1 text-xs bg-foreground text-background h-8">
+                        Appliquer les éléments
+                      </Button>
+                    </div>
                   </div>
                   
-                  {/* Panneau GrapesJS StyleManager - affiché ici */}
-                  <div id="grapesjs-style-panel-content" className="min-h-[200px]"></div>
+                  {/* Template - Section repliable */}
+                  <div className="space-y-3 border-t pt-3">
+                    <button 
+                      onClick={() => setTemplateExpanded(!templateExpanded)}
+                      className="w-full flex items-center justify-between text-sm font-medium text-foreground hover:text-primary transition-colors"
+                    >
+                      <span>Template</span>
+                      {templateExpanded ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </button>
+                    
+                    {templateExpanded && (
+                      <div className="space-y-3 pt-2">
+                        <div className="space-y-2">
+                          <Label className="text-xs">Couleur d'arrière-plan</Label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={templateStyles.backgroundColor}
+                              onChange={(e) => setTemplateStyles({ ...templateStyles, backgroundColor: e.target.value })}
+                              className="w-10 h-10 rounded border-2 border-gray-300 cursor-pointer"
+                            />
+                            <Input 
+                              value={templateStyles.backgroundColor}
+                              onChange={(e) => setTemplateStyles({ ...templateStyles, backgroundColor: e.target.value })}
+                              className="h-8 text-xs flex-1"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label className="text-xs">Image d'arrière-plan</Label>
+                          <Button variant="outline" size="sm" className="w-full text-xs h-8 gap-2">
+                            <ImagePlus className="h-3.5 w-3.5" />
+                            Ajouter une image
+                          </Button>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label className="text-xs">Insérer image à partir d'une URL</Label>
+                          <Input 
+                            value={templateStyles.backgroundImageUrl}
+                            onChange={(e) => setTemplateStyles({ ...templateStyles, backgroundImageUrl: e.target.value })}
+                            placeholder="https://mydomain.com/myimage.png"
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label className="text-xs">Couleur du corps</Label>
+                          <div className="flex items-center gap-2">
+                            <div className="w-10 h-10 rounded border-2 border-gray-300 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZGRkIi8+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNmZmYiLz48L3N2Zz4=')] bg-[length:10px_10px] cursor-pointer"></div>
+                            <Input 
+                              value={templateStyles.bodyColor || ""}
+                              onChange={(e) => setTemplateStyles({ ...templateStyles, bodyColor: e.target.value })}
+                              placeholder="Transparent"
+                              className="h-8 text-xs flex-1"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label className="text-xs">Largeur du corps</Label>
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 border border-gray-300"></div>
+                            <div className="flex items-center gap-1 flex-1">
+                              <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setTemplateStyles({ ...templateStyles, bodyWidth: Math.max(300, templateStyles.bodyWidth - 10) })}>-</Button>
+                              <Input 
+                                type="number"
+                                value={templateStyles.bodyWidth}
+                                onChange={(e) => setTemplateStyles({ ...templateStyles, bodyWidth: parseInt(e.target.value) || 600 })}
+                                className="h-8 text-xs text-center flex-1"
+                              />
+                              <span className="text-xs text-muted-foreground">px</span>
+                              <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setTemplateStyles({ ...templateStyles, bodyWidth: templateStyles.bodyWidth + 10 })}>+</Button>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs">Afficher dans le navigateur</Label>
+                          <Switch 
+                            checked={templateStyles.showInBrowser}
+                            onCheckedChange={(checked) => setTemplateStyles({ ...templateStyles, showInBrowser: checked })}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   
                   {/* Apparence du texte - Section repliable */}
                   <div className="space-y-3 border-t pt-3">
