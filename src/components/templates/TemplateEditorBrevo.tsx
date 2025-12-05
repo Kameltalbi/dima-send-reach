@@ -753,10 +753,31 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
         console.log("Ajout du bloc:", blockContent.substring(0, 100));
         
         try {
+          // Récupérer le composant sélectionné pour insérer après
+          const selected = editorRef.current.getSelected();
           const components = wrapper.components();
-          components.add(blockContent);
+          
+          if (selected) {
+            // Trouver le parent et l'index du composant sélectionné
+            const parent = selected.parent();
+            if (parent) {
+              const parentComponents = parent.components();
+              const index = parentComponents.indexOf(selected);
+              // Insérer après le composant sélectionné
+              parentComponents.add(blockContent, { at: index + 1 });
+              console.log("Bloc ajouté après le composant sélectionné, index:", index + 1);
+            } else {
+              // Pas de parent, ajouter au wrapper
+              components.add(blockContent);
+              console.log("Bloc ajouté à la fin (pas de parent)");
+            }
+          } else {
+            // Aucun composant sélectionné, ajouter à la fin
+            components.add(blockContent);
+            console.log("Bloc ajouté à la fin (aucune sélection)");
+          }
+          
           editorRef.current.refresh();
-          console.log("Bloc ajouté avec succès");
           toast.success(`Bloc "${blockType}" ajouté`);
         } catch (err) {
           console.error("Erreur ajout bloc:", err);
