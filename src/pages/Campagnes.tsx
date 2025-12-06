@@ -148,7 +148,7 @@ const Campagnes = () => {
     setIsDeleteOpen(true);
   };
 
-  const getStatusBadge = (statut: string) => {
+  const getStatusBadge = (statut: string, dateEnvoi?: string | null) => {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
       brouillon: "outline",
       en_attente: "secondary",
@@ -163,6 +163,30 @@ const Campagnes = () => {
       envoye: "Envoyée",
       annule: "Annulée",
     };
+    
+    // Si statut en_attente avec une date_envoi future, afficher "Programmée"
+    if (statut === "en_attente" && dateEnvoi) {
+      const scheduledDate = new Date(dateEnvoi);
+      const now = new Date();
+      if (scheduledDate > now) {
+        return (
+          <div className="flex flex-col gap-1">
+            <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+              Programmée
+            </Badge>
+            <span className="text-xs text-muted-foreground">
+              {scheduledDate.toLocaleDateString('fr-FR', { 
+                day: 'numeric', 
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </span>
+          </div>
+        );
+      }
+    }
+    
     return (
       <Badge variant={variants[statut] || "outline"}>
         {labels[statut] || statut}
@@ -296,7 +320,7 @@ const Campagnes = () => {
                             <span className="text-muted-foreground">Tous les contacts</span>
                           )}
                         </TableCell>
-                        <TableCell>{getStatusBadge(campaign.statut)}</TableCell>
+                        <TableCell>{getStatusBadge(campaign.statut, campaign.date_envoi)}</TableCell>
                         <TableCell>
                           {stats.total_envoyes > 0 ? stats.total_envoyes.toLocaleString() : "-"}
                         </TableCell>
