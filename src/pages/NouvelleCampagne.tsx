@@ -54,7 +54,8 @@ import {
   X as XIcon,
   RectangleHorizontal,
   Folder,
-  Trash2
+  Trash2,
+  LogOut
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Toggle } from "@/components/ui/toggle";
@@ -109,6 +110,9 @@ const NouvelleCampagne = () => {
   const mediaLibraryInputRef = useRef<HTMLInputElement>(null);
   const [selectedTextComponent, setSelectedTextComponent] = useState<boolean>(false);
   const selectedComponentRef = useRef<any>(null);
+  const [blockStyles, setBlockStyles] = useState({
+    backgroundColor: '#ffffff',
+  });
   const [textStyles, setTextStyles] = useState({
     fontFamily: 'Arial',
     fontSize: '14px',
@@ -897,12 +901,34 @@ const NouvelleCampagne = () => {
     setSelectedMediaPaths(newSelection);
   };
   
-  const handleSaveAndQuit = () => {
-    saveMutation.mutate(true);
-    setLastSaved(new Date());
-    setTimeout(() => {
+  const handleSave = () => {
+    saveMutation.mutate(true, {
+      onSuccess: () => {
+        setLastSaved(new Date());
+        toast.success("Campagne enregistrée avec succès");
+      }
+    });
+  };
+
+  const handleQuit = () => {
+    if (hasUnsavedChanges) {
+      if (confirm("Vous avez des modifications non sauvegardées. Voulez-vous vraiment quitter sans enregistrer ?")) {
+        navigate("/campagnes");
+      }
+    } else {
       navigate("/campagnes");
-    }, 500);
+    }
+  };
+
+  const handleSaveAndQuit = () => {
+    saveMutation.mutate(true, {
+      onSuccess: () => {
+        setLastSaved(new Date());
+        setTimeout(() => {
+          navigate("/campagnes");
+        }, 500);
+      }
+    });
   };
   
   // Formater l'heure de dernière sauvegarde
@@ -943,7 +969,7 @@ const NouvelleCampagne = () => {
   ];
 
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
+    <div className="h-screen flex flex-col bg-background overflow-hidden" style={{ height: '100vh', maxHeight: '100vh' }}>
       {/* Header style Brevo */}
       <div className="h-12 bg-[#f5f5f5] border-b border-gray-200 px-4 flex items-center justify-between z-20">
         <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -1007,6 +1033,15 @@ const NouvelleCampagne = () => {
           )}
           
           <Button 
+            variant="outline"
+            onClick={() => setIsTemplateDialogOpen(true)}
+            className="gap-2 h-8 text-xs"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            Templates
+          </Button>
+          
+          <Button 
             variant="ghost"
             onClick={handlePreviewAndTest}
             className="gap-2 h-8 text-xs"
@@ -1016,24 +1051,34 @@ const NouvelleCampagne = () => {
           </Button>
           
           <Button 
-            onClick={handleSaveAndQuit}
+            onClick={handleSave}
             disabled={saveMutation.isPending}
-            className="gap-2 h-8 text-xs bg-foreground text-background hover:bg-foreground/90"
+            variant="outline"
+            className="gap-2 h-8 text-xs"
           >
             {saveMutation.isPending ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
               <Save className="h-3.5 w-3.5" />
             )}
-            Enregistrer et quitter
+            Enregistrer
+          </Button>
+          
+          <Button 
+            onClick={handleQuit}
+            variant="ghost"
+            className="gap-2 h-8 text-xs"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            Quitter
           </Button>
         </div>
       </div>
 
       {/* Contenu principal */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden min-h-0" style={{ height: 'calc(100vh - 48px)', minHeight: 0, maxHeight: 'calc(100vh - 48px)' }}>
         {/* Sidebar gauche - Style Brevo */}
-        <div className="w-80 border-r bg-[#f5f5f5] flex flex-col">
+        <div className="w-80 border-r bg-[#f5f5f5] flex flex-col flex-shrink-0">
           {/* Onglets horizontaux */}
           <div className="border-b bg-white px-4 py-2 flex gap-1">
             <button
@@ -1419,6 +1464,16 @@ const NouvelleCampagne = () => {
               
               {sidebarTab === "enregistres" && (
                 <div className="p-4 space-y-4 overflow-y-auto">
+                  {/* Bouton pour importer un template */}
+                  <Button
+                    onClick={() => setIsTemplateDialogOpen(true)}
+                    variant="default"
+                    className="w-full gap-2"
+                  >
+                    <FileText className="h-4 w-4" />
+                    Importer un template
+                  </Button>
+                  
                   {/* Bouton pour sauvegarder la section sélectionnée */}
                   <div className="space-y-2">
                     <Button
@@ -1525,10 +1580,10 @@ const NouvelleCampagne = () => {
         </div>
 
         {/* Zone principale - Fond beige avec grille pointillée */}
-        <div className="flex-1 overflow-hidden bg-[#f5f0e8] relative">
+        <div className="flex-1 flex flex-col overflow-hidden bg-[#f5f0e8] relative min-h-0" style={{ height: '100%', minHeight: 0, maxHeight: '100%', flex: '1 1 0%' }}>
           {/* Grille pointillée en arrière-plan */}
           <div 
-            className="absolute inset-0 opacity-30"
+            className="absolute inset-0 opacity-30 pointer-events-none"
             style={{
               backgroundImage: `
                 radial-gradient(circle, #d4c5b0 1px, transparent 1px)
@@ -1538,8 +1593,7 @@ const NouvelleCampagne = () => {
           />
           
           {/* Zone d'édition - pleine largeur */}
-          <div className="h-full overflow-auto relative">
-            <div className="bg-white shadow-2xl h-full flex flex-col w-full">
+          <div className="flex-1 flex flex-col overflow-hidden min-h-0 relative" style={{ height: '100%', minHeight: 0, maxHeight: '100%', flex: '1 1 0%' }}>
               <TemplateEditorBrevo
                 key={`editor-v${editorVersion}`}
                 initialContent={htmlContent}
@@ -1553,14 +1607,86 @@ const NouvelleCampagne = () => {
                     selectedComponentRef.current = component;
                     // Extraire les styles du composant
                     const styles = component.getStyle();
-                    // Convertir rgb() en hex si nécessaire
-                    let color = styles['color'] || '#000000';
+                    const tagName = component.get('tagName')?.toLowerCase();
+                    const isTextComponent = tagName === 'p' || tagName === 'h1' || tagName === 'h2' || tagName === 'h3' || tagName === 'h4' || tagName === 'h5' || tagName === 'h6' || tagName === 'span' || tagName === 'a';
+                    
+                    // Obtenir l'élément DOM pour les styles calculés et inline
+                    const el = component.getEl();
+                    let computedStyles: any = {};
+                    let inlineStyle = '';
+                    if (el) {
+                      // Récupérer les styles calculés
+                      if (window.getComputedStyle) {
+                        try {
+                          computedStyles = window.getComputedStyle(el);
+                        } catch (e) {
+                          console.warn('Erreur lors de la récupération des styles calculés:', e);
+                        }
+                      }
+                      // Récupérer les styles inline depuis l'attribut style
+                      if (el.getAttribute) {
+                        inlineStyle = el.getAttribute('style') || '';
+                      }
+                    }
+                    
+                    // Fonction pour extraire une couleur depuis une chaîne de style
+                    const extractColorFromStyle = (styleString: string, property: string): string | null => {
+                      const regex = new RegExp(`${property}\\s*:\\s*([^;]+)`, 'i');
+                      const match = styleString.match(regex);
+                      return match ? match[1].trim() : null;
+                    };
+                    
+                    // Extraire la couleur de fond depuis plusieurs sources (priorité: inline > styles GrapesJS > computed)
+                    let bgColor = extractColorFromStyle(inlineStyle, 'background-color') ||
+                                 extractColorFromStyle(inlineStyle, 'background') ||
+                                 styles['background-color'] || 
+                                 styles['background'] || 
+                                 computedStyles?.backgroundColor ||
+                                 computedStyles?.background ||
+                                 '#ffffff';
+                    
+                    // Convertir rgb() en hex si nécessaire pour la couleur de texte
+                    let color = extractColorFromStyle(inlineStyle, 'color') ||
+                               styles['color'] || 
+                               computedStyles?.color || 
+                               '#000000';
                     if (color.startsWith('rgb')) {
                       const rgb = color.match(/\d+/g);
                       if (rgb && rgb.length >= 3) {
                         color = '#' + rgb.map(x => parseInt(x).toString(16).padStart(2, '0')).join('');
                       }
                     }
+                    
+                    // Si c'est un gradient, extraire la première couleur
+                    if (bgColor.includes('gradient')) {
+                      // Extraire la première couleur du gradient (ex: linear-gradient(135deg, #667eea 0%, #764ba2 100%))
+                      const gradientMatch = bgColor.match(/#[0-9a-fA-F]{6}|rgb\([^)]+\)|rgba\([^)]+\)/);
+                      if (gradientMatch) {
+                        bgColor = gradientMatch[0];
+                      } else {
+                        bgColor = '#ffffff';
+                      }
+                    } else if (bgColor.includes('url')) {
+                      // Si c'est une image de fond, garder blanc par défaut
+                      bgColor = '#ffffff';
+                    }
+                    
+                    // Convertir rgb/rgba en hex
+                    if (bgColor.startsWith('rgb')) {
+                      const rgbMatch = bgColor.match(/\d+/g);
+                      if (rgbMatch && rgbMatch.length >= 3) {
+                        const r = parseInt(rgbMatch[0]);
+                        const g = parseInt(rgbMatch[1]);
+                        const b = parseInt(rgbMatch[2]);
+                        bgColor = '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+                      }
+                    }
+                    
+                    // S'assurer que c'est un code hex valide
+                    if (!bgColor.startsWith('#')) {
+                      bgColor = '#ffffff';
+                    }
+                    
                     setTextStyles({
                       fontFamily: styles['font-family']?.replace(/['"]/g, '') || 'Arial',
                       fontSize: styles['font-size'] || '14px',
@@ -1571,7 +1697,12 @@ const NouvelleCampagne = () => {
                       textDecoration: styles['text-decoration'] || 'none',
                       lineHeight: styles['line-height'] || '1.5',
                     });
-                    setSelectedTextComponent(true);
+                    
+                    setBlockStyles({
+                      backgroundColor: bgColor,
+                    });
+                    
+                    setSelectedTextComponent(isTextComponent);
                   } else {
                     selectedComponentRef.current = null;
                     setSelectedTextComponent(false);
@@ -1589,7 +1720,6 @@ const NouvelleCampagne = () => {
                   addBlockRef.current = addBlock;
                 }}
               />
-            </div>
             
             {/* Dialog Bibliothèque de contenu */}
             <Dialog 
@@ -2028,20 +2158,23 @@ const NouvelleCampagne = () => {
               </DialogContent>
             </Dialog>
             
-            {/* Panneau de configuration texte à droite - style Brevo */}
-            {selectedTextComponent && selectedComponentRef.current && (
+            {/* Panneau de configuration à droite - style Brevo */}
+            {selectedComponentRef.current && (
               <div className="absolute right-0 top-0 bottom-0 w-80 bg-white border-l shadow-lg z-50 overflow-y-auto">
                 <div className="p-4 border-b">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-foreground">Paramètres du texte</h3>
+                    <h3 className="text-sm font-semibold text-foreground">
+                      {selectedTextComponent ? 'Paramètres du texte' : 'Paramètres du bloc'}
+                    </h3>
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6"
-                      onClick={() => {
-                        setSelectedTextComponent(false);
-                        selectedComponentRef.current = null;
-                      }}
+                    onClick={() => {
+                      setSelectedTextComponent(false);
+                      selectedComponentRef.current = null;
+                      setBlockStyles({ backgroundColor: '#ffffff' });
+                    }}
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -2049,6 +2182,91 @@ const NouvelleCampagne = () => {
                 </div>
                 
                 <div className="p-4 space-y-4">
+                  {/* Couleur de fond - pour tous les composants */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium">Couleur de fond</Label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={blockStyles.backgroundColor.startsWith('#') ? blockStyles.backgroundColor : '#ffffff'}
+                        onChange={(e) => {
+                          if (selectedComponentRef.current) {
+                            const colorValue = e.target.value;
+                            try {
+                              // Appliquer le style dans GrapesJS avec setStyle
+                              selectedComponentRef.current.setStyle({ 'background-color': colorValue });
+                              
+                              // Appliquer directement en inline sur l'élément DOM (crucial pour les emails)
+                              const el = selectedComponentRef.current.getEl();
+                              if (el) {
+                                el.style.backgroundColor = colorValue;
+                                el.style.setProperty('background-color', colorValue, 'important');
+                                // Forcer la mise à jour de l'attribut style HTML
+                                const currentStyle = el.getAttribute('style') || '';
+                                const newStyle = currentStyle.replace(/background-color\s*:[^;]+;?/gi, '') + `background-color: ${colorValue} !important;`;
+                                el.setAttribute('style', newStyle.trim());
+                              }
+                              
+                              // Déclencher les événements pour mettre à jour GrapesJS
+                              selectedComponentRef.current.trigger('change:style');
+                              selectedComponentRef.current.trigger('update');
+                              
+                              setBlockStyles({ backgroundColor: colorValue });
+                            } catch (error) {
+                              console.error('Erreur lors de la modification de la couleur:', error);
+                            }
+                          }
+                        }}
+                        className="w-12 h-9 rounded border-2 border-gray-300 cursor-pointer"
+                      />
+                      <Input
+                        value={blockStyles.backgroundColor}
+                        onChange={(e) => {
+                          if (selectedComponentRef.current) {
+                            let colorValue = e.target.value.trim();
+                            // S'assurer que c'est un code hex valide
+                            if (!colorValue.startsWith('#')) {
+                              colorValue = `#${colorValue}`;
+                            }
+                            // Valider le format hex
+                            if (!/^#[0-9A-Fa-f]{6}$/.test(colorValue) && colorValue.length > 1) {
+                              return; // Ne pas appliquer si le format n'est pas valide
+                            }
+                            
+                            try {
+                              // Appliquer le style dans GrapesJS
+                              selectedComponentRef.current.setStyle({ 'background-color': colorValue });
+                              
+                              // Appliquer directement en inline sur l'élément DOM
+                              const el = selectedComponentRef.current.getEl();
+                              if (el) {
+                                el.style.backgroundColor = colorValue;
+                                el.style.setProperty('background-color', colorValue, 'important');
+                                // Forcer la mise à jour de l'attribut style HTML
+                                const currentStyle = el.getAttribute('style') || '';
+                                const newStyle = currentStyle.replace(/background-color\s*:[^;]+;?/gi, '') + `background-color: ${colorValue} !important;`;
+                                el.setAttribute('style', newStyle.trim());
+                              }
+                              
+                              // Déclencher les événements
+                              selectedComponentRef.current.trigger('change:style');
+                              selectedComponentRef.current.trigger('update');
+                              
+                              setBlockStyles({ backgroundColor: colorValue });
+                            } catch (error) {
+                              console.error('Erreur lors de la modification de la couleur:', error);
+                            }
+                          }
+                        }}
+                        className="h-9 text-sm flex-1"
+                        placeholder="#ffffff"
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Paramètres texte - seulement pour les composants texte */}
+                  {selectedTextComponent && (
+                    <>
                   {/* Police */}
                   <div className="space-y-2">
                     <Label className="text-xs font-medium">Police</Label>
@@ -2297,6 +2515,8 @@ const NouvelleCampagne = () => {
                       </Button>
                     </div>
                   </div>
+                  </>
+                  )}
                 </div>
               </div>
             )}

@@ -77,10 +77,11 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
   // Fonction pour charger le HTML dans l'éditeur
   const loadHtmlIntoEditor = useCallback((editorInstance: any, html: string) => {
     try {
-      console.log("loadHtmlIntoEditor appelé avec HTML de longueur:", html.length);
+      // Logs désactivés pour réduire le bruit dans la console
+      // console.log("loadHtmlIntoEditor appelé avec HTML de longueur:", html.length);
       
       if (!html || !html.trim()) {
-        console.warn("Le contenu HTML est vide, chargement du template par défaut");
+        // console.warn("Le contenu HTML est vide, chargement du template par défaut");
         return;
       }
       
@@ -97,7 +98,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
             css += cssMatch[1] + '\n';
           }
         });
-        console.log("CSS extrait, longueur:", css.length);
+        // console.log("CSS extrait, longueur:", css.length);
       }
       
       // Extraire le contenu du body
@@ -105,7 +106,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
       if (bodyMatch) {
         bodyContent = bodyMatch[1];
-        console.log("Contenu body extrait");
+        // console.log("Contenu body extrait");
       }
       
       // Nettoyage strict du HTML pour éviter les erreurs React #418
@@ -121,18 +122,18 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
         .replace(/<!--[\s\S]*?-->/g, '')
         .trim();
       
-      console.log("Contenu nettoyé, longueur:", bodyContent.length);
-      console.log("Aperçu:", bodyContent.substring(0, 300));
+      // console.log("Contenu nettoyé, longueur:", bodyContent.length);
+      // console.log("Aperçu:", bodyContent.substring(0, 300));
       
       // Étape 1: Charger le HTML d'abord (sans CSS)
       editorInstance.setComponents(bodyContent);
-      console.log("setComponents appelé");
+      // console.log("setComponents appelé");
       
       // Étape 2: Injecter le CSS après un délai pour éviter les problèmes d'affichage
       setTimeout(() => {
         if (css) {
           editorInstance.setStyle(css);
-          console.log("setStyle appelé avec délai");
+          // console.log("setStyle appelé avec délai");
         }
       }, 50);
       
@@ -152,7 +153,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
           // Vérifier si le contenu est chargé
           const components = wrapper?.components();
           const count = components?.length || 0;
-          console.log("Nombre de composants:", count);
+          // console.log("Nombre de composants:", count);
           
           // Rendre tous les composants droppables et éditables
           if (components && typeof components.each === 'function') {
@@ -169,7 +170,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
           
           // Forcer le refresh
           editorInstance.refresh();
-          console.log("refresh() appelé");
+          // console.log("refresh() appelé");
           
           // Appliquer les styles inline à tous les composants
           if (components && components.models) {
@@ -185,7 +186,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
             });
           }
           
-          console.log("Contenu chargé avec succès");
+          // console.log("Contenu chargé avec succès");
         } catch (error) {
           console.error("Erreur lors du chargement:", error);
         }
@@ -221,7 +222,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
 
     const editor = grapesjs.init({
       container: containerRef.current,
-      height: "600px",
+      height: "100%",
       width: "100%",
       storageManager: false,
       // Forcer les styles inline pour les emails
@@ -633,7 +634,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
             }
           });
           
-          console.log('Contrôles RTE ajoutés: police, taille, couleur');
+          // console.log('Contrôles RTE ajoutés: police, taille, couleur');
         } else {
           console.warn('RTE non disponible ou méthode add non trouvée');
         }
@@ -644,12 +645,12 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
     setTimeout(() => {
       const traitsManager = editor.Traits;
       const traitsPanel = document.getElementById('grapesjs-traits-panel');
-      console.log('TraitsManager:', traitsManager);
-      console.log('Panneau de traits:', traitsPanel);
+      // console.log('TraitsManager:', traitsManager);
+      // console.log('Panneau de traits:', traitsPanel);
       if (traitsManager && traitsPanel) {
-        console.log('TraitsManager et panneau trouvés');
+        // console.log('TraitsManager et panneau trouvés');
       } else {
-        console.warn('TraitsManager ou panneau non trouvé');
+        // console.warn('TraitsManager ou panneau non trouvé');
       }
     }, 500);
 
@@ -1019,7 +1020,8 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
 
     // Appliquer des styles par défaut aux images ajoutées et rendre tous les composants droppables
     editor.on('component:add', (component: any) => {
-      console.log("Composant ajouté:", component.get('type'), component.get('tagName'));
+      // Log désactivé pour réduire le bruit dans la console
+      // console.log("Composant ajouté:", component.get('type'), component.get('tagName'));
       
       // Rendre tous les composants ajoutés droppables et éditables
       component.set({
@@ -1217,7 +1219,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
           const camelProp = prop.replace(/-([a-z])/g, (g: string) => g[1].toUpperCase());
           el.style[camelProp] = styles[prop];
         });
-        console.log("Styles appliqués:", styles);
+        // console.log("Styles appliqués:", styles);
       }
     };
 
@@ -1261,14 +1263,81 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
 
     // Attendre que l'éditeur soit complètement chargé avant de charger le contenu
     // IMPORTANT: Flag pour éviter les exécutions multiples
+    // Forcer la hauteur et le scroll sur le canvas après initialisation
+    const setupCanvasHeight = () => {
+      try {
+        // Calculer la hauteur disponible
+        const availableHeight = window.innerHeight - 48; // 48px pour le header
+        
+        // Configurer le conteneur parent
+        if (containerRef.current) {
+          containerRef.current.style.height = `${availableHeight}px`;
+          containerRef.current.style.minHeight = `${availableHeight}px`;
+          containerRef.current.style.maxHeight = `${availableHeight}px`;
+          containerRef.current.style.overflowY = 'auto';
+          containerRef.current.style.overflowX = 'hidden';
+        }
+        
+        // Configurer le canvas GrapesJS
+        const canvasView = editor.Canvas.getCanvasView();
+        const canvasEl = canvasView?.el;
+        const framesEl = editor.Canvas.getFramesEl();
+        
+        if (canvasEl) {
+          canvasEl.style.height = `${availableHeight}px`;
+          canvasEl.style.minHeight = `${availableHeight}px`;
+          canvasEl.style.maxHeight = `${availableHeight}px`;
+          canvasEl.style.overflowY = 'auto';
+          canvasEl.style.overflowX = 'hidden';
+        }
+        
+        if (framesEl) {
+          framesEl.style.minHeight = `${availableHeight - 100}px`;
+          framesEl.style.paddingBottom = '300px';
+          framesEl.style.height = 'auto';
+        }
+      } catch (error) {
+        console.error("Erreur lors de la configuration de la hauteur:", error);
+      }
+    };
+    
+    // Appeler immédiatement et après un délai
+    setupCanvasHeight();
+    setTimeout(setupCanvasHeight, 500);
+    setTimeout(setupCanvasHeight, 1000);
+    
+    // Réécouter le redimensionnement de la fenêtre
+    const handleResize = () => {
+      setupCanvasHeight();
+    };
+    window.addEventListener('resize', handleResize);
+    
+    // Stocker la référence pour le cleanup
+    const resizeHandler = handleResize;
+
     editor.on('load', () => {
       // Vérifier le flag anti-doublon
       if (loadedRef.current) {
-        console.log("Événement 'load' ignoré (déjà chargé)");
+        // console.log("Événement 'load' ignoré (déjà chargé)");
         return;
       }
       loadedRef.current = true;
-      console.log("Événement 'load' de GrapesJS déclenché (premier chargement)");
+      
+      // Forcer le scroll après le chargement
+      setTimeout(() => {
+        const canvasEl = editor.Canvas.getCanvasView().el;
+        const framesEl = editor.Canvas.getFramesEl();
+        if (canvasEl) {
+          canvasEl.style.overflowY = 'auto';
+          canvasEl.style.overflowX = 'hidden';
+        }
+        if (framesEl) {
+          framesEl.style.minHeight = '100%';
+          framesEl.style.paddingBottom = '300px';
+          framesEl.style.height = 'auto';
+        }
+      }, 300);
+      // console.log("Événement 'load' de GrapesJS déclenché (premier chargement)");
       
       // S'assurer que le wrapper est droppable
       const wrapper = editor.getWrapper();
@@ -1279,19 +1348,19 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
           selectable: false,
           hoverable: false,
         });
-        console.log("Wrapper configuré comme droppable");
+        // console.log("Wrapper configuré comme droppable");
       }
       
       // Utiliser la ref pour avoir la dernière valeur de initialContent
       const contentToLoad = initialContentRef.current;
-      console.log("Contenu à charger:", contentToLoad ? `${contentToLoad.length} caractères` : "aucun");
+      // console.log("Contenu à charger:", contentToLoad ? `${contentToLoad.length} caractères` : "aucun");
       
       // Charger le contenu initial une fois que l'éditeur est prêt
       if (contentToLoad && contentToLoad.trim()) {
-        console.log("Chargement du contenu initial depuis l'événement load");
+        // console.log("Chargement du contenu initial depuis l'événement load");
         loadHtmlIntoEditor(editor, contentToLoad);
       } else {
-        console.log("Pas de contenu initial, chargement du template par défaut");
+        // console.log("Pas de contenu initial, chargement du template par défaut");
         setDefaultTemplate(editor);
       }
       
@@ -1299,12 +1368,28 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       const bm = editor.BlockManager;
       if (bm) {
         bm.render();
-        console.log("BlockManager initialisé");
+        // console.log("BlockManager initialisé");
       }
     });
 
-    // Sauvegarder automatiquement les changements avec debounce
+    // Forcer le scroll après chaque mise à jour
     editor.on('update', () => {
+      // S'assurer que le scroll est activé après chaque mise à jour
+      setTimeout(() => {
+        try {
+          const framesEl = editor.Canvas.getFramesEl();
+          if (framesEl) {
+            framesEl.style.paddingBottom = '300px';
+            framesEl.style.minHeight = '100%';
+          }
+          if (containerRef.current) {
+            containerRef.current.style.overflowY = 'auto';
+          }
+        } catch (error) {
+          console.error("Erreur lors de la mise à jour du scroll:", error);
+        }
+      }, 100);
+      
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
@@ -1623,6 +1708,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
+      window.removeEventListener('resize', resizeHandler);
       containerRef.current?.removeEventListener('drop', handleDrop, true);
       containerRef.current?.removeEventListener('dragover', handleDragOver, true);
       containerRef.current?.removeEventListener('dragleave', handleDragLeave, true);
@@ -1636,30 +1722,30 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
   const previousContentRef = useRef<string>("");
   useEffect(() => {
     if (!initialContent || initialContent.trim() === "") {
-      console.log("initialContent est vide ou null");
+      // console.log("initialContent est vide ou null");
       return;
     }
     
     if (!editorRef.current) {
-      console.log("editorRef.current n'est pas encore défini");
+      // console.log("editorRef.current n'est pas encore défini");
       return;
     }
     
     // Éviter de recharger le même contenu
     if (previousContentRef.current === initialContent) {
-      console.log("Le contenu est identique, pas de rechargement");
+      // console.log("Le contenu est identique, pas de rechargement");
       return;
     }
     
-    console.log("Chargement du contenu dans l'éditeur, longueur:", initialContent.length);
+    // console.log("Chargement du contenu dans l'éditeur, longueur:", initialContent.length);
     
     // Vérifier que l'éditeur est prêt (a la méthode getComponents)
     if (typeof editorRef.current.getComponents !== 'function') {
-      console.log("L'éditeur n'est pas encore prêt, attente...");
+      // console.log("L'éditeur n'est pas encore prêt, attente...");
       // Attendre un peu plus si l'éditeur n'est pas encore prêt
       const timer = setTimeout(() => {
         if (editorRef.current && typeof editorRef.current.getComponents === 'function') {
-          console.log("Chargement du contenu après attente...");
+          // console.log("Chargement du contenu après attente...");
           loadHtmlIntoEditor(editorRef.current, initialContent);
           previousContentRef.current = initialContent;
         } else {
@@ -1672,10 +1758,10 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
     // Attendre que l'éditeur soit prêt
     const timer = setTimeout(() => {
       try {
-        console.log("Chargement du contenu dans l'éditeur...");
+        // console.log("Chargement du contenu dans l'éditeur...");
         loadHtmlIntoEditor(editorRef.current, initialContent);
         previousContentRef.current = initialContent;
-        console.log("Contenu chargé avec succès");
+        // console.log("Contenu chargé avec succès");
       } catch (error) {
         console.error('Error loading content into editor:', error);
       }
@@ -1706,7 +1792,7 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
   };
 
   return (
-    <div className="relative h-full flex flex-col">
+    <div className="relative h-full w-full flex flex-col overflow-hidden" style={{ height: '100%', minHeight: 0, maxHeight: '100%' }}>
       {/* Bouton Aperçu flottant */}
       <Button
         onClick={handlePreview}
@@ -1718,28 +1804,32 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
         Aperçu
       </Button>
 
-      <div className="flex flex-1 min-h-0">
+      <div className="flex flex-1 min-h-0 overflow-hidden" style={{ height: '100%', minHeight: 0, maxHeight: '100%' }}>
         {/* Panneau de blocs natif GrapesJS pour drag-drop */}
         <div className="w-56 border-r bg-card flex flex-col overflow-hidden flex-shrink-0">
-          <div className="p-3 border-b bg-muted/30">
+          <div className="p-3 border-b bg-muted/30 flex-shrink-0">
             <h3 className="text-sm font-semibold text-foreground">BLOCS</h3>
             <p className="text-xs text-muted-foreground mt-1">Glissez-déposez dans l'éditeur</p>
           </div>
           <div 
             id="gjs-blocks-panel" 
-            className="flex-1 overflow-y-auto p-2"
+            className="flex-1 overflow-y-auto p-2 min-h-0"
           />
         </div>
         
         {/* Canvas GrapesJS */}
         <div
           ref={containerRef}
-          className="flex-1 grapesjs-dotted-bg"
+          className="flex-1 grapesjs-dotted-bg overflow-y-auto overflow-x-hidden min-h-0"
           style={{ 
             backgroundColor: '#f8f9fa',
             backgroundImage: 'radial-gradient(circle, #cbd5e1 1px, transparent 1px)',
             backgroundSize: '20px 20px',
+            position: 'relative',
+            height: '100%',
             minHeight: 0,
+            maxHeight: '100%',
+            flex: '1 1 0%',
           }}
         />
       </div>
