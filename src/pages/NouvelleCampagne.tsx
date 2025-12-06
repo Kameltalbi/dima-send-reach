@@ -53,7 +53,8 @@ import {
   GripVertical,
   X as XIcon,
   RectangleHorizontal,
-  Folder
+  Folder,
+  Trash2
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Toggle } from "@/components/ui/toggle";
@@ -1682,6 +1683,57 @@ const NouvelleCampagne = () => {
                       Dossiers
                       <ChevronDown className="h-4 w-4 ml-1" />
                     </Button>
+                    
+                    {/* Séparateur */}
+                    <div className="flex-1" />
+                    
+                    {/* Boutons de sélection */}
+                    {isSelectionMode ? (
+                      <>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setIsSelectionMode(false);
+                            setSelectedMediaPaths(new Set());
+                          }}
+                          type="button"
+                        >
+                          Annuler
+                        </Button>
+                        {selectedMediaPaths.size > 0 && (
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleDeleteSelectedMedia();
+                            }}
+                            type="button"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Supprimer ({selectedMediaPaths.size})
+                          </Button>
+                        )}
+                      </>
+                    ) : (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setIsSelectionMode(true);
+                        }}
+                        type="button"
+                      >
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        Sélectionner
+                      </Button>
+                    )}
                   </div>
                   
                   <TabsContent value="mes-fichiers" className="flex-1 overflow-y-auto mt-0">
