@@ -46,6 +46,19 @@ serve(async (req) => {
       .eq('status', 'sending')
       .lt('locked_at', lockTimeout.toISOString());
 
+    // Also update scheduled emails that are now due to become pending
+    const now = new Date().toISOString();
+    const { data: scheduledUpdated, error: scheduleUpdateError } = await supabaseClient
+      .from('email_queue')
+      .update({ status: 'pending' })
+      .eq('status', 'scheduled')
+      .lte('created_at', now)
+      .select('id');
+    
+    if (scheduledUpdated && scheduledUpdated.length > 0) {
+      console.log(`[${workerId}] Activated ${scheduledUpdated.length} scheduled emails`);
+    }
+
     // Fetch pending emails with row-level locking to prevent duplicates
     const { data: pendingEmails, error: fetchError } = await supabaseClient
       .from('email_queue')
@@ -68,7 +81,8 @@ serve(async (req) => {
         JSON.stringify({ 
           success: true, 
           message: 'No pending emails',
-          processed: 0 
+          processed: 0,
+          scheduledActivated: scheduledUpdated?.length || 0
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
