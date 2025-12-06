@@ -331,36 +331,84 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
       // Ajouter des styles personnalisés pour le canvas avec fond à points
       cssIcons: '',
       blockManager: {
+        appendTo: '#gjs-blocks-panel',
         blocks: [
           {
             id: 'titre',
-            label: 'Titre',
+            label: '<div class="gjs-block-label"><span style="font-size: 24px; font-weight: bold;">T</span><br/>Titre</div>',
             category: 'Contenu',
             content: '<h1 data-gjs-type="text" style="font-size: 32px; font-weight: 700; margin: 20px 0; color: #333;">Votre titre</h1>',
+            attributes: { class: 'gjs-block-title' },
           },
           {
             id: 'texte',
-            label: 'Texte',
+            label: '<div class="gjs-block-label"><span style="font-size: 18px;">¶</span><br/>Texte</div>',
             category: 'Contenu',
             content: '<p data-gjs-type="text" style="font-size: 16px; line-height: 1.6; margin: 20px 0; color: #333;">Votre texte ici</p>',
+            attributes: { class: 'gjs-block-text' },
           },
           {
             id: 'image',
-            label: 'Image',
+            label: '<div class="gjs-block-label"><span style="font-size: 20px;">🖼</span><br/>Image</div>',
             category: 'Contenu',
             content: '<img src="https://via.placeholder.com/600x300" alt="Image" style="max-width: 100%; height: auto; display: block; margin: 20px auto;" />',
+            attributes: { class: 'gjs-block-image' },
           },
           {
             id: 'bouton',
-            label: 'Bouton',
+            label: '<div class="gjs-block-label"><span style="font-size: 16px;">🔘</span><br/>Bouton</div>',
             category: 'Contenu',
             content: '<a href="#" data-gjs-type="link" style="display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0;">Bouton</a>',
+            attributes: { class: 'gjs-block-button' },
           },
           {
             id: 'diviseur',
-            label: 'Diviseur',
+            label: '<div class="gjs-block-label"><span style="font-size: 18px;">─</span><br/>Diviseur</div>',
             category: 'Contenu',
             content: '<hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;"/>',
+            attributes: { class: 'gjs-block-divider' },
+          },
+          {
+            id: 'colonnes-2',
+            label: '<div class="gjs-block-label"><span style="font-size: 16px;">▢▢</span><br/>2 Colonnes</div>',
+            category: 'Structure',
+            content: `<table width="100%" style="border-collapse: collapse; margin: 20px 0;">
+              <tr>
+                <td style="width: 50%; padding: 10px; vertical-align: top;">
+                  <div data-gjs-type="text" style="padding: 10px;">Colonne 1</div>
+                </td>
+                <td style="width: 50%; padding: 10px; vertical-align: top;">
+                  <div data-gjs-type="text" style="padding: 10px;">Colonne 2</div>
+                </td>
+              </tr>
+            </table>`,
+            attributes: { class: 'gjs-block-columns' },
+          },
+          {
+            id: 'colonnes-3',
+            label: '<div class="gjs-block-label"><span style="font-size: 16px;">▢▢▢</span><br/>3 Colonnes</div>',
+            category: 'Structure',
+            content: `<table width="100%" style="border-collapse: collapse; margin: 20px 0;">
+              <tr>
+                <td style="width: 33.33%; padding: 10px; vertical-align: top;">
+                  <div data-gjs-type="text" style="padding: 10px;">Col 1</div>
+                </td>
+                <td style="width: 33.33%; padding: 10px; vertical-align: top;">
+                  <div data-gjs-type="text" style="padding: 10px;">Col 2</div>
+                </td>
+                <td style="width: 33.33%; padding: 10px; vertical-align: top;">
+                  <div data-gjs-type="text" style="padding: 10px;">Col 3</div>
+                </td>
+              </tr>
+            </table>`,
+            attributes: { class: 'gjs-block-columns' },
+          },
+          {
+            id: 'social',
+            label: '<div class="gjs-block-label"><span style="font-size: 16px;">📱</span><br/>Réseaux</div>',
+            category: 'Social',
+            content: '<div style="text-align: center; margin: 20px 0;"><a href="#" style="margin: 0 10px; display: inline-block;"><img src="https://via.placeholder.com/32x32?text=f" alt="Facebook" /></a><a href="#" style="margin: 0 10px; display: inline-block;"><img src="https://via.placeholder.com/32x32?text=t" alt="Twitter" /></a><a href="#" style="margin: 0 10px; display: inline-block;"><img src="https://via.placeholder.com/32x32?text=in" alt="LinkedIn" /></a></div>',
+            attributes: { class: 'gjs-block-social' },
           },
         ],
       },
@@ -1670,16 +1718,31 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
         Aperçu
       </Button>
 
-      <div
-        ref={containerRef}
-        className="w-full flex-1 grapesjs-dotted-bg"
-        style={{ 
-          backgroundColor: '#f8f9fa',
-          backgroundImage: 'radial-gradient(circle, #cbd5e1 1px, transparent 1px)',
-          backgroundSize: '20px 20px',
-          minHeight: 0,
-        }}
-      />
+      <div className="flex flex-1 min-h-0">
+        {/* Panneau de blocs natif GrapesJS pour drag-drop */}
+        <div className="w-56 border-r bg-card flex flex-col overflow-hidden flex-shrink-0">
+          <div className="p-3 border-b bg-muted/30">
+            <h3 className="text-sm font-semibold text-foreground">BLOCS</h3>
+            <p className="text-xs text-muted-foreground mt-1">Glissez-déposez dans l'éditeur</p>
+          </div>
+          <div 
+            id="gjs-blocks-panel" 
+            className="flex-1 overflow-y-auto p-2"
+          />
+        </div>
+        
+        {/* Canvas GrapesJS */}
+        <div
+          ref={containerRef}
+          className="flex-1 grapesjs-dotted-bg"
+          style={{ 
+            backgroundColor: '#f8f9fa',
+            backgroundImage: 'radial-gradient(circle, #cbd5e1 1px, transparent 1px)',
+            backgroundSize: '20px 20px',
+            minHeight: 0,
+          }}
+        />
+      </div>
 
       {/* Dialog pour modifier le lien */}
       <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
