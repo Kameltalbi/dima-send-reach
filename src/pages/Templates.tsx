@@ -907,59 +907,6 @@ export default function Templates() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="default"
-                  className="gap-2"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
-                  Charger des exemples
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleLoadExamples}>
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Ajouter des templates d'exemple
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={async () => {
-                    if (!confirm("Êtes-vous sûr de vouloir supprimer tous les templates d'exemple ?")) {
-                      return;
-                    }
-                    try {
-                      const { data: userData } = await supabase.auth.getUser();
-                      if (!userData.user) {
-                        toast.error("Vous devez être connecté");
-                        return;
-                      }
-                      const { error } = await supabase
-                        .from("templates")
-                        .delete()
-                        .eq("user_id", userData.user.id)
-                        .in("nom", exampleTemplateNames);
-                      if (error) throw error;
-                      queryClient.invalidateQueries({ queryKey: ["templates"] });
-                      toast.success("Templates d'exemple supprimés");
-                    } catch (error: any) {
-                      toast.error("Erreur lors de la suppression");
-                    }
-                  }}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Supprimer tous les templates d'exemple
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
             <Button 
               onClick={() => navigate("/templates/nouveau")} 
               size="default"
@@ -1062,16 +1009,10 @@ export default function Templates() {
               <p className="text-sm text-muted-foreground mb-6 text-center">
                 Créez votre premier template ou chargez des exemples pour commencer
               </p>
-              <div className="flex gap-3">
-                <Button onClick={() => setShowCreateDialog(true)} size="sm" className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Nouveau template
-                </Button>
-                <Button onClick={handleLoadExamples} variant="outline" size="sm" className="gap-2">
-                  <Sparkles className="h-4 w-4" />
-                  Charger des exemples
-                </Button>
-              </div>
+              <Button onClick={() => setShowCreateDialog(true)} size="sm" className="gap-2">
+                <Plus className="h-4 w-4" />
+                Nouveau template
+              </Button>
             </CardContent>
           </Card>
         ) : viewMode === "grid" ? (
