@@ -1063,6 +1063,70 @@ const NouvelleCampagne = () => {
             Enregistrer
           </Button>
           
+          {/* Bouton Programmer */}
+          <Button 
+            onClick={() => setIsSettingsOpen(true)}
+            variant="outline"
+            className="gap-2 h-8 text-xs"
+          >
+            <Clock className="h-3.5 w-3.5" />
+            Programmer
+          </Button>
+          
+          {/* Bouton Envoyer */}
+          <Button 
+            onClick={() => {
+              // Validation avant envoi
+              if (!formData.nom_campagne.trim()) {
+                toast.error("Veuillez saisir un nom pour la campagne");
+                return;
+              }
+              if (!formData.sujet_email.trim()) {
+                toast.error("Veuillez saisir un sujet pour l'email");
+                return;
+              }
+              if (!formData.expediteur_nom.trim()) {
+                toast.error("Le nom de l'expéditeur est obligatoire");
+                return;
+              }
+              if (!formData.expediteur_email.trim()) {
+                toast.error("L'email de l'expéditeur est obligatoire");
+                return;
+              }
+              if (!formData.list_id) {
+                toast.error("Veuillez sélectionner une liste de contacts");
+                return;
+              }
+              // Récupérer le HTML actuel
+              let currentHtml = htmlContent;
+              if (getCurrentHtmlRef.current) {
+                try {
+                  const editorHtml = getCurrentHtmlRef.current();
+                  if (editorHtml && editorHtml.trim()) {
+                    currentHtml = editorHtml;
+                  }
+                } catch (error) {
+                  console.error("Erreur lors de la récupération du HTML:", error);
+                }
+              }
+              if (!currentHtml || !currentHtml.trim()) {
+                toast.error("Veuillez créer du contenu pour votre email");
+                return;
+              }
+              // Envoyer la campagne
+              saveMutation.mutate(false);
+            }}
+            disabled={saveMutation.isPending || !canSendEmails}
+            className="gap-2 h-8 text-xs bg-primary hover:bg-primary/90"
+          >
+            {saveMutation.isPending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Play className="h-3.5 w-3.5" />
+            )}
+            Envoyer
+          </Button>
+          
           <Button 
             onClick={handleQuit}
             variant="ghost"
