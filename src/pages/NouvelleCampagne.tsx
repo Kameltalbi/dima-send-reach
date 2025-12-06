@@ -2966,6 +2966,24 @@ const NouvelleCampagne = () => {
                               alt={template.nom}
                               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                             />
+                          ) : template.content_html ? (
+                            <div className="w-full h-full relative bg-white overflow-hidden">
+                              <iframe
+                                srcDoc={template.content_html}
+                                className="w-full h-full border-0"
+                                style={{
+                                  transform: 'scale(0.25)',
+                                  transformOrigin: 'top left',
+                                  width: '400%',
+                                  height: '400%',
+                                  pointerEvents: 'none',
+                                  border: 'none',
+                                }}
+                                title={`Aperçu ${template.nom}`}
+                                sandbox="allow-same-origin"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none" />
+                            </div>
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
                               <div className="text-center space-y-4">
