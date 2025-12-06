@@ -17,7 +17,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Loader2, Send, Users, CheckCircle2, AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Loader2, Send, Users, CheckCircle2, AlertCircle, Clock, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
@@ -39,6 +40,9 @@ export const BatchSendDialog = ({
 }: BatchSendDialogProps) => {
   const { t } = useTranslation();
   const [selectedVolume, setSelectedVolume] = useState<number | null>(null);
+  const [sendMode, setSendMode] = useState<"now" | "schedule">("now");
+  const [scheduledDate, setScheduledDate] = useState("");
+  const [scheduledTime, setScheduledTime] = useState("");
 
   // Fetch statistics
   const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useQuery({
@@ -75,12 +79,13 @@ export const BatchSendDialog = ({
 
   // Batch send mutation
   const batchSendMutation = useMutation({
-    mutationFn: async (volume: number) => {
+    mutationFn: async ({ volume, scheduledAt }: { volume: number; scheduledAt?: string }) => {
       const { data, error } = await supabase.functions.invoke("send-batch-campaign", {
         body: {
           campaignId,
           listId,
           volume,
+          scheduledAt,
         },
       });
 
@@ -92,15 +97,24 @@ export const BatchSendDialog = ({
       return data;
     },
     onSuccess: (data) => {
-      toast.success(
-        t("batchSend.success", {
-          count: data.summary.batchSent,
-          remaining: data.summary.remaining,
-        })
-      );
+      if (sendMode === "schedule") {
+        toast.success(
+          `${data.summary?.batchSent || selectedVolume?.toLocaleString()} emails programmés pour le ${new Date(`${scheduledDate}T${scheduledTime}`).toLocaleString('fr-FR')}`
+        );
+      } else {
+        toast.success(
+          t("batchSend.success", {
+            count: data.summary.batchSent,
+            remaining: data.summary.remaining,
+          })
+        );
+      }
       refetchStats();
       onOpenChange(false);
       setSelectedVolume(null);
+      setSendMode("now");
+      setScheduledDate("");
+      setScheduledTime("");
     },
     onError: (error: any) => {
       toast.error(error.message || t("batchSend.error"));
@@ -123,13 +137,25 @@ export const BatchSendDialog = ({
       return;
     }
 
-    batchSendMutation.mutate(selectedVolume);
+    if (sendMode === "schedule") {
+      if (!scheduledDate || !scheduledTime) {
+        toast.error("Veuillez sélectionner une date et une heure");
+        return;
+      }
+      const scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
+      batchSendMutation.mutate({ volume: selectedVolume, scheduledAt });
+    } else {
+      batchSendMutation.mutate({ volume: selectedVolume });
+    }
   };
 
   // Reset selected volume when dialog opens/closes
   useEffect(() => {
     if (!open) {
       setSelectedVolume(null);
+      setSendMode("now");
+      setScheduledDate("");
+      setScheduledTime("");
     }
   }, [open]);
 
@@ -275,6 +301,85 @@ export const BatchSendDialog = ({
               )}
             </div>
 
+            {/* Send Mode Selection */}
+            <div className="space-y-3">
+              <Label>Quand envoyer ce batch ?</Label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="sendMode"
+                    value="now"
+                    checked={sendMode === "now"}
+                    onChange={() => setSendMode("now")}
+                    className="h-4 w-4 text-primary"
+                  />
+                  <Send className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">Envoyer maintenant</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="sendMode"
+                    value="schedule"
+                    checked={sendMode === "schedule"}
+                    onChange={() => setSendMode("schedule")}
+                    className="h-4 w-4 text-primary"
+                  />
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">Programmer pour plus tard</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Schedule Options */}
+            {sendMode === "schedule" && (
+              <div className="space-y-3 p-4 bg-muted/50 rounded-lg border">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="batch-scheduled-date">
+                      <Calendar className="h-4 w-4 inline mr-2" />
+                      Date d'envoi
+                    </Label>
+                    <Input
+                      id="batch-scheduled-date"
+                      type="date"
+                      value={scheduledDate}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => setScheduledDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="batch-scheduled-time">
+                      <Clock className="h-4 w-4 inline mr-2" />
+                      Heure d'envoi
+                    </Label>
+                    <Input
+                      id="batch-scheduled-time"
+                      type="time"
+                      value={scheduledTime}
+                      onChange={(e) => setScheduledTime(e.target.value)}
+                    />
+                  </div>
+                </div>
+                {scheduledDate && scheduledTime && (
+                  <div className="p-3 bg-primary/10 rounded-md">
+                    <p className="text-sm text-primary font-medium flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      {selectedVolume?.toLocaleString()} emails seront envoyés le {new Date(`${scheduledDate}T${scheduledTime}`).toLocaleString('fr-FR', { 
+                        weekday: 'long',
+                        day: 'numeric', 
+                        month: 'long', 
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Info Message */}
             <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
               <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
@@ -300,13 +405,19 @@ export const BatchSendDialog = ({
                   !stats ||
                   stats.remaining < selectedVolume ||
                   batchSendMutation.isPending ||
-                  availableVolumes.length === 0
+                  availableVolumes.length === 0 ||
+                  (sendMode === "schedule" && (!scheduledDate || !scheduledTime))
                 }
               >
                 {batchSendMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t("batchSend.sending")}
+                    {sendMode === "schedule" ? "Programmation..." : t("batchSend.sending")}
+                  </>
+                ) : sendMode === "schedule" ? (
+                  <>
+                    <Clock className="mr-2 h-4 w-4" />
+                    Programmer l'envoi
                   </>
                 ) : (
                   <>

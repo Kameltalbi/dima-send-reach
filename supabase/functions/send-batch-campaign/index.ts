@@ -11,6 +11,7 @@ interface BatchSendRequest {
   campaignId: string;
   listId: string;
   volume: number; // 10000, 15000, 20000, 25000, 30000, or 50000
+  scheduledAt?: string; // Optional ISO date string for scheduling
 }
 
 serve(async (req) => {
@@ -34,7 +35,7 @@ serve(async (req) => {
       }
     );
 
-    const { campaignId, listId, volume }: BatchSendRequest = await req.json();
+    const { campaignId, listId, volume, scheduledAt }: BatchSendRequest = await req.json();
 
     if (!campaignId || !listId || !volume) {
       throw new Error("campaignId, listId, and volume are required");
@@ -44,6 +45,13 @@ serve(async (req) => {
     const validVolumes = [10000, 15000, 20000, 25000, 30000, 50000];
     if (!validVolumes.includes(volume)) {
       throw new Error(`Invalid volume. Must be one of: ${validVolumes.join(", ")}`);
+    }
+
+    const isScheduled = !!scheduledAt;
+    const scheduleDate = scheduledAt ? new Date(scheduledAt) : null;
+    
+    if (isScheduled) {
+      console.log(`Scheduling batch send for ${scheduleDate?.toISOString()}`);
     }
 
     // Get campaign details
@@ -169,6 +177,7 @@ serve(async (req) => {
     }
 
     // Add emails to queue for processing
+    // If scheduled, set created_at to the scheduled time so they won't be processed until then
     const emailQueueData = selectedContacts.map((contact: any) => ({
       campaign_id: campaignId,
       to_email: contact.email,
@@ -176,7 +185,8 @@ serve(async (req) => {
       from_email: campaign.expediteur_email,
       subject: campaign.sujet_email,
       html: campaign.html_contenu || "",
-      status: "pending",
+      status: isScheduled ? "scheduled" : "pending",
+      created_at: isScheduled ? scheduledAt : new Date().toISOString(),
     }));
 
     const { error: queueError } = await supabaseClient
@@ -185,6 +195,17 @@ serve(async (req) => {
 
     if (queueError) {
       throw new Error(`Error adding to email queue: ${queueError.message}`);
+    }
+
+    // Update campaign status if scheduling
+    if (isScheduled) {
+      await supabaseClient
+        .from("campaigns")
+        .update({ 
+          statut: "en_attente",
+          date_envoi: scheduledAt
+        })
+        .eq("id", campaignId);
     }
 
     // Update campaign_sends status to 'sent' after queueing
