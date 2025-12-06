@@ -16,6 +16,7 @@ import Listes from "./pages/Listes";
 import GestionListe from "./pages/GestionListe";
 import Campagnes from "./pages/Campagnes";
 import NouvelleCampagne from "./pages/NouvelleCampagne";
+import NouveauTemplate from "./pages/NouveauTemplate";
 import Statistiques from "./pages/Statistiques";
 import Templates from "./pages/Templates";
 import Parametres from "./pages/Parametres";
@@ -67,6 +68,8 @@ const App = () => (
             <Route path="/campagnes/:id/analytics" element={<AppLayout><SubscriptionProtectedRoute><CampaignAnalytics /></SubscriptionProtectedRoute></AppLayout>} />
             <Route path="/statistiques" element={<AppLayout><SubscriptionProtectedRoute><Statistiques /></SubscriptionProtectedRoute></AppLayout>} />
             <Route path="/templates" element={<AppLayout><SubscriptionProtectedRoute><Templates /></SubscriptionProtectedRoute></AppLayout>} />
+            <Route path="/templates/nouveau" element={<SubscriptionProtectedRoute><NouveauTemplate /></SubscriptionProtectedRoute>} />
+            <Route path="/templates/:id/edit" element={<SubscriptionProtectedRoute><NouveauTemplate /></SubscriptionProtectedRoute>} />
             <Route path="/parametres" element={<AppLayout><SubscriptionProtectedRoute><Parametres /></SubscriptionProtectedRoute></AppLayout>} />
             <Route path="/team" element={<AppLayout><SubscriptionProtectedRoute><Team /></SubscriptionProtectedRoute></AppLayout>} />
             <Route path="/config-ses" element={<AppLayout><SubscriptionProtectedRoute><ConfigurationSES /></SubscriptionProtectedRoute></AppLayout>} />
