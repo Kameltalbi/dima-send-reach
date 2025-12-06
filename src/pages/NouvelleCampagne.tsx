@@ -145,6 +145,8 @@ const NouvelleCampagne = () => {
     whenToSend: "now",
     scheduledDate: "",
     scheduledTime: "",
+    useBatchSend: false,
+    batchVolume: "10000",
   });
 
   // États pour le test A/B
@@ -215,6 +217,8 @@ const NouvelleCampagne = () => {
         whenToSend: "now",
         scheduledDate: "",
         scheduledTime: "",
+        useBatchSend: false,
+        batchVolume: "10000",
       });
       if (existingCampaign.html_contenu) {
         setHtmlContent(existingCampaign.html_contenu);
@@ -2778,6 +2782,58 @@ const NouvelleCampagne = () => {
                       </p>
                     </div>
                   )}
+                </div>
+              )}
+            </div>
+
+            {/* Envoi par lots */}
+            <div className="space-y-4 pt-4 border-t">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="batch-send">Envoi par lots</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Pour les grandes listes, envoyez par lots de 1k à 50k emails
+                  </p>
+                </div>
+                <Switch
+                  id="batch-send"
+                  checked={formData.useBatchSend}
+                  onCheckedChange={(checked) => {
+                    setFormData({ ...formData, useBatchSend: checked });
+                    setHasUnsavedChanges(true);
+                  }}
+                />
+              </div>
+
+              {formData.useBatchSend && (
+                <div className="space-y-3 pl-4 border-l-2 border-primary/20">
+                  <div className="space-y-2">
+                    <Label>Volume par lot</Label>
+                    <Select 
+                      value={formData.batchVolume} 
+                      onValueChange={(value) => {
+                        setFormData({ ...formData, batchVolume: value });
+                        setHasUnsavedChanges(true);
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1000">1 000 emails</SelectItem>
+                        <SelectItem value="5000">5 000 emails</SelectItem>
+                        <SelectItem value="10000">10 000 emails</SelectItem>
+                        <SelectItem value="15000">15 000 emails</SelectItem>
+                        <SelectItem value="20000">20 000 emails</SelectItem>
+                        <SelectItem value="25000">25 000 emails</SelectItem>
+                        <SelectItem value="30000">30 000 emails</SelectItem>
+                        <SelectItem value="50000">50 000 emails</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Les emails seront envoyés en lots de {parseInt(formData.batchVolume).toLocaleString('fr-FR')} à la fois
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
