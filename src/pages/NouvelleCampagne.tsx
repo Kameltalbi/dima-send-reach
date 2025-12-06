@@ -1143,43 +1143,9 @@ const NouvelleCampagne = () => {
                     </Button>
                   </div>
                   
-                  {/* Blocs disponibles */}
-                  <div className="space-y-2">
-                    <h3 className="text-xs font-semibold text-foreground">Blocs disponibles</h3>
-                    <p className="text-xs text-muted-foreground mb-2">Sélectionnez un élément puis cliquez sur un bloc</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      {contentBlocks.map((block) => {
-                        const Icon = block.icon;
-                        return (
-                          <div
-                            key={block.id}
-                            className="group relative bg-white border rounded-lg p-4 cursor-pointer hover:border-primary hover:shadow-md transition-all"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              console.log("Block clicked:", block.id);
-                              if (addBlockRef.current) {
-                                console.log("Calling addBlockRef with:", block.id);
-                                addBlockRef.current(block.id);
-                              } else {
-                                console.error("addBlockRef.current is null");
-                                toast.error("L'éditeur n'est pas encore prêt");
-                              }
-                            }}
-                          >
-                            <div className="flex flex-col items-center gap-2">
-                              <Icon className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
-                              {block.label && (
-                                <span className="text-xs text-center text-muted-foreground font-medium group-hover:text-primary transition-colors">
-                                  {block.label}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                  <p className="text-xs text-muted-foreground text-center py-4">
+                    Utilisez le panneau "BLOCS" à gauche de l'éditeur pour glisser-déposer des éléments
+                  </p>
                 </div>
               )}
               
