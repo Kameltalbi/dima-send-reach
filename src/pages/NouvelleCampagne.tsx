@@ -2700,6 +2700,88 @@ const NouvelleCampagne = () => {
               </Select>
             </div>
 
+            {/* Programmation de l'envoi */}
+            <div className="space-y-4 pt-4 border-t">
+              <div className="space-y-2">
+                <Label>Quand envoyer ?</Label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="whenToSend"
+                      value="now"
+                      checked={formData.whenToSend === "now"}
+                      onChange={(e) => {
+                        setFormData({ ...formData, whenToSend: e.target.value });
+                        setHasUnsavedChanges(true);
+                      }}
+                      className="h-4 w-4 text-primary"
+                    />
+                    <span className="text-sm">Envoyer immédiatement</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="whenToSend"
+                      value="schedule"
+                      checked={formData.whenToSend === "schedule"}
+                      onChange={(e) => {
+                        setFormData({ ...formData, whenToSend: e.target.value });
+                        setHasUnsavedChanges(true);
+                      }}
+                      className="h-4 w-4 text-primary"
+                    />
+                    <span className="text-sm">Programmer pour plus tard</span>
+                  </label>
+                </div>
+              </div>
+
+              {formData.whenToSend === "schedule" && (
+                <div className="grid grid-cols-2 gap-4 pl-4 border-l-2 border-primary/20">
+                  <div className="space-y-2">
+                    <Label htmlFor="scheduled-date">Date d'envoi *</Label>
+                    <Input
+                      id="scheduled-date"
+                      type="date"
+                      value={formData.scheduledDate}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => {
+                        setFormData({ ...formData, scheduledDate: e.target.value });
+                        setHasUnsavedChanges(true);
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="scheduled-time">Heure d'envoi *</Label>
+                    <Input
+                      id="scheduled-time"
+                      type="time"
+                      value={formData.scheduledTime}
+                      onChange={(e) => {
+                        setFormData({ ...formData, scheduledTime: e.target.value });
+                        setHasUnsavedChanges(true);
+                      }}
+                    />
+                  </div>
+                  {formData.scheduledDate && formData.scheduledTime && (
+                    <div className="col-span-2 p-3 bg-primary/10 rounded-md">
+                      <p className="text-sm text-primary font-medium flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        Envoi programmé le {new Date(`${formData.scheduledDate}T${formData.scheduledTime}`).toLocaleString('fr-FR', { 
+                          weekday: 'long',
+                          day: 'numeric', 
+                          month: 'long', 
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Test A/B */}
             <div className="space-y-4 pt-4 border-t">
               <div className="flex items-center justify-between">
@@ -2897,12 +2979,67 @@ const NouvelleCampagne = () => {
                 <Button variant="outline" onClick={() => setIsSettingsOpen(false)}>
                   Fermer
                 </Button>
-                <Button onClick={() => {
-                  saveMutation.mutate(true);
-                  setIsSettingsOpen(false);
-                }}>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    saveMutation.mutate(true);
+                    setIsSettingsOpen(false);
+                  }}
+                >
+                  <Save className="h-4 w-4 mr-2" />
                   Enregistrer
                 </Button>
+                {formData.whenToSend === "schedule" && formData.scheduledDate && formData.scheduledTime && (
+                  <Button 
+                    onClick={() => {
+                      // Validation
+                      if (!formData.nom_campagne.trim()) {
+                        toast.error("Le nom de la campagne est obligatoire");
+                        return;
+                      }
+                      if (!formData.sujet_email.trim()) {
+                        toast.error("Le sujet de l'e-mail est obligatoire");
+                        return;
+                      }
+                      if (!formData.expediteur_nom.trim()) {
+                        toast.error("Le nom de l'expéditeur est obligatoire");
+                        return;
+                      }
+                      if (!formData.expediteur_email.trim()) {
+                        toast.error("L'email de l'expéditeur est obligatoire");
+                        return;
+                      }
+                      if (!formData.list_id) {
+                        toast.error("Veuillez sélectionner une liste de contacts");
+                        return;
+                      }
+                      // Récupérer le HTML actuel
+                      let currentHtml = htmlContent;
+                      if (getCurrentHtmlRef.current) {
+                        try {
+                          const editorHtml = getCurrentHtmlRef.current();
+                          if (editorHtml && editorHtml.trim()) {
+                            currentHtml = editorHtml;
+                          }
+                        } catch (error) {
+                          console.error("Erreur lors de la récupération du HTML:", error);
+                        }
+                      }
+                      if (!currentHtml || !currentHtml.trim()) {
+                        toast.error("Veuillez créer du contenu pour votre email");
+                        return;
+                      }
+                      // Programmer la campagne
+                      saveMutation.mutate(false);
+                      setIsSettingsOpen(false);
+                    }}
+                    disabled={saveMutation.isPending}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    <Clock className="h-4 w-4 mr-2" />
+                    Programmer l'envoi
+                  </Button>
+                )}
               </>
             )}
           </div>
