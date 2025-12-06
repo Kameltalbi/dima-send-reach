@@ -745,31 +745,44 @@ export function TemplateEditorBrevo({ initialContent, onSave, deviceView = "desk
             blockContent = '<div data-gjs-type="text" style="padding: 20px;">Nouveau bloc</div>';
         }
         
-        console.log("Ajout du bloc:", blockContent.substring(0, 100));
+        console.log("Ajout du bloc:", blockType);
+        console.log("Block content:", blockContent.substring(0, 100));
         
         try {
           // Récupérer le composant sélectionné pour insérer après
           const selected = editorRef.current.getSelected();
+          const wrapper = editorRef.current.getWrapper();
+          
+          if (!wrapper) {
+            console.error("Wrapper non disponible");
+            toast.error("L'éditeur n'est pas initialisé");
+            return;
+          }
+          
           const components = wrapper.components();
           
-          if (selected) {
-            // Trouver le parent et l'index du composant sélectionné
+          // Créer le composant à partir du HTML
+          const newComponent = components.add(blockContent);
+          
+          console.log("Nouveau composant créé:", newComponent);
+          
+          // Si un composant était sélectionné, essayer de le positionner après
+          if (selected && newComponent && newComponent.length > 0) {
             const parent = selected.parent();
             if (parent) {
               const parentComponents = parent.components();
-              const index = parentComponents.indexOf(selected);
-              // Insérer après le composant sélectionné
-              parentComponents.add(blockContent, { at: index + 1 });
-              console.log("Bloc ajouté après le composant sélectionné, index:", index + 1);
-            } else {
-              // Pas de parent, ajouter au wrapper
-              components.add(blockContent);
-              console.log("Bloc ajouté à la fin (pas de parent)");
+              const selectedIndex = parentComponents.indexOf(selected);
+              
+              // Déplacer le nouveau composant à la bonne position
+              if (selectedIndex >= 0) {
+                // Le composant a été ajouté à la fin, on le déplace
+                const addedComp = newComponent[0];
+                if (addedComp) {
+                  addedComp.move(parent, { at: selectedIndex + 1 });
+                  console.log("Composant déplacé après la sélection, index:", selectedIndex + 1);
+                }
+              }
             }
-          } else {
-            // Aucun composant sélectionné, ajouter à la fin
-            components.add(blockContent);
-            console.log("Bloc ajouté à la fin (aucune sélection)");
           }
           
           editorRef.current.refresh();

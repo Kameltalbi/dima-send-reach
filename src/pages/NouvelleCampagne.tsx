@@ -1154,10 +1154,15 @@ const NouvelleCampagne = () => {
                           <div
                             key={block.id}
                             className="group relative bg-white border rounded-lg p-4 cursor-pointer hover:border-primary hover:shadow-md transition-all"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log("Block clicked:", block.id);
                               if (addBlockRef.current) {
+                                console.log("Calling addBlockRef with:", block.id);
                                 addBlockRef.current(block.id);
                               } else {
+                                console.error("addBlockRef.current is null");
                                 toast.error("L'éditeur n'est pas encore prêt");
                               }
                             }}
