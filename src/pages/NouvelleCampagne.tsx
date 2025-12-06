@@ -1128,14 +1128,6 @@ const NouvelleCampagne = () => {
                 ></div>
               </div>
               
-              {sidebarIcon === "contenu" && sidebarTab === "blocs" && (
-                <div className="p-4">
-                  <p className="text-xs text-muted-foreground text-center">
-                    Utilisez le panneau "BLOCS" à gauche de l'éditeur pour glisser-déposer des éléments
-                  </p>
-                </div>
-              )}
-              
               {sidebarIcon === "sonia" && (
                 <div className="p-4 space-y-4">
                   <div className="text-sm text-muted-foreground text-center py-4">
