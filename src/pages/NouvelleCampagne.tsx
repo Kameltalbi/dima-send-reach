@@ -91,7 +91,7 @@ const NouvelleCampagne = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const getCurrentHtmlRef = useRef<(() => string) | null>(null);
   const addBlockRef = useRef<((blockType: string) => void) | null>(null);
-  const [sidebarTab, setSidebarTab] = useState<"blocs" | "sections" | "enregistres">("blocs");
+  const [sidebarTab, setSidebarTab] = useState<"blocs" | "sections" | "enregistres">("sections");
   const [sidebarIcon, setSidebarIcon] = useState<"contenu" | "bibliotheque" | "sonia">("contenu");
   const [deviceView, setDeviceView] = useState<"desktop" | "mobile">("desktop");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
