@@ -1129,33 +1129,28 @@ const NouvelleCampagne = () => {
               </div>
               
               {sidebarIcon === "contenu" && sidebarTab === "blocs" && (
-                <div className="p-4 space-y-4">
-                  {/* Bouton pour choisir un template */}
-                  <div className="space-y-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full text-xs h-9 gap-2 border-dashed"
-                      onClick={() => setIsTemplateDialogOpen(true)}
-                    >
-                      <FileText className="h-4 w-4" />
-                      Choisir un template
-                    </Button>
-                  </div>
-                  
-                  <p className="text-xs text-muted-foreground text-center py-4">
+                <div className="p-4">
+                  <p className="text-xs text-muted-foreground text-center">
                     Utilisez le panneau "BLOCS" à gauche de l'éditeur pour glisser-déposer des éléments
                   </p>
                 </div>
               )}
               
-              {/* Section Style supprimée - GrapesJS gère les styles */}
-              
               {sidebarIcon === "sonia" && (
-                <div className="p-4">
-                  <div className="text-sm text-muted-foreground text-center py-8">
+                <div className="p-4 space-y-4">
+                  <div className="text-sm text-muted-foreground text-center py-4">
                     Assistant Sonia - Bientôt disponible
                   </div>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full text-xs h-9 gap-2 border-dashed"
+                    onClick={() => setIsTemplateDialogOpen(true)}
+                  >
+                    <Plus className="h-4 w-4" />
+                    +Template
+                  </Button>
                 </div>
               )}
               
