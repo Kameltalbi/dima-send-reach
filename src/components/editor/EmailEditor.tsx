@@ -16,6 +16,7 @@ interface EmailEditorProps {
   initialContent?: string;
   onSave: (html: string) => void;
   onContentChange?: (html: string) => void;
+  deviceView?: "desktop" | "mobile";
 }
 
 // Configuration des blocs email
@@ -144,7 +145,7 @@ const emailBlocks = [
   },
 ];
 
-export function EmailEditor({ initialContent, onSave, onContentChange }: EmailEditorProps) {
+export function EmailEditor({ initialContent, onSave, onContentChange, deviceView = "desktop" }: EmailEditorProps) {
   const editorRef = useRef<Editor | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const blocksContainerRef = useRef<HTMLDivElement>(null);
@@ -152,6 +153,14 @@ export function EmailEditor({ initialContent, onSave, onContentChange }: EmailEd
   const [previewHtml, setPreviewHtml] = useState("");
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
   const [isReady, setIsReady] = useState(false);
+
+  // Réagir aux changements de deviceView depuis le parent
+  useEffect(() => {
+    if (editorRef.current && isReady) {
+      const deviceName = deviceView === "mobile" ? "Mobile" : "Desktop";
+      editorRef.current.setDevice(deviceName);
+    }
+  }, [deviceView, isReady]);
 
   // Récupérer le HTML actuel
   const getCurrentHtml = useCallback((): string => {
