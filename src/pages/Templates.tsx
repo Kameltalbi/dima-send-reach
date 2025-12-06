@@ -961,7 +961,7 @@ export default function Templates() {
               </DropdownMenuContent>
             </DropdownMenu>
             <Button 
-              onClick={() => setShowCreateDialog(true)} 
+              onClick={() => navigate("/templates/nouveau")} 
               size="default"
               className="gap-2"
             >
@@ -1133,6 +1133,13 @@ export default function Templates() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuItem onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/templates/${template.id}/edit`);
+                        }}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Modifier
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={(e) => {
                           e.stopPropagation();
                           handleUseInCampaign(template.id);

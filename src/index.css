@@ -1545,3 +1545,158 @@ All colors MUST be HSL.
 #grapesjs-blocks-container .gjs-block-category {
   display: none;
 }
+
+/* ========== Email Editor Styles ========== */
+#email-editor-blocks {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+#email-editor-blocks .gjs-block {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  padding: 12px 8px;
+  cursor: grab;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 70px;
+}
+
+#email-editor-blocks .gjs-block:hover {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 4px 12px hsl(var(--primary) / 0.15);
+  transform: translateY(-2px);
+}
+
+#email-editor-blocks .gjs-block:active {
+  cursor: grabbing;
+  transform: translateY(0);
+}
+
+#email-editor-blocks .gjs-block-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: hsl(var(--muted-foreground));
+  font-size: 11px;
+  font-weight: 500;
+}
+
+#email-editor-blocks .gjs-block-label svg {
+  width: 24px;
+  height: 24px;
+}
+
+#email-editor-blocks .gjs-block:hover .gjs-block-label {
+  color: hsl(var(--primary));
+}
+
+/* Block category headers */
+#email-editor-blocks .gjs-block-category {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 0 4px 0;
+  margin-top: 8px;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+#email-editor-blocks .gjs-block-category:first-child {
+  margin-top: 0;
+}
+
+/* Style Manager */
+#email-editor-styles .gjs-sm-sector {
+  border: none;
+  margin-bottom: 8px;
+}
+
+#email-editor-styles .gjs-sm-sector-title {
+  background: hsl(var(--muted));
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  cursor: pointer;
+}
+
+#email-editor-styles .gjs-sm-properties {
+  padding: 12px;
+  background: hsl(var(--card));
+  border-radius: 0 0 6px 6px;
+}
+
+#email-editor-styles .gjs-sm-property {
+  margin-bottom: 12px;
+}
+
+#email-editor-styles .gjs-sm-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 4px;
+}
+
+#email-editor-styles .gjs-field {
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+#email-editor-styles .gjs-field:focus-within {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.1);
+}
+
+/* GrapesJS Canvas */
+.gjs-cv-canvas {
+  background: transparent !important;
+}
+
+.gjs-frame-wrapper {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin: 20px auto;
+  max-width: 700px;
+}
+
+/* Component selection */
+.gjs-selected {
+  outline: 2px solid hsl(var(--primary)) !important;
+  outline-offset: -2px;
+}
+
+.gjs-hovered {
+  outline: 1px dashed hsl(var(--primary) / 0.5) !important;
+}
+
+/* Toolbar */
+.gjs-toolbar {
+  background: hsl(var(--popover));
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 4px;
+}
+
+.gjs-toolbar-item {
+  padding: 6px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.gjs-toolbar-item:hover {
+  background: hsl(var(--muted));
+}
